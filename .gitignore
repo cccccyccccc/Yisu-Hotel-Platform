@@ -1,0 +1,22 @@
+# 依赖包
+node_modules/
+.pnp
+.pnp.js
+
+# 系统文件
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# 环境变量与密钥 (安全起见，绝对不要提交)
+.env
+secret.json
+config/keys.js
+
+# 构建产物
+dist/
+build/
+
+.idea/
+*.iml
