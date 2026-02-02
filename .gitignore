@@ -8,8 +8,9 @@ node_modules/
 Thumbs.db
 .idea/
 .vscode/
+*.iml
 
-# 环境变量与密钥 (安全起见，绝对不要提交)
+# 环境变量与密钥
 .env
 secret.json
 config/keys.js
@@ -18,5 +19,3 @@ config/keys.js
 dist/
 build/
 
-.idea/
-*.iml
