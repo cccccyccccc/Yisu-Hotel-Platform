@@ -1,3 +1,4 @@
+// 酒店房间信息表
 const mongoose = require('mongoose');
 
 const roomTypeSchema = new mongoose.Schema({
