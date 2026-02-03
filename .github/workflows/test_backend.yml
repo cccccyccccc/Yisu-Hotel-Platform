@@ -26,13 +26,13 @@ jobs:
     steps:
       # 1. 拉取代码
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       # 2. 安装 Node.js
-      - name: Use Node.js 18
-        uses: actions/setup-node@v3
+      - name: Use Node.js 20
+        uses: actions/setup-node@v4
         with:
-          node-version: 18
+          node-version: 20
           cache: 'npm'
           cache-dependency-path: server/package-lock.json
 
