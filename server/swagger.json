@@ -52,6 +52,7 @@
           "city": { "type": "string", "example": "上海" },
           "address": { "type": "string", "example": "上海市浦东新区东泰路126号" },
           "starRating": { "type": "integer", "minimum": 1, "maximum": 5, "example": 5 },
+          "score": { "type": "number", "description": "综合评分 (自动计算)", "example": 4.8 },
           "price": { "type": "number", "description": "起始价格", "example": 9999 },
           "openingTime": { "type": "string", "example": "2021年" },
           "description": { "type": "string", "example": "云端体验" },
@@ -68,7 +69,7 @@
       },
       "RoomType": {
         "type": "object",
-        "required": ["hotelId", "title", "price"],
+        "required": ["hotelId", "title", "price", "stock"],
         "properties": {
           "hotelId": { "type": "string", "description": "关联酒店ID", "example": "609c1..." },
           "title": { "type": "string", "example": "云端大床房" },
@@ -101,6 +102,34 @@
             "enum": ["pending", "paid", "completed", "cancelled"],
             "default": "pending",
             "example": "paid"
+          },
+          "createdAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "Review": {
+        "type": "object",
+        "required": ["hotelId", "rating", "content"],
+        "properties": {
+          "userId": {
+            "type": "string",
+            "description": "用户ID (GET列表中会填充为包含头像用户名的对象)",
+            "example": "user_123"
+          },
+          "hotelId": { "type": "string", "example": "hotel_456" },
+          "rating": { "type": "integer", "minimum": 1, "maximum": 5, "example": 5 },
+          "content": { "type": "string", "example": "非常棒的体验！" },
+          "createdAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "Favorite": {
+        "type": "object",
+        "required": ["userId", "hotelId"],
+        "properties": {
+          "userId": { "type": "string", "example": "user_123" },
+          "hotelId": {
+            "type": "string",
+            "description": "GET列表接口中会填充为完整的 Hotel 对象",
+            "example": "hotel_456"
           },
           "createdAt": { "type": "string", "format": "date-time" }
         }
@@ -251,15 +280,7 @@
               "application/json": {
                 "schema": {
                   "type": "array",
-                  "items": {
-                    "type": "object",
-                    "properties": {
-                      "userId": { "type": "object", "properties": { "username": { "type": "string" }, "avatar": { "type": "string" } } },
-                      "rating": { "type": "integer" },
-                      "content": { "type": "string" },
-                      "createdAt": { "type": "string" }
-                    }
-                  }
+                  "items": { "$ref": "#/components/schemas/Review" }
                 }
               }
             }
@@ -607,7 +628,17 @@
         "tags": ["Favorites"],
         "security": [{ "bearerAuth": [] }],
         "responses": {
-          "200": { "description": "获取成功" }
+          "200": {
+            "description": "获取成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/Favorite" }
+                }
+              }
+            }
+          }
         }
       }
     },
