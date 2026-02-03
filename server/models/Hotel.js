@@ -17,6 +17,11 @@ const hotelSchema = new mongoose.Schema({
     price: { type: Number, required: true }, // 起始价格
     openingTime: { type: String },           // 开业时间
 
+    score: {
+        type: Number,
+        default: 5 // 默认评分
+    },
+
     // 详细信息 & 媒体
     description: { type: String },
     tags: [String],                // 标签，如 ["免费停车", "亲子"]

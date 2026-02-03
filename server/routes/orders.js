@@ -4,41 +4,45 @@ const Order = require('../models/Order');
 const RoomType = require('../models/RoomType');
 const authMiddleware = require('../middleware/authMiddleware');
 
-
-// 创建订单 (POST /api/orders)
+// 修改 POST /api/orders 接口
 router.post('/', authMiddleware, async (req, res) => {
     try {
-        const { hotelId, roomTypeId, checkInDate, checkOutDate, quantity } = req.body;
+        const { hotelId, roomTypeId, checkInDate, checkOutDate, quantity = 1 } = req.body;
 
-        // 查找房型获取单价 (后端计算总价才安全)
+        // 查房型
         const room = await RoomType.findById(roomTypeId);
         if (!room) return res.status(404).json({ msg: '房型不存在' });
 
-        // 计算入住天数
+        // 库存检查
+        if (room.stock < quantity) {
+            return res.status(400).json({ msg: '该房型库存不足，请选择其他房型' });
+        }
+
+        // 计算天数和总价
         const start = new Date(checkInDate);
         const end = new Date(checkOutDate);
-        // 计算时间差(毫秒) -> 转为天数
-        const diffTime = Math.abs(end - start);
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        const diffDays = Math.ceil(Math.abs(end - start) / (1000 * 60 * 60 * 24));
+        if (diffDays <= 0) return res.status(400).json({ msg: '日期无效' });
 
-        if (diffDays <= 0) return res.status(400).json({ msg: '离店日期必须晚于入住日期' });
-
-        // 计算总价 = 单价 * 房间数 * 天数
-        const totalPrice = room.price * (quantity || 1) * diffDays;
+        const totalPrice = room.price * quantity * diffDays;
 
         // 创建订单
         const newOrder = new Order({
-            userId: req.user.userId, // 从 Token 获取
+            userId: req.user.userId,
             hotelId,
             roomTypeId,
             checkInDate,
             checkOutDate,
-            quantity: quantity || 1,
-            totalPrice, // 存入计算后的总价
-            status: 'paid' // 简化逻辑：默认直接算已支付
+            quantity,
+            totalPrice,
+            status: 'paid'
         });
-
         await newOrder.save();
+
+        // 扣减库存
+        room.stock = room.stock - quantity;
+        await room.save();
+
         res.json(newOrder);
 
     } catch (err) {
@@ -74,11 +78,9 @@ router.put('/:id/cancel', authMiddleware, async (req, res) => {
         if (order.userId.toString() !== req.user.userId) {
             return res.status(401).json({ msg: '无权操作' });
         }
-
         order.status = 'cancelled';
         await order.save();
         res.json(order);
-
     } catch (err) {
         res.status(500).json({ msg: '服务器错误' });
     }

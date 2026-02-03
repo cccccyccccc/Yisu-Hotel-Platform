@@ -3,45 +3,32 @@ const router = express.Router();
 const Hotel = require('../models/Hotel');
 const authMiddleware = require('../middleware/authMiddleware');
 
-
 // 发布新酒店 (POST /api/hotels)
 router.post('/', authMiddleware, async (req, res) => {
     try {
-        // 权限检查：只有商户(merchant)才能发布
         if (req.user.role !== 'merchant') {
             return res.status(403).json({ msg: '只有商户权限才能发布酒店' });
         }
         const { name, nameEn, city, address, starRating, price, description, tags, openingTime } = req.body;
-        // 名称查重
-        const existingHotel = await Hotel.findOne({ name: name });
+
+        const existingHotel = await Hotel.findOne({ name });
         if (existingHotel) {
-            return res.status(400).json({ msg: '该酒店名称已存在，请勿重复发布' });
+            return res.status(400).json({ msg: '该酒店名称已存在' });
         }
-        // 创建新酒店
+
         const newHotel = new Hotel({
-            merchantId: req.user.userId, // 从 Token 里自动获取当前商户 ID
-            name,
-            nameEn,
-            city,
-            address,
-            starRating,
-            price,
-            description,
-            tags,
-            openingTime,
-            status: 0     // 默认为待审核
+            merchantId: req.user.userId,
+            name, nameEn, city, address, starRating, price, description, tags, openingTime,
+            status: 0 // 默认为待审核
         });
 
         const hotel = await newHotel.save();
         res.json(hotel);
-
     } catch (err) {
         console.error(err);
         res.status(500).json({ msg: '服务器错误' });
     }
 });
-
-
 
 // 获取我的酒店列表 (GET /api/hotels/my)
 router.get('/my', authMiddleware, async (req, res) => {
@@ -76,21 +63,58 @@ router.get('/admin/list', authMiddleware, async (req, res) => {
 // 首页搜索接口 (GET /api/hotels)
 router.get('/', async (req, res) => {
     try {
-        const { city, keyword, starRating } = req.query;
-        let query = { status: 1 }; // 默认只查已发布的
+        const {
+            city, keyword, starRating, minPrice, maxPrice,
+            sortType, page = 1, limit = 10
+        } = req.query;
 
+        // 构建查询条件
+        let query = { status: 1 }; // 默认只查已发布的
         if (city) query.city = city;
-        if (starRating) query.starRating = starRating;
+        if (starRating) query.starRating = Number(starRating);
+        // 价格区间筛选
+        if (minPrice || maxPrice) {
+            query.price = {};
+            if (minPrice) query.price.$gte = Number(minPrice);
+            if (maxPrice) query.price.$lte = Number(maxPrice);
+        }
         if (keyword) {
             query.$or = [
                 { name: { $regex: keyword, $options: 'i' } },
                 { address: { $regex: keyword, $options: 'i' } }
             ];
         }
+        // 构建排序规则
+        let sort = {};
+        switch (sortType) {
+            case 'price_asc':  sort = { price: 1 }; break;  // 价格低到高
+            case 'price_desc': sort = { price: -1 }; break; // 价格高到低
+            case 'score_desc': sort = { score: -1 }; break; // 评分高到低
+            default:           sort = { createdAt: -1 };    // 默认按最新发布
+        }
+        // 分页计算
+        const pageNum = Math.max(1, parseInt(page));
+        const limitNum = Math.max(1, parseInt(limit));
+        const skip = (pageNum - 1) * limitNum;
 
-        const hotels = await Hotel.find(query).sort({ createdAt: -1 });
-        res.json(hotels);
+        // 执行查询 (并行查询总数和数据)
+        const [hotels, total] = await Promise.all([
+            Hotel.find(query).sort(sort).skip(skip).limit(limitNum),
+            Hotel.countDocuments(query)
+        ]);
+
+        // 返回分页结构
+        res.json({
+            data: hotels,
+            pagination: {
+                total,
+                page: pageNum,
+                limit: limitNum,
+                totalPages: Math.ceil(total / limitNum)
+            }
+        });
     } catch (err) {
+        console.error(err);
         res.status(500).json({ msg: 'Server Error' });
     }
 });

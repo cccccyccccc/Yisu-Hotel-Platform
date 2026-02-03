@@ -15,6 +15,10 @@ const roomTypeSchema = new mongoose.Schema({
     capacity: { type: Number, default: 2 },  // 可住人数
     bedInfo: { type: String },               // 如 "2张1.2米单人床"
     size: { type: String },                  // 如 "40m²"
+    stock: {
+        type: Number,
+        required: true
+    },
     images: [String],                        // 房型图片
 
     createdAt: { type: Date, default: Date.now }
