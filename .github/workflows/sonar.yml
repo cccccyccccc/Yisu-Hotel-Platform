@@ -1,0 +1,60 @@
+name: SonarCloud Analysis
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  pull_request:
+    branches: [ "main", "master" ]
+  workflow_dispatch:
+
+permissions:
+  pull-requests: read # 允许 SonarCloud 在 PR 中发表评论
+
+jobs:
+  Analysis:
+    runs-on: ubuntu-latest
+
+    # 🛠️ 关键配置：启动一个临时的 MongoDB 服务
+    # 这样你的测试代码连接 localhost:27017 才能成功，否则测试会挂掉
+    services:
+      mongodb:
+        image: mongo:latest
+        ports:
+          - 27017:27017
+
+    steps:
+      # 1. 拉取代码 (fetch-depth: 0 是 SonarCloud 必须的，用于分析 Git 历史)
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # 2. 安装 Node.js 环境
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      # 3. 安装项目依赖
+      - name: Install dependencies
+        run: npm ci
+
+      # 4. 创建必要的临时文件夹 (修复之前提到的 uploads 报错)
+      - name: Create uploads directory
+        run: mkdir -p uploads
+
+      # 5. 运行测试并生成覆盖率报告
+      # --coverage 参数告诉 Jest 生成 lcov.info 文件
+      - name: Run Tests with Coverage
+        env:
+          # 配置测试用的环境变量，连接到上面的 MongoDB service
+          MONGODB_URI_TEST: mongodb://localhost:27017/yisu-test-ci
+          JWT_SECRET: test_secret_key_for_ci
+        run: npm test -- --coverage
+
+      # 6. 执行 SonarCloud 扫描
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarcloud-github-action@master
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
