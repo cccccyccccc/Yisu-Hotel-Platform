@@ -5,6 +5,7 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const path = require('path');
+const setupSwagger = require('./swagger');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -34,6 +35,7 @@ app.use('/api/rooms', roomRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/orders', orderRoutes);
 
+setupSwagger(app); // 开启swagger
 // 后端服务开启
 if (process.env.NODE_ENV !== 'test') {
     app.listen(PORT, () => {

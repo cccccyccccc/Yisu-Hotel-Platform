@@ -21,7 +21,7 @@ const userSchema = new mongoose.Schema({
         default: 'user',
         required: true
     },
-    // --- 个人资料 (提升用户体验) ---
+    // 个人资料 (提升用户体验)
     gender: {
         type: String,
         enum: ['male', 'female', 'unknown'],
