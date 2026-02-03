@@ -13,6 +13,19 @@ const hotelSchema = new mongoose.Schema({
     nameEn: { type: String },               // 英文名
     city: { type: String, required: true }, // 城市
     address: { type: String, required: true },
+
+    location: {
+        type: {
+            type: String,
+            enum: ['Point'],
+            default: 'Point'
+        },
+        coordinates: {
+            type: [Number], // 格式：[经度, 纬度]
+            required: true
+        }
+    },
+
     starRating: { type: Number, required: true, min: 1, max: 5 },
     price: { type: Number, required: true }, // 起始价格
     openingTime: { type: String },           // 开业时间
@@ -42,4 +55,5 @@ const hotelSchema = new mongoose.Schema({
     createdAt: { type: Date, default: Date.now }
 });
 
+hotelSchema.index({ location: '2dsphere' });
 module.exports = mongoose.model('Hotel', hotelSchema);

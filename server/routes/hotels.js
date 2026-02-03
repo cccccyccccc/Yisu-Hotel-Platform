@@ -9,7 +9,8 @@ router.post('/', authMiddleware, async (req, res) => {
         if (req.user.role !== 'merchant') {
             return res.status(403).json({ msg: '只有商户权限才能发布酒店' });
         }
-        const { name, nameEn, city, address, starRating, price, description, tags, openingTime } = req.body;
+
+        const { name, nameEn, city, address, starRating, price, description, tags, openingTime, location } = req.body;
 
         const existingHotel = await Hotel.findOne({ name });
         if (existingHotel) {
@@ -19,7 +20,8 @@ router.post('/', authMiddleware, async (req, res) => {
         const newHotel = new Hotel({
             merchantId: req.user.userId,
             name, nameEn, city, address, starRating, price, description, tags, openingTime,
-            status: 0 // 默认为待审核
+            location,
+            status: 0
         });
 
         const hotel = await newHotel.save();
@@ -48,7 +50,6 @@ router.get('/my', authMiddleware, async (req, res) => {
 router.get('/admin/list', authMiddleware, async (req, res) => {
     try {
         if (req.user.role !== 'admin') return res.status(403).json({ msg: '权限不足' });
-
         // 关联查询商户名，方便管理员知道是谁发布的
         const hotels = await Hotel.find()
             .populate('merchantId', 'username')
@@ -65,45 +66,63 @@ router.get('/', async (req, res) => {
     try {
         const {
             city, keyword, starRating, minPrice, maxPrice,
-            sortType, page = 1, limit = 10
+            sortType, page = 1, limit = 10,
+            userLat, userLng
         } = req.query;
-
-        // 构建查询条件
-        let query = { status: 1 }; // 默认只查已发布的
-        if (city) query.city = city;
-        if (starRating) query.starRating = Number(starRating);
-        // 价格区间筛选
+        let baseQuery = { status: 1 };
+        if (city) baseQuery.city = city;
+        if (starRating) baseQuery.starRating = Number(starRating);
         if (minPrice || maxPrice) {
-            query.price = {};
-            if (minPrice) query.price.$gte = Number(minPrice);
-            if (maxPrice) query.price.$lte = Number(maxPrice);
+            baseQuery.price = {};
+            if (minPrice) baseQuery.price.$gte = Number(minPrice);
+            if (maxPrice) baseQuery.price.$lte = Number(maxPrice);
         }
         if (keyword) {
-            query.$or = [
+            baseQuery.$or = [
                 { name: { $regex: keyword, $options: 'i' } },
                 { address: { $regex: keyword, $options: 'i' } }
             ];
         }
-        // 构建排序规则
+
+        // 分离 findQuery (用于查数据) 和 countQuery (用于查总数)
+        let findQuery = { ...baseQuery };
+        let countQuery = { ...baseQuery };
         let sort = {};
-        switch (sortType) {
-            case 'price_asc':  sort = { price: 1 }; break;  // 价格低到高
-            case 'price_desc': sort = { price: -1 }; break; // 价格高到低
-            case 'score_desc': sort = { score: -1 }; break; // 评分高到低
-            default:           sort = { createdAt: -1 };    // 默认按最新发布
+
+        // 2. 地理位置排序
+        if (sortType === 'distance' && userLat && userLng) {
+            // 使用 $near，这需要 location 字段有 2dsphere 索引
+            findQuery.location = {
+                $near: {
+                    $geometry: {
+                        type: "Point",
+                        coordinates: [parseFloat(userLng), parseFloat(userLat)]
+                    }
+                    // 可选：$maxDistance: 50000
+                }
+            };
+            // $near 隐式包含排序，不需要 sort 字段
+            sort = {};
+        } else {
+            // 常规排序
+            switch (sortType) {
+                case 'price_asc':  sort = { price: 1 }; break;
+                case 'price_desc': sort = { price: -1 }; break;
+                case 'score_desc': sort = { score: -1 }; break;
+                default:           sort = { createdAt: -1 };
+            }
         }
-        // 分页计算
+
         const pageNum = Math.max(1, parseInt(page));
         const limitNum = Math.max(1, parseInt(limit));
         const skip = (pageNum - 1) * limitNum;
 
-        // 执行查询 (并行查询总数和数据)
+        // 3. 执行查询
         const [hotels, total] = await Promise.all([
-            Hotel.find(query).sort(sort).skip(skip).limit(limitNum),
-            Hotel.countDocuments(query)
+            Hotel.find(findQuery).sort(sort).skip(skip).limit(limitNum),
+            Hotel.countDocuments(countQuery) // 使用不带 $near 的条件查总数
         ]);
 
-        // 返回分页结构
         res.json({
             data: hotels,
             pagination: {
@@ -113,13 +132,16 @@ router.get('/', async (req, res) => {
                 totalPages: Math.ceil(total / limitNum)
             }
         });
+
     } catch (err) {
         console.error(err);
+        // 如果这里报错，说明索引还是没建好
+        if (err.message && err.message.includes('index')) {
+            return res.status(500).json({ msg: 'Database Index Missing' });
+        }
         res.status(500).json({ msg: 'Server Error' });
     }
 });
-
-
 
 // 获取单个酒店详情 (GET /api/hotels/:id)
 router.get('/:id', async (req, res) => {

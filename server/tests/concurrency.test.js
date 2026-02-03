@@ -46,13 +46,20 @@ beforeAll(async () => {
     const merchantToken = merchLogin.body.token;
 
     // 3.3 发布酒店
+    // ⚠️⚠️⚠️ 关键修复：这里添加 location 字段 ⚠️⚠️⚠️
     const hotelRes = await request(app).post('/api/hotels')
         .set('Authorization', `Bearer ${merchantToken}`)
         .send({
             name: '并发测试酒店', city: '上海', address: '测试路1号',
             starRating: 5, price: 100, openingTime: '2023',
-            status: 1 // 直接设为已发布(如果接口允许)，或者走审核流程。这里为了简单假设已发布
-        });
+            status: 1, // 直接设为已发布
+            location: {
+                type: 'Point',
+                coordinates: [121.4737, 31.2304] // [经度, 纬度]
+            }
+        })
+        .expect(200); // 确保这里返回 200，如果之前报错这里就会抛出异常
+
     hotelId = hotelRes.body._id;
 
     // 3.4 发布房型 (关键：库存设为 5)
@@ -78,7 +85,7 @@ describe('🔥 高并发抢房测试', () => {
     it(`模拟 ${CONCURRENT_REQUESTS} 人抢 ${INITIAL_STOCK} 间房，应无超卖`, async () => {
         console.log(`🚀 开始并发测试：${CONCURRENT_REQUESTS} 个请求同时发出...`);
 
-        // 1. 构造 20 个并发请求 Promise (不使用 await，让它们同时发出)
+        // 1. 构造 20 个并发请求 Promise
         const requests = Array(CONCURRENT_REQUESTS).fill().map((_, index) => {
             return request(app)
                 .post('/api/orders')

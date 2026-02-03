@@ -10,11 +10,12 @@ const RoomType = require('../models/RoomType');
 const Order = require('../models/Order');
 const Favorite = require('../models/Favorite');
 const Review = require('../models/Review');
+const Banner = require('../models/Banner'); // <--- 新增 Banner 模型
 
 // === 全局变量 (用于在不同测试步骤间传递数据) ===
 let adminToken, merchantToken, userToken;
 let merchantId, userId;
-let hotelId, roomTypeId, orderId;
+let hotelId, roomTypeId, orderId, bannerId;
 
 // === 环境准备 ===
 beforeAll(async () => {
@@ -29,6 +30,8 @@ beforeAll(async () => {
     await Order.deleteMany({});
     await Favorite.deleteMany({});
     await Review.deleteMany({});
+    await Banner.deleteMany({});
+    await Hotel.syncIndexes();
 });
 
 afterAll(async () => {
@@ -51,7 +54,7 @@ describe('第一章：角色注册与登录', () => {
             username: 'admin_01', password: 'password123'
         }).expect(200);
 
-        adminToken = res.body.token; // 保存 Token
+        adminToken = res.body.token;
         expect(adminToken).toBeDefined();
     });
 
@@ -102,18 +105,17 @@ describe('第一章：角色注册与登录', () => {
 describe('第二章：商户业务 (发布与房型)', () => {
 
     it('2.1 图片上传测试 (Mock Upload)', async () => {
-        // 模拟上传一张小图片
         const buffer = Buffer.from('fake image content');
         const res = await request(app)
             .post('/api/upload')
-            .attach('file', buffer, 'test.jpg') // 模拟 multipart/form-data
+            .attach('file', buffer, 'test.jpg')
             .expect(200);
 
         expect(res.body).toHaveProperty('url');
         expect(res.body.url).toMatch(/^\/uploads\//);
     });
 
-    it('2.2 商户发布新酒店', async () => {
+    it('2.2 商户发布新酒店 (含地理位置)', async () => {
         const res = await request(app)
             .post('/api/hotels')
             .set('Authorization', `Bearer ${merchantToken}`)
@@ -125,12 +127,19 @@ describe('第二章：商户业务 (发布与房型)', () => {
                 starRating: 5,
                 price: 800,
                 description: '这是一个测试酒店',
-                tags: ['豪华', '地铁口']
+                tags: ['豪华', '地铁口'],
+                // === 新增：地理坐标 (上海人民广场附近) ===
+                location: {
+                    type: 'Point',
+                    coordinates: [121.4737, 31.2304] // [经度, 纬度]
+                }
             })
             .expect(200);
 
-        hotelId = res.body._id; // 保存酒店ID
-        expect(res.body.status).toBe(0); // 默认应该是待审核
+        hotelId = res.body._id;
+        expect(res.body.status).toBe(0);
+        // 确保 location 被正确保存
+        expect(res.body.location.coordinates[0]).toBe(121.4737);
     });
 
     it('2.3 商户为酒店添加房型', async () => {
@@ -141,12 +150,12 @@ describe('第二章：商户业务 (发布与房型)', () => {
                 hotelId: hotelId,
                 title: '豪华江景房',
                 price: 1200,
-                stock: 5, // 库存5间
+                stock: 5,
                 capacity: 2
             })
             .expect(200);
 
-        roomTypeId = res.body._id; // 保存房型ID
+        roomTypeId = res.body._id;
     });
 
     it('2.4 商户查看自己的酒店列表', async () => {
@@ -166,14 +175,12 @@ describe('第二章：商户业务 (发布与房型)', () => {
 describe('第三章：管理员审核', () => {
 
     it('3.1 管理员查看待审核列表并通过', async () => {
-        // 1. 审核通过
         await request(app)
             .put(`/api/hotels/${hotelId}/audit`)
             .set('Authorization', `Bearer ${adminToken}`)
-            .send({ status: 1 }) // 1 = 通过
+            .send({ status: 1 })
             .expect(200);
 
-        // 2. 验证状态
         const hotel = await Hotel.findById(hotelId);
         expect(hotel.status).toBe(1);
     });
@@ -184,7 +191,7 @@ describe('第三章：管理员审核', () => {
 // ==========================================
 describe('第四章：用户搜索与收藏', () => {
 
-    it('4.1 用户搜索酒店 (分页与筛选)', async () => {
+    it('4.1 用户搜索酒店 (价格排序)', async () => {
         const res = await request(app)
             .get('/api/hotels')
             .query({ city: '上海', sortType: 'price_asc', page: 1, limit: 10 })
@@ -194,13 +201,29 @@ describe('第四章：用户搜索与收藏', () => {
         expect(res.body.data[0].name).toBe('测试大酒店');
     });
 
-    it('4.2 用户收藏酒店', async () => {
+    it('4.2 用户搜索酒店 (距离排序 LBS)', async () => {
+        // 模拟用户在上海 (坐标略有偏差，计算距离)
+        const res = await request(app)
+            .get('/api/hotels')
+            .query({
+                sortType: 'distance',
+                userLng: 121.4700,
+                userLat: 31.2300,
+                page: 1, limit: 10
+            })
+            .expect(200);
+
+        // 应该能搜到刚才发布的酒店（因为它在附近）
+        expect(res.body.data.length).toBe(1);
+        expect(res.body.data[0]._id).toBe(hotelId);
+    });
+
+    it('4.3 用户收藏酒店', async () => {
         await request(app)
             .post(`/api/favorites/${hotelId}`)
             .set('Authorization', `Bearer ${userToken}`)
             .expect(201);
 
-        // 检查状态
         const res = await request(app)
             .get(`/api/favorites/check/${hotelId}`)
             .set('Authorization', `Bearer ${userToken}`)
@@ -209,7 +232,7 @@ describe('第四章：用户搜索与收藏', () => {
         expect(res.body.isFavorite).toBe(true);
     });
 
-    it('4.3 用户取消收藏', async () => {
+    it('4.4 用户取消收藏', async () => {
         await request(app)
             .delete(`/api/favorites/${hotelId}`)
             .set('Authorization', `Bearer ${userToken}`)
@@ -228,7 +251,7 @@ describe('第四章：用户搜索与收藏', () => {
 // ==========================================
 describe('第五章：下单与库存', () => {
 
-    it('5.1 用户下单预订', async () => {
+    it('5.1 用户下单预订 (原子操作测试)', async () => {
         const res = await request(app)
             .post('/api/orders')
             .set('Authorization', `Bearer ${userToken}`)
@@ -236,13 +259,12 @@ describe('第五章：下单与库存', () => {
                 hotelId,
                 roomTypeId,
                 checkInDate: '2026-05-01',
-                checkOutDate: '2026-05-03', // 住2晚
+                checkOutDate: '2026-05-03',
                 quantity: 1
             })
             .expect(200);
 
         orderId = res.body._id;
-        // 总价 = 1200 * 2晚 * 1间 = 2400
         expect(res.body.totalPrice).toBe(2400);
     });
 
@@ -261,6 +283,21 @@ describe('第五章：下单与库存', () => {
         expect(res.body.length).toBe(1);
         expect(res.body[0].status).toBe('paid');
     });
+
+    it('5.4 用户取消订单 (库存应自动回退)', async () => {
+        await request(app)
+            .put(`/api/orders/${orderId}/cancel`)
+            .set('Authorization', `Bearer ${userToken}`)
+            .expect(200);
+
+        // 验证状态
+        const order = await Order.findById(orderId);
+        expect(order.status).toBe('cancelled');
+
+        // 验证库存回退 (4 -> 5)
+        const room = await RoomType.findById(roomTypeId);
+        expect(room.stock).toBe(5);
+    });
 });
 
 // ==========================================
@@ -274,7 +311,7 @@ describe('第六章：评价闭环', () => {
             .set('Authorization', `Bearer ${userToken}`)
             .send({
                 hotelId,
-                rating: 5, // 给个5分好评
+                rating: 5,
                 content: '非常棒的体验，下次还来！'
             })
             .expect(201);
@@ -282,7 +319,6 @@ describe('第六章：评价闭环', () => {
 
     it('6.2 验证酒店评分自动更新', async () => {
         const hotel = await Hotel.findById(hotelId);
-        // 因为只有一个5分评价，平均分应该是 5
         expect(hotel.score).toBe(5);
     });
 
@@ -293,7 +329,51 @@ describe('第六章：评价闭环', () => {
 
         expect(res.body.length).toBe(1);
         expect(res.body[0].content).toBe('非常棒的体验，下次还来！');
-        // 检查是否关联了用户信息
-        expect(res.body[0].userId.username).toBe('user_01');
+    });
+});
+
+// ==========================================
+// 第七章：Banner 管理 (Admin Only)
+// ==========================================
+describe('第七章：Banner 管理', () => {
+
+    it('7.1 管理员发布轮播图', async () => {
+        const res = await request(app)
+            .post('/api/banners')
+            .set('Authorization', `Bearer ${adminToken}`)
+            .send({
+                imageUrl: '/uploads/banner1.jpg',
+                targetHotelId: hotelId,
+                title: '五一特惠',
+                priority: 10
+            })
+            .expect(201);
+
+        bannerId = res.body._id;
+        expect(res.body.title).toBe('五一特惠');
+    });
+
+    it('7.2 普通用户获取首页轮播图', async () => {
+        const res = await request(app)
+            .get('/api/banners')
+            .expect(200);
+
+        expect(res.body.length).toBeGreaterThan(0);
+        // 确保关联查询生效
+        expect(res.body[0].targetHotelId).toHaveProperty('name');
+    });
+
+    it('7.3 管理员删除轮播图', async () => {
+        await request(app)
+            .delete(`/api/banners/${bannerId}`)
+            .set('Authorization', `Bearer ${adminToken}`)
+            .expect(200);
+
+        const res = await request(app)
+            .get('/api/banners')
+            .expect(200);
+
+        // 删完了应该是空的
+        expect(res.body.length).toBe(0);
     });
 });

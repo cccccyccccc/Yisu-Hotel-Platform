@@ -133,6 +133,17 @@
           },
           "createdAt": { "type": "string", "format": "date-time" }
         }
+      },
+      "Banner": {
+        "type": "object",
+        "required": ["imageUrl", "targetHotelId"],
+        "properties": {
+          "imageUrl": { "type": "string", "example": "/uploads/banner1.jpg" },
+          "targetHotelId": { "type": "string", "description": "关联酒店ID", "example": "654321..." },
+          "title": { "type": "string", "example": "五一特惠活动" },
+          "priority": { "type": "integer", "default": 0, "example": 10 },
+          "status": { "type": "integer", "default": 1, "example": 1 }
+        }
       }
     }
   },
@@ -236,6 +247,55 @@
         },
         "responses": {
           "200": { "description": "修改成功" }
+        }
+      }
+    },
+    "/api/banners": {
+      "get": {
+        "summary": "获取首页轮播图 (公开)",
+        "tags": ["Banners"],
+        "responses": {
+          "200": {
+            "description": "获取成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/Banner" }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "添加轮播图 (仅管理员)",
+        "tags": ["Banners"],
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/Banner" }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "创建成功" },
+          "403": { "description": "权限不足" }
+        }
+      }
+    },
+    "/api/banners/{id}": {
+      "delete": {
+        "summary": "删除轮播图 (仅管理员)",
+        "tags": ["Banners"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": { "description": "删除成功" }
         }
       }
     },
