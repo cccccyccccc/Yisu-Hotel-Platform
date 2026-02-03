@@ -3,6 +3,7 @@ const router = express.Router();
 const Hotel = require('../models/Hotel');
 const authMiddleware = require('../middleware/authMiddleware');
 
+
 // 发布新酒店 (POST /api/hotels)
 router.post('/', authMiddleware, async (req, res) => {
     try {
@@ -10,25 +11,25 @@ router.post('/', authMiddleware, async (req, res) => {
         if (req.user.role !== 'merchant') {
             return res.status(403).json({ msg: '只有商户权限才能发布酒店' });
         }
-
-        const { name, address, starRating, price, description, tags } = req.body;
-
+        const { name, nameEn, city, address, starRating, price, description, tags, openingTime } = req.body;
         // 名称查重
         const existingHotel = await Hotel.findOne({ name: name });
         if (existingHotel) {
             return res.status(400).json({ msg: '该酒店名称已存在，请勿重复发布' });
         }
-
         // 创建新酒店
         const newHotel = new Hotel({
             merchantId: req.user.userId, // 从 Token 里自动获取当前商户 ID
             name,
+            nameEn,
+            city,
             address,
             starRating,
             price,
             description,
             tags,
-            status: 0 // 默认为待审核
+            openingTime,
+            status: 0     // 默认为待审核
         });
 
         const hotel = await newHotel.save();
@@ -41,12 +42,12 @@ router.post('/', authMiddleware, async (req, res) => {
 });
 
 
+
 // 获取我的酒店列表 (GET /api/hotels/my)
 router.get('/my', authMiddleware, async (req, res) => {
     try {
-        // 根据当前登录用户的 ID 查找酒店
         const hotels = await Hotel.find({ merchantId: req.user.userId })
-            .sort({ createdAt: -1 }); // 按时间倒序
+            .sort({ createdAt: -1 });
         res.json(hotels);
     } catch (err) {
         console.error(err);
@@ -54,32 +55,153 @@ router.get('/my', authMiddleware, async (req, res) => {
     }
 });
 
-// 修改酒店信息 (PUT /api/hotels/:id)
+
+
+// 管理员：查看所有酒店 (GET /api/hotels/admin/list)
+router.get('/admin/list', authMiddleware, async (req, res) => {
+    try {
+        if (req.user.role !== 'admin') return res.status(403).json({ msg: '权限不足' });
+
+        // 关联查询商户名，方便管理员知道是谁发布的
+        const hotels = await Hotel.find()
+            .populate('merchantId', 'username')
+            .sort({ createdAt: -1 });
+
+        res.json(hotels);
+    } catch (err) {
+        res.status(500).json({ msg: 'Server Error' });
+    }
+});
+
+// 首页搜索接口 (GET /api/hotels)
+router.get('/', async (req, res) => {
+    try {
+        const { city, keyword, starRating } = req.query;
+        let query = { status: 1 }; // 默认只查已发布的
+
+        if (city) query.city = city;
+        if (starRating) query.starRating = starRating;
+        if (keyword) {
+            query.$or = [
+                { name: { $regex: keyword, $options: 'i' } },
+                { address: { $regex: keyword, $options: 'i' } }
+            ];
+        }
+
+        const hotels = await Hotel.find(query).sort({ createdAt: -1 });
+        res.json(hotels);
+    } catch (err) {
+        res.status(500).json({ msg: 'Server Error' });
+    }
+});
+
+
+
+// 获取单个酒店详情 (GET /api/hotels/:id)
+router.get('/:id', async (req, res) => {
+    try {
+        const hotel = await Hotel.findById(req.params.id);
+        if (!hotel) return res.status(404).json({ msg: 'Not Found' });
+        res.json(hotel);
+    } catch (err) {
+        // 如果 ID 格式不对，也会进这里，返回 404 比 Server Error 更友好
+        if (err.kind === 'ObjectId') return res.status(404).json({ msg: 'Hotel not found' });
+        res.status(500).json({ msg: 'Server Error' });
+    }
+});
+
+
+
+// 商户修改酒店信息 (PUT /api/hotels/:id)
 router.put('/:id', authMiddleware, async (req, res) => {
     try {
-        const { name, address, price, status } = req.body;
+        const { name, nameEn, city, address, starRating, price, description, tags, openingTime } = req.body;
 
-        // 只能改自己的酒店
-        let hotel = await Hotel.findById(req.params.id);
+        const hotel = await Hotel.findById(req.params.id);
         if (!hotel) return res.status(404).json({ msg: '酒店不存在' });
 
-        // 验证所有权
+        // 权限校验
         if (hotel.merchantId.toString() !== req.user.userId) {
             return res.status(401).json({ msg: '无权修改此酒店' });
         }
 
         // 更新字段
-        hotel.name = name || hotel.name;
-        hotel.address = address || hotel.address;
-        hotel.price = price || hotel.price;
+        if (name) hotel.name = name;
+        if (nameEn) hotel.nameEn = nameEn;
+        if (city) hotel.city = city;
+        if (address) hotel.address = address;
+        if (starRating) hotel.starRating = starRating;
+        if (price) hotel.price = price;
+        if (description) hotel.description = description;
+        if (tags) hotel.tags = tags;
+        if (openingTime) hotel.openingTime = openingTime;
 
-        // 如果修改了关键信息，建议重置状态为待审核 (这里简化处理，暂不重置)
+        // 如果原本是“已发布”或“不通过”，修改后重置为“待审核”
+        if (hotel.status === 1 || hotel.status === 2) {
+            hotel.status = 0;
+        }
+        await hotel.save();
+        res.json(hotel);
+    } catch (err) {
+        res.status(500).json({ msg: 'Server Error' });
+    }
+});
+
+// 管理员：审核酒店 (PUT /api/hotels/:id/audit)
+router.put('/:id/audit', authMiddleware, async (req, res) => {
+    try {
+        if (req.user.role !== 'admin') return res.status(403).json({ msg: '权限不足' });
+
+        const { status, rejectReason } = req.body;
+        const hotel = await Hotel.findById(req.params.id);
+
+        hotel.status = status;
+        if (status === 2) {
+            hotel.rejectReason = rejectReason || '未说明原因';
+        } else {
+            hotel.rejectReason = ''; // 通过则清空原因
+        }
 
         await hotel.save();
         res.json(hotel);
     } catch (err) {
-        console.error(err);
-        res.status(500).json({ msg: '服务器错误' });
+        res.status(500).json({ msg: 'Server Error' });
+    }
+});
+
+
+
+// 酒店上下线操作 (PUT /api/hotels/:id/status)
+router.put('/:id/status', authMiddleware, async (req, res) => {
+    try {
+        const { status } = req.body;
+
+        const hotel = await Hotel.findById(req.params.id);
+        if (!hotel) return res.status(404).json({ msg: '酒店不存在' });
+
+        const isOwner = hotel.merchantId.toString() === req.user.userId;
+        const isAdmin = req.user.role === 'admin';
+
+        if (!isOwner && !isAdmin) {
+            return res.status(403).json({ msg: '无权操作' });
+        }
+
+        // 上下线逻辑
+        if (status === 3) {
+            hotel.status = 3; // 下线
+        } else if (status === 1) {
+            // 只有曾经审核通过的(status=1)或者只是被下线的(status=3)才能恢复
+            // 这里简单处理：允许恢复为1
+            hotel.status = 1;
+        } else {
+            return res.status(400).json({ msg: '非法状态操作' });
+        }
+
+        await hotel.save();
+        res.json({ msg: '操作成功', status: hotel.status });
+
+    } catch (err) {
+        res.status(500).json({ msg: 'Server Error' });
     }
 });
 

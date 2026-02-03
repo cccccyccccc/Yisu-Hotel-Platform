@@ -1,0 +1,27 @@
+### ⚠️ 变量配置区 (注意这里要用 管理员 Token)
+@admin_token = 你的管理员Token贴在这里
+@hotel_id = 待审核的酒店ID
+
+### 1. 查看所有酒店列表 (包含 status=0 待审核的)
+GET http://localhost:5000/api/hotels/admin/list
+Authorization: Bearer {{admin_token}}
+
+### 2. 审核拒绝 (测试)
+PUT http://localhost:5000/api/hotels/{{hotel_id}}/audit
+Content-Type: application/json
+Authorization: Bearer {{admin_token}}
+
+{
+  "status": 2,
+  "rejectReason": "图片不清晰，请重新上传"
+}
+
+### 3. 审核通过 (正式发布)
+PUT http://localhost:5000/api/hotels/{{hotel_id}}/audit
+Content-Type: application/json
+Authorization: Bearer {{admin_token}}
+
+{
+  "status": 1,
+  "rejectReason": ""
+}

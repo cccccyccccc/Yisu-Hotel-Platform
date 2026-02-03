@@ -17,7 +17,6 @@ mongoose.connect(process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/yisu-hote
     .then(() => console.log('✅ MongoDB 数据库连接成功!'))
     .catch(err => console.error('❌ MongoDB 连接失败:', err));
 
-
 app.get('/', (req, res) => {
     res.send('易宿酒店平台后端服务已启动！');
 });
@@ -25,11 +24,21 @@ app.get('/', (req, res) => {
 // 路由注册部分
 const authRoutes = require('./routes/auth');
 const hotelRoutes = require('./routes/hotels');
+const roomRoutes = require('./routes/rooms');
+const uploadRoutes = require('./routes/upload');
+const orderRoutes = require('./routes/orders');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/hotels', hotelRoutes);
+app.use('/api/rooms', roomRoutes);
+app.use('/api/upload', uploadRoutes);
+app.use('/api/orders', orderRoutes);
 
 // 后端服务开启
-app.listen(PORT, () => {
-    console.log(`🚀 服务正在运行: http://localhost:${PORT}`);
-});
+if (process.env.NODE_ENV !== 'test') {
+    app.listen(PORT, () => {
+        console.log(`🚀 服务正在运行: http://localhost:${PORT}`);
+    });
+}
+
+module.exports = app;

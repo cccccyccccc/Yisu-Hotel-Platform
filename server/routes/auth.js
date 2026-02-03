@@ -5,7 +5,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 
-// 定义密钥 (实际项目中建议放在 .env 文件或 secret.json 中)
+// 从配置文件中拿取密钥
 const JWT_SECRET = process.env.JWT_SECRET;
 
 // 注册接口 (POST /api/auth/register)

@@ -1,0 +1,55 @@
+name: Backend CI (Node.js)
+
+# 触发条件：推送到 main 分支，或者提交 Pull Request 时
+on:
+  push:
+    branches: [ "main" ]
+    paths: [ "server/**" ] # 只有 server 目录变动才触发
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    # 在 CI 环境中启动一个临时的 MongoDB 服务
+    services:
+      mongodb:
+        image: mongo:6.0
+        ports:
+          - 27017:27017
+
+    defaults:
+      run:
+        working-directory: ./server # 所有命令都在 server 目录下运行
+
+    steps:
+      # 1. 拉取代码
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # 2. 安装 Node.js
+      - name: Use Node.js 18
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+          cache: 'npm'
+          cache-dependency-path: server/package-lock.json
+
+      # 3. 安装依赖
+      - name: Install dependencies
+        run: npm ci
+
+      # 4. 代码风格检查 (Lint)
+      # 如果代码写得不规范，这里会报错，流程终止
+      - name: Lint Code
+        run: npm run lint
+
+      # 5. 运行自动化测试 (Jest)
+      # 这一步会连接上面的 mongodb service 进行真机测试
+      - name: Run Tests
+        run: npm test
+        env:
+          # 注入环境变量
+          JWT_SECRET: "ci_secret_key_123"
+          MONGODB_URI: "mongodb://localhost:27017/ci_test_db"

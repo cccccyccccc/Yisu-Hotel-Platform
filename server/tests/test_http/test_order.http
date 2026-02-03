@@ -1,0 +1,25 @@
+### ⚠️ 变量配置区
+@token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2OTgxY2NjNjA5YjY1MGZlNjgzNTg3MzgiLCJyb2xlIjoibWVyY2hhbnQiLCJ1c2VybmFtZSI6Im1lcmNoYW50XzAxIiwiaWF0IjoxNzcwMTE0NjA4LCJleHAiOjE3NzAyMDEwMDh9.TTmxlQE3eRq_wMcwho9TCOGM9RVp3vN2CBSLaJir5II
+@hotel_id = 6981d099143746681dcf0175
+@room_id = 6981d101143746681dcf017a
+
+### 1. 创建订单 (预订 2 晚，2 间房)
+POST http://localhost:5000/api/orders
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "hotelId": "{{hotel_id}}",
+  "roomTypeId": "{{room_id}}",
+  "checkInDate": "2023-10-01",
+  "checkOutDate": "2023-10-03",
+  "quantity": 2
+}
+
+### 2. 查看我的订单 (验证是否关联查询出了酒店名)
+GET http://localhost:5000/api/orders/my
+Authorization: Bearer {{token}}
+
+### 3. 取消订单 (需要把下面 ID 换成刚才生成的订单 ID)
+PUT http://localhost:5000/api/orders/neededID/cancel
+Authorization: Bearer {{token}}

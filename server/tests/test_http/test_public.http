@@ -1,0 +1,14 @@
+### 1. 首页默认查询 (查不到待审核的，只能查到 status=1)
+GET http://localhost:5000/api/hotels
+
+### 2. 按城市筛选
+GET http://localhost:5000/api/hotels?city=上海
+
+### 3. 按关键字模糊搜索
+GET http://localhost:5000/api/hotels?keyword=中心
+
+### 4. 组合查询 (上海 + 5星级)
+GET http://localhost:5000/api/hotels?city=上海&starRating=5
+
+### 5. 查看酒店详情 (包含基础信息)
+GET http://localhost:5000/api/hotels/654321...

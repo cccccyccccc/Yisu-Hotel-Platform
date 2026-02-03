@@ -11,6 +11,7 @@ const hotelSchema = new mongoose.Schema({
     // 必须维度
     name: { type: String, required: true }, // 中文名
     nameEn: { type: String },               // 英文名
+    city: { type: String, required: true }, // 城市
     address: { type: String, required: true },
     starRating: { type: Number, required: true, min: 1, max: 5 },
     price: { type: Number, required: true }, // 起始价格
