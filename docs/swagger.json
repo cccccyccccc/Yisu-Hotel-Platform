@@ -1,0 +1,487 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "易宿酒店预订平台 API",
+    "version": "1.0.0",
+    "description": "基于 Node.js Express 的酒店预订系统后端接口文档"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:5000",
+      "description": "本地开发服务器"
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    },
+    "schemas": {
+      "User": {
+        "type": "object",
+        "required": ["username", "password", "role"],
+        "properties": {
+          "username": { "type": "string", "example": "merchant_01" },
+          "password": { "type": "string", "example": "password123", "description": "加密存储" },
+          "role": {
+            "type": "string",
+            "enum": ["user", "merchant", "admin"],
+            "default": "user",
+            "example": "merchant"
+          },
+          "gender": {
+            "type": "string",
+            "enum": ["male", "female", "unknown"],
+            "default": "unknown",
+            "example": "male"
+          },
+          "avatar": { "type": "string", "example": "/uploads/avatars/default.png" },
+          "bio": { "type": "string", "example": "热爱旅行" }
+        }
+      },
+      "Hotel": {
+        "type": "object",
+        "required": ["merchantId", "name", "city", "address", "starRating", "price"],
+        "properties": {
+          "merchantId": { "type": "string", "description": "关联商户ID", "example": "609c1..." },
+          "name": { "type": "string", "example": "上海中心J酒店" },
+          "nameEn": { "type": "string", "example": "J Hotel Shanghai Tower" },
+          "city": { "type": "string", "example": "上海" },
+          "address": { "type": "string", "example": "上海市浦东新区东泰路126号" },
+          "starRating": { "type": "integer", "minimum": 1, "maximum": 5, "example": 5 },
+          "price": { "type": "number", "description": "起始价格", "example": 9999 },
+          "openingTime": { "type": "string", "example": "2021年" },
+          "description": { "type": "string", "example": "云端体验" },
+          "tags": { "type": "array", "items": { "type": "string" }, "example": ["地标", "奢华"] },
+          "images": { "type": "array", "items": { "type": "string" }, "example": ["/uploads/hotel1.jpg"] },
+          "status": {
+            "type": "integer",
+            "enum": [0, 1, 2, 3],
+            "description": "0:待审核, 1:已发布, 2:拒绝, 3:下线",
+            "default": 0
+          },
+          "rejectReason": { "type": "string", "example": "图片不清晰" }
+        }
+      },
+      "RoomType": {
+        "type": "object",
+        "required": ["hotelId", "title", "price"],
+        "properties": {
+          "hotelId": { "type": "string", "description": "关联酒店ID", "example": "609c1..." },
+          "title": { "type": "string", "example": "云端大床房" },
+          "price": { "type": "number", "description": "实际价格", "example": 5000 },
+          "originalPrice": { "type": "number", "description": "原价(可选)", "example": 8888 },
+          "capacity": { "type": "integer", "default": 2, "example": 2 },
+          "bedInfo": { "type": "string", "example": "1张2米特大床" },
+          "size": { "type": "string", "example": "60m²" },
+          "images": {
+            "type": "array",
+            "items": { "type": "string" },
+            "example": ["/uploads/room1.jpg"]
+          }
+        }
+      },
+      "Order": {
+        "type": "object",
+        "required": ["userId", "hotelId", "roomTypeId", "checkInDate", "checkOutDate", "totalPrice"],
+        "properties": {
+          "userId": { "type": "string", "description": "下单用户ID", "example": "user_123" },
+          "hotelId": { "type": "string", "example": "hotel_456" },
+          "roomTypeId": { "type": "string", "example": "room_789" },
+          "checkInDate": { "type": "string", "format": "date", "example": "2023-10-01" },
+          "checkOutDate": { "type": "string", "format": "date", "example": "2023-10-03" },
+          "quantity": { "type": "integer", "default": 1, "example": 1 },
+          "totalPrice": { "type": "number", "example": 2000 },
+          "status": {
+            "type": "string",
+            "enum": ["pending", "paid", "completed", "cancelled"],
+            "default": "pending",
+            "example": "paid"
+          },
+          "createdAt": { "type": "string", "format": "date-time" }
+        }
+      }
+    }
+  },
+  "paths": {
+    "/api/auth/register": {
+      "post": {
+        "summary": "用户注册",
+        "tags": ["Auth"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["username", "password"],
+                "properties": {
+                  "username": { "type": "string", "example": "merchant_01" },
+                  "password": { "type": "string", "example": "123456" },
+                  "role": { "type": "string", "enum": ["user", "merchant", "admin"], "default": "user" },
+                  "gender": { "type": "string", "enum": ["male", "female", "unknown"] },
+                  "bio": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "注册成功" },
+          "400": { "description": "账号已存在" }
+        }
+      }
+    },
+    "/api/auth/login": {
+      "post": {
+        "summary": "用户登录",
+        "tags": ["Auth"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["username", "password"],
+                "properties": {
+                  "username": { "type": "string", "example": "merchant_01" },
+                  "password": { "type": "string", "example": "123456" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "登录成功，返回 Token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "token": { "type": "string" },
+                    "user": { "$ref": "#/components/schemas/User" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/upload": {
+      "post": {
+        "summary": "上传图片",
+        "tags": ["Upload"],
+        "description": "上传单个文件，成功后返回相对路径",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "file": { "type": "string", "format": "binary" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "上传成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "msg": { "type": "string" },
+                    "url": { "type": "string", "example": "/uploads/1709...jpg" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/hotels": {
+      "post": {
+        "summary": "发布新酒店 (仅商户)",
+        "tags": ["Hotels"],
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/Hotel" }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "发布成功" },
+          "403": { "description": "权限不足" }
+        }
+      },
+      "get": {
+        "summary": "首页搜索酒店 (公共)",
+        "tags": ["Hotels"],
+        "parameters": [
+          { "name": "city", "in": "query", "schema": { "type": "string" }, "description": "城市筛选" },
+          { "name": "keyword", "in": "query", "schema": { "type": "string" }, "description": "名称或地址关键字" },
+          { "name": "starRating", "in": "query", "schema": { "type": "integer" }, "description": "星级筛选" }
+        ],
+        "responses": {
+          "200": {
+            "description": "获取成功",
+            "content": {
+              "application/json": {
+                "schema": { "type": "array", "items": { "$ref": "#/components/schemas/Hotel" } }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/hotels/my": {
+      "get": {
+        "summary": "获取我的酒店列表 (仅商户)",
+        "tags": ["Hotels"],
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "获取成功",
+            "content": {
+              "application/json": {
+                "schema": { "type": "array", "items": { "$ref": "#/components/schemas/Hotel" } }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/hotels/admin/list": {
+      "get": {
+        "summary": "获取所有酒店列表 (仅管理员)",
+        "tags": ["Hotels"],
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "获取成功",
+            "content": {
+              "application/json": {
+                "schema": { "type": "array", "items": { "$ref": "#/components/schemas/Hotel" } }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/hotels/{id}": {
+      "get": {
+        "summary": "获取酒店详情",
+        "tags": ["Hotels"],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "获取成功",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/Hotel" } }
+            }
+          },
+          "404": { "description": "未找到酒店" }
+        }
+      },
+      "put": {
+        "summary": "修改酒店信息 (仅商户)",
+        "tags": ["Hotels"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/Hotel" } }
+          }
+        },
+        "responses": {
+          "200": { "description": "修改成功" }
+        }
+      }
+    },
+    "/api/hotels/{id}/audit": {
+      "put": {
+        "summary": "审核酒店 (仅管理员)",
+        "tags": ["Hotels"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "status": { "type": "integer", "description": "1:通过, 2:拒绝" },
+                  "rejectReason": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "操作成功" }
+        }
+      }
+    },
+    "/api/hotels/{id}/status": {
+      "put": {
+        "summary": "酒店上下线 (商户/管理员)",
+        "tags": ["Hotels"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "status": { "type": "integer", "description": "1:上线, 3:下线" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "操作成功" }
+        }
+      }
+    },
+    "/api/rooms": {
+      "post": {
+        "summary": "添加房型 (仅商户)",
+        "tags": ["Rooms"],
+        "description": "添加后会自动更新酒店的最低价(minPrice)",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/RoomType" } }
+          }
+        },
+        "responses": {
+          "200": { "description": "添加成功" },
+          "401": { "description": "无权操作" }
+        }
+      }
+    },
+    "/api/rooms/{hotelId}": {
+      "get": {
+        "summary": "获取某酒店的所有房型",
+        "tags": ["Rooms"],
+        "description": "公共接口，用于详情页展示，按价格从低到高排序",
+        "parameters": [
+          { "name": "hotelId", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "获取成功",
+            "content": {
+              "application/json": {
+                "schema": { "type": "array", "items": { "$ref": "#/components/schemas/RoomType" } }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/rooms/{id}": {
+      "delete": {
+        "summary": "删除房型 (仅商户)",
+        "tags": ["Rooms"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": { "description": "删除成功" }
+        }
+      }
+    },
+    "/api/orders": {
+      "post": {
+        "summary": "创建订单",
+        "tags": ["Orders"],
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["hotelId", "roomTypeId", "checkInDate", "checkOutDate"],
+                "properties": {
+                  "hotelId": { "type": "string" },
+                  "roomTypeId": { "type": "string" },
+                  "checkInDate": { "type": "string", "format": "date" },
+                  "checkOutDate": { "type": "string", "format": "date" },
+                  "quantity": { "type": "integer" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "下单成功",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/Order" } }
+            }
+          },
+          "400": { "description": "参数错误" }
+        }
+      }
+    },
+    "/api/orders/my": {
+      "get": {
+        "summary": "获取我的订单列表",
+        "tags": ["Orders"],
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "获取成功",
+            "content": {
+              "application/json": {
+                "schema": { "type": "array", "items": { "$ref": "#/components/schemas/Order" } }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/orders/{id}/cancel": {
+      "put": {
+        "summary": "取消订单",
+        "tags": ["Orders"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "取消成功",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/Order" } }
+            }
+          }
+        }
+      }
+    }
+  }
+}
