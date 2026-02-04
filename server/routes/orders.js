@@ -4,101 +4,91 @@ const Order = require('../models/Order');
 const RoomType = require('../models/RoomType');
 const authMiddleware = require('../middleware/authMiddleware');
 
+function getDateRange(start, end) {
+    const dates = [];
+    let cur = new Date(start);
+    while (cur < end) {
+        dates.push(new Date(cur));
+        cur.setDate(cur.getDate() + 1);
+    }
+    return dates;
+}
+
+function checkOverSold(room, overlappingOrders, newOrderId, checkDates) {
+    for (const dateObj of checkDates) {
+        const dateStr = dateObj.toISOString().split('T')[0];
+        let dailyLimit = room.stock;
+        if (room.priceCalendar) {
+            const cal = room.priceCalendar.find(c => c.date === dateStr);
+            if (cal && cal.stock !== undefined) dailyLimit = cal.stock;
+        }
+        let currentUsage = 0;
+        let isMyOrderIncluded = false;
+        for (const order of overlappingOrders) {
+            const oStart = new Date(order.checkInDate);
+            const oEnd = new Date(order.checkOutDate);
+            const isMe = order._id.toString() === newOrderId.toString();
+            if (dateObj >= oStart && dateObj < oEnd) {
+                currentUsage += order.quantity;
+                if (currentUsage > dailyLimit) {
+                    if (isMe) {
+                        return { isOverSold: true, reason: `日期 ${dateStr} 库存不足` };
+                    }
+                } else {
+                    if (isMe) {
+                        isMyOrderIncluded = true;
+                    }
+                }
+            }
+        }
+    }
+    return { isOverSold: false };
+}
+
 // 创建订单 (POST /api/orders)
 router.post('/', authMiddleware, async (req, res) => {
     try {
         const { hotelId, roomTypeId, checkInDate, checkOutDate, quantity = 1 } = req.body;
 
-        if (Number(quantity) <= 0) {
-            return res.status(400).json({ msg: '预订数量必须大于 0' });
-        }
-
-        // 日期校验
+        // 参数校验
+        if (Number(quantity) <= 0) return res.status(400).json({ msg: '数量必须大于0' });
         const start = new Date(checkInDate);
         const end = new Date(checkOutDate);
         const diffDays = Math.ceil((end - start) / (1000 * 60 * 60 * 24));
         if (diffDays <= 0) return res.status(400).json({ msg: '日期无效' });
 
-        // 初始房型检查
         const room = await RoomType.findById(roomTypeId);
         if (!room) return res.status(404).json({ msg: '房型不存在' });
 
-        // 生成日期列表
-        const checkDates = [];
-        let cur = new Date(start);
-        while (cur < end) {
-            checkDates.push(new Date(cur));
-            cur.setDate(cur.getDate() + 1);
-        }
-
-        // 核心策略：乐观锁 / 后置校验 (Post-Save Validation)
-        // 先尝试生成并保存订单 (占坑)
-        const totalPrice = room.price * quantity * diffDays; // 简化价格计算
-
+        // 乐观锁占位
+        const totalPrice = room.price * quantity * diffDays;
         const newOrder = new Order({
             userId: req.user.userId,
-            hotelId,
-            roomTypeId,
-            checkInDate: start,
-            checkOutDate: end,
-            quantity,
-            totalPrice,
-            status: 'paid'
+            hotelId, roomTypeId, checkInDate: start, checkOutDate: end,
+            quantity, totalPrice, status: 'paid'
         });
-
         await newOrder.save();
 
-        // 双重检查：保存后，立即检查是否超售
-        // 查出该时间段所有有效订单，按创建时间排序 (先到先得)
+        // 双重检查 (Double Check)
+        // 使用 _id 辅助排序，保证即便毫秒级时间戳相同，顺序也是固定的
         const overlappingOrders = await Order.find({
             roomTypeId: roomTypeId,
             status: { $in: ['paid', 'confirmed', 'pending'] },
             checkInDate: { $lt: end },
             checkOutDate: { $gt: start }
-        }).sort({ createdAt: 1, _id: 1 });// 按时间排序
+        }).sort({ createdAt: 1, _id: 1 });
 
-        let isOverSold = false;
-        let failureReason = '';
-
-        for (const dateObj of checkDates) {
-            const dateStr = dateObj.toISOString().split('T')[0];
-
-            let dailyLimit = room.stock;
-            if (room.priceCalendar) {
-                const cal = room.priceCalendar.find(c => c.date === dateStr);
-                if (cal && cal.stock !== undefined) dailyLimit = cal.stock;
-            }
-
-            let currentUsage = 0;
-            for (const order of overlappingOrders) {
-                const oStart = new Date(order.checkInDate);
-                const oEnd = new Date(order.checkOutDate);
-                if (dateObj >= oStart && dateObj < oEnd) {
-                    currentUsage += order.quantity;
-                    if (currentUsage > dailyLimit) {
-                        if (order._id.toString() === newOrder._id.toString()) {
-                            isOverSold = true;
-                            failureReason = `日期 ${dateStr} 库存不足`;
-                            break;
-                        }
-                    }
-                }
-            }
-            if (isOverSold) break;
-        }
+        const checkDates = getDateRange(start, end);
+        const checkResult = checkOverSold(room, overlappingOrders, newOrder._id, checkDates);
 
         // 裁决
-        if (isOverSold) {
-            // 撤销操作：删除刚才创建的订单
+        if (checkResult.isOverSold) {
             await Order.findByIdAndDelete(newOrder._id);
-            return res.status(400).json({ msg: failureReason || '库存不足，抢购失败' });
+            return res.status(400).json({ msg: checkResult.reason || '抢购失败' });
         }
-
-        // 一切正常，返回成功
         res.json(newOrder);
-
     } catch (err) {
-        console.error(err);
+        if (process.env.NODE_ENV !== 'test') console.error('Order Error:', err.message);
         res.status(500).json({ msg: '服务器错误' });
     }
 });

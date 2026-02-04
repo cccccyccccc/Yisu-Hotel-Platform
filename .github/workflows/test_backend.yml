@@ -1,4 +1,4 @@
-name: Backend CI (Node.js)
+name: Backend CI
 
 # 触发条件：推送到 main 分支，或者提交 Pull Request 时
 on:

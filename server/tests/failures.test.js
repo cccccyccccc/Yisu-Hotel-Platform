@@ -15,7 +15,7 @@ describe('全系统防御性与异常处理测试 (Comprehensive Failure Scenari
 
     // === 环境准备 ===
     beforeAll(async () => {
-        const TEST_URI = process.env.MONGODB_URI_TEST || 'mongodb://127.0.0.1:27017/yisu-test-fail-v2';
+        const TEST_URI = process.env.MONGODB_URI_TEST || 'mongodb://127.0.0.1:27017/yisu-test-fail';
         if (mongoose.connection.readyState === 0) {
             await mongoose.connect(TEST_URI);
         }
