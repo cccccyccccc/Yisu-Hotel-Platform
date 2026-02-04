@@ -19,7 +19,7 @@ router.post('/register', async (req, res) => {
         }
 
         // 检查账号是否已存在
-        const existingUser = await User.findOne({ username });
+        const existingUser = await User.findOne({ username: username.toString() });
         if (existingUser) {
             return res.status(400).json({ msg: '该账号已被注册' });
         }
@@ -51,7 +51,7 @@ router.post('/login', async (req, res) => {
         const { username, password } = req.body;
 
         // 找用户
-        const user = await User.findOne({ username });
+        const user = await User.findOne({ username: username.toString() });
         if (!user) {
             return res.status(400).json({ msg: '账号不存在' });
         }

@@ -44,8 +44,6 @@ router.get('/my', authMiddleware, async (req, res) => {
     }
 });
 
-
-
 // 管理员：查看所有酒店 (GET /api/hotels/admin/list)
 router.get('/admin/list', authMiddleware, async (req, res) => {
     try {
