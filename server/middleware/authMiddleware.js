@@ -4,7 +4,7 @@ const jwt = require('jsonwebtoken');
 // 密钥
 const JWT_SECRET = process.env.JWT_SECRET;
 
-module.exports = function(req, res, next) {
+module.exports = function authMiddleware(req, res, next) {
     // 从请求头获取 Token
     // 前端通常会发：Authorization: Bearer <token>
     const tokenHeader = req.header('Authorization');
@@ -21,6 +21,7 @@ module.exports = function(req, res, next) {
         req.user = decoded;
         next(); // 放行，进入下一个环节
     } catch (err) {
+        console.error('Token 验证失败:', err.message);
         res.status(401).json({ msg: 'Token 无效或已过期' });
     }
 };

@@ -64,6 +64,7 @@ router.delete('/:id', authMiddleware, async (req, res) => {
 
         res.json({ msg: '删除成功' });
     } catch (err) {
+        console.error(err);
         res.status(500).json({ msg: 'Server Error' });
     }
 });

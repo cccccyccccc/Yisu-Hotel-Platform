@@ -44,6 +44,7 @@ router.delete('/:hotelId', authMiddleware, async (req, res) => {
         res.json({ msg: '已取消收藏' });
 
     } catch (err) {
+        console.error(err);
         res.status(500).json({ msg: '服务器错误' });
     }
 });
@@ -61,6 +62,7 @@ router.get('/', authMiddleware, async (req, res) => {
 
         res.json(validFavorites);
     } catch (err) {
+        console.error(err);
         res.status(500).json({ msg: '服务器错误' });
     }
 });
@@ -77,6 +79,7 @@ router.get('/check/:hotelId', authMiddleware, async (req, res) => {
         });
         res.json({ isFavorite: !!existing });
     } catch (err) {
+        console.error(err);
         res.status(500).json({ msg: '服务器错误' });
     }
 });

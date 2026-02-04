@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const multer = require('multer');
-const path = require('path');
+const path = require('node:path');
 
 // 配置存储策略
 const storage = multer.diskStorage({

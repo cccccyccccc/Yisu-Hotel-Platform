@@ -4,21 +4,31 @@ require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
-const path = require('path');
+const path = require('node:path');
 const setupSwagger = require('./swagger');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+app.disable('x-powered-by');
+
 // 允许跨域访问并且连接数据库
 app.use(cors());
 app.use(express.json());
 app.use('/uploads', express.static(path.join(__dirname, 'public/uploads')));
+
 if (process.env.NODE_ENV !== 'test') {
-    mongoose.connect(process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/yisu-hotel')
-        .then(() => console.log('✅ MongoDB 数据库连接成功!'))
-        .catch(err => console.error('❌ MongoDB 连接失败:', err));
+    (async () => {
+        try {
+            const dbUri = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/yisu-hotel';
+            await mongoose.connect(dbUri);
+            console.log('✅ MongoDB 数据库连接成功！');
+        } catch (err) {
+            console.error('❌ MongoDB 连接失败:', err);
+        }
+    })();
 }
+
 app.get('/', (req, res) => {
     res.send('易宿酒店平台后端服务已启动！');
 });
