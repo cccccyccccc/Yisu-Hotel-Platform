@@ -1,7 +1,7 @@
 const request = require('supertest');
 const mongoose = require('mongoose');
-const app = require('../server/app'); // 根据你的项目结构调整路径
-const User = require('../server/models/User');
+const app = require('../app'); // 根据你的项目结构调整路径
+const User = require('../models/User');
 
 describe('防御性与异常处理测试 (Failure Scenarios)', () => {
 
