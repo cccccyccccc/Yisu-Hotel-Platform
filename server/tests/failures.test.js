@@ -3,14 +3,13 @@ const mongoose = require('mongoose');
 const app = require('../app');
 const User = require('../models/User');
 
+// 增加超时设置：30秒
 jest.setTimeout(30000);
 
 describe('防御性与异常处理测试 (Failure Scenarios)', () => {
 
     // 测试前连接数据库
     beforeAll(async () => {
-        // 🔴 修正：去掉了 if (process.env.NODE_ENV !== 'test') 判断
-        // 只要不是已连接状态，就进行连接
         if (mongoose.connection.readyState === 0) {
             await mongoose.connect(process.env.MONGODB_URI_TEST || 'mongodb://localhost:27017/yisu-test-fail');
         }
@@ -18,7 +17,6 @@ describe('防御性与异常处理测试 (Failure Scenarios)', () => {
 
     // 测试后断开
     afterAll(async () => {
-        // 确保断开连接，防止 Jest 报 "did not exit" 错误
         await mongoose.connection.close();
     });
 
@@ -27,6 +25,13 @@ describe('防御性与异常处理测试 (Failure Scenarios)', () => {
         await User.deleteMany({});
     });
 
+    // 辅助函数：注册并登录获取 Token
+    async function getAuthToken() {
+        await request(app).post('/api/auth/register').send({ username: 'temp_user', password: '123', role: 'merchant' });
+        const res = await request(app).post('/api/auth/login').send({ username: 'temp_user', password: '123' });
+        return res.body.token;
+    }
+
     // ==========================================
     // 1. 专门测试 authMiddleware 的异常处理
     // ==========================================
@@ -34,15 +39,11 @@ describe('防御性与异常处理测试 (Failure Scenarios)', () => {
         const res = await request(app)
             .get('/api/favorites')
             .set('Authorization', 'Bearer invalid_garbage_token_123');
-
-        // 预期 401，且触发了 console.error
         expect(res.statusCode).toBe(401);
     });
 
     it('1.2 应该拦截没有 Token 的请求', async () => {
-        const res = await request(app)
-            .get('/api/favorites'); // 不传 Authorization 头
-
+        const res = await request(app).get('/api/favorites');
         expect(res.statusCode).toBe(401);
     });
 
@@ -52,56 +53,92 @@ describe('防御性与异常处理测试 (Failure Scenarios)', () => {
     it('2.1 注册时缺少字段应报错', async () => {
         const res = await request(app).post('/api/auth/register').send({
             username: 'testuser'
-            // 故意不传 password
         });
         expect(res.statusCode).toBe(400);
     });
 
     it('2.2 注册已存在的用户应报错', async () => {
-        // 先注册一个
-        await request(app).post('/api/auth/register').send({
-            username: 'duplicate_user',
-            password: '123'
-        });
-
-        // 再注册同一个
-        const res = await request(app).post('/api/auth/register').send({
-            username: 'duplicate_user',
-            password: '123'
-        });
-
+        await request(app).post('/api/auth/register').send({ username: 'duplicate_user', password: '123' });
+        const res = await request(app).post('/api/auth/register').send({ username: 'duplicate_user', password: '123' });
         expect(res.statusCode).toBe(400);
     });
 
     // ==========================================
-    // 3. 测试 Favorites 路由的 ID 校验 (ObjectId)
+    // 3. 测试 Favorites 路由的 ID 校验
     // ==========================================
     it('3.1 传入非法的 ObjectId 应该被拦截 (防止 CastError)', async () => {
-        // 先登录拿到 Token
-        await request(app).post('/api/auth/register').send({ username: 'u1', password: '123' });
-        const loginRes = await request(app).post('/api/auth/login').send({ username: 'u1', password: '123' });
-        const token = loginRes.body.token;
-
-        // 故意传一个非法的 ID "bad-id-123"
+        const token = await getAuthToken(); // 🟢 修复：确保先注册再获取 Token
         const res = await request(app)
             .post('/api/favorites/bad-id-123')
             .set('Authorization', `Bearer ${token}`);
-
         expect(res.statusCode).toBe(400);
     });
 
     it('3.2 操作不存在的酒店应返回 404', async () => {
-        // 登录
-        await request(app).post('/api/auth/register').send({ username: 'u2', password: '123' });
-        const loginRes = await request(app).post('/api/auth/login').send({ username: 'u2', password: '123' });
-        const token = loginRes.body.token;
-
-        // 传一个合法的 ObjectId，但数据库里没有这个酒店
+        const token = await getAuthToken(); // 🟢 修复
         const fakeId = new mongoose.Types.ObjectId();
         const res = await request(app)
             .post(`/api/favorites/${fakeId}`)
             .set('Authorization', `Bearer ${token}`);
-
         expect(res.statusCode).toBe(404);
+    });
+
+    // ==========================================
+    // 4. 酒店管理异常测试
+    // ==========================================
+    it('4.1 创建酒店时缺少必填字段应报错', async () => {
+        const token = await getAuthToken(); // 🟢 修复
+        const res = await request(app)
+            .post('/api/hotels')
+            .set('Authorization', `Bearer ${token}`)
+            .send({ description: '这家酒店没有名字' }); // 缺少 name 等必填项
+        expect(res.statusCode).toBe(400);
+    });
+
+    it('4.2 更新不存在的酒店应返回 404 或 400', async () => {
+        const token = await getAuthToken(); // 🟢 修复
+        const fakeId = new mongoose.Types.ObjectId();
+        const res = await request(app)
+            .put(`/api/hotels/${fakeId}`)
+            .set('Authorization', `Bearer ${token}`)
+            .send({ name: '更新名字' });
+
+        // 你的代码里加了 ID 校验返回 400，找不到返回 404，两者都算通过
+        expect([400, 404]).toContain(res.statusCode);
+    });
+
+    it('4.3 传入非法 ID 获取详情应被拦截', async () => {
+        const res = await request(app).get('/api/hotels/bad-id-123');
+        expect(res.statusCode).toBe(400);
+    });
+
+    // ==========================================
+    // 5. 房型管理异常测试
+    // ==========================================
+    it('5.1 创建房型时关联不存在的酒店应报错', async () => {
+        const token = await getAuthToken(); // 🟢 修复
+        const fakeHotelId = new mongoose.Types.ObjectId();
+        const res = await request(app)
+            .post('/api/rooms')
+            .set('Authorization', `Bearer ${token}`)
+            .send({
+                hotelId: fakeHotelId,
+                title: '总统套房',
+                price: 999,
+                stock: 10
+            });
+
+        // 你的代码里先校验了必填项，如果必填项都在，就会校验 hotelId
+        expect([400, 404, 403]).toContain(res.statusCode);
+    });
+
+    it('5.2 删除房型时传入非法 ID 应报错', async () => {
+        const token = await getAuthToken(); // 🟢 修复
+        const res = await request(app)
+            .delete('/api/rooms/bad-room-id')
+            .set('Authorization', `Bearer ${token}`);
+
+        // 你的 rooms.js 路由里加了 isValid 校验，所以是 400
+        expect(res.statusCode).toBe(400);
     });
 });

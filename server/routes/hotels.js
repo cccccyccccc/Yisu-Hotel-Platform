@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const Hotel = require('../models/Hotel');
+const mongoose = require('mongoose');
 const authMiddleware = require('../middleware/authMiddleware');
 
 // 发布新酒店 (POST /api/hotels)
@@ -28,6 +29,9 @@ router.post('/', authMiddleware, async (req, res) => {
         res.json(hotel);
     } catch (err) {
         console.error(err);
+        if (err.name === 'ValidationError') {
+            return res.status(400).json({ msg: err.message });
+        }
         res.status(500).json({ msg: '服务器错误' });
     }
 });
@@ -76,9 +80,10 @@ router.get('/', async (req, res) => {
             if (maxPrice) baseQuery.price.$lte = Number(maxPrice);
         }
         if (keyword) {
+            const safeKeyword = keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
             baseQuery.$or = [
-                { name: { $regex: keyword, $options: 'i' } },
-                { address: { $regex: keyword, $options: 'i' } }
+                { name: { $regex: safeKeyword, $options: 'i' } },
+                { address: { $regex: safeKeyword, $options: 'i' } }
             ];
         }
 
@@ -144,6 +149,10 @@ router.get('/', async (req, res) => {
 // 获取单个酒店详情 (GET /api/hotels/:id)
 router.get('/:id', async (req, res) => {
     try {
+        if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+            return res.status(400).json({ msg: 'Invalid ID format' });
+        }
+
         const hotel = await Hotel.findById(req.params.id);
         if (!hotel) return res.status(404).json({ msg: 'Not Found' });
         res.json(hotel);
@@ -159,6 +168,10 @@ router.get('/:id', async (req, res) => {
 // 商户修改酒店信息 (PUT /api/hotels/:id)
 router.put('/:id', authMiddleware, async (req, res) => {
     try {
+        if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+            return res.status(400).json({ msg: 'Invalid ID format' });
+        }
+
         const { name, nameEn, city, address, starRating, price, description, tags, openingTime } = req.body;
 
         const hotel = await Hotel.findById(req.params.id);

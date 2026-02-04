@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const RoomType = require('../models/RoomType');
+const mongoose = require('mongoose');
 const Hotel = require('../models/Hotel');
 const authMiddleware = require('../middleware/authMiddleware');
 
@@ -17,6 +18,10 @@ router.post('/', authMiddleware, async (req, res) => {
         // 基础非空校验
         if (!hotelId || !title || !price || stock === undefined) {
             return res.status(400).json({ msg: '酒店ID、标题、价格和库存为必填项' });
+        }
+
+        if (!mongoose.Types.ObjectId.isValid(hotelId)) {
+            return res.status(400).json({ msg: '无效的酒店ID格式' });
         }
 
         // 验证酒店归属权
@@ -42,6 +47,10 @@ router.post('/', authMiddleware, async (req, res) => {
 // 获取某酒店的所有房型 (GET /api/rooms/:hotelId)
 router.get('/:hotelId', async (req, res) => {
     try {
+        if (!mongoose.Types.ObjectId.isValid(req.params.hotelId)) {
+            return res.status(400).json({ msg: 'Invalid ID' });
+        }
+
         const rooms = await RoomType.find({ hotelId: req.params.hotelId }).sort({ price: 1 });
         res.json(rooms);
     } catch (err) {
@@ -52,13 +61,19 @@ router.get('/:hotelId', async (req, res) => {
 // 删除房型 (DELETE /api/rooms/:id)
 router.delete('/:id', authMiddleware, async (req, res) => {
     try {
+        if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+            return res.status(400).json({ msg: 'Invalid ID' });
+        }
+
         const room = await RoomType.findById(req.params.id);
         if (!room) return res.status(404).json({ msg: '房型不存在' });
         // 查酒店验证权限
         const hotel = await Hotel.findById(room.hotelId);
-        if (hotel.merchantId.toString() !== req.user.userId) {
+
+        if (hotel && hotel.merchantId.toString() !== req.user.userId) {
             return res.status(403).json({ msg: '无权删除' });
         }
+
         await RoomType.findByIdAndDelete(req.params.id);
         res.json({ msg: '删除成功' });
     } catch (err) {
