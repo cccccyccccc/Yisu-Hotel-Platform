@@ -13,7 +13,7 @@ router.post('/:hotelId', authMiddleware, async (req, res) => {
         const hotel = await Hotel.findById(hotelId);
         if (!hotel) return res.status(404).json({ msg: '酒店不存在' });
 
-        const userId = String(req.params.userId);
+        const userId = String(req.user.userId);
         // 防止重复收藏 (虽然数据库有索引兜底，但这里先查一次反馈更友好的错误)
         const existing = await Favorite.findOne({ userId: userId, hotelId });
         if (existing) {
