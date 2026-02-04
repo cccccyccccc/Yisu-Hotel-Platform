@@ -10,14 +10,14 @@ const Favorite = require('../models/Favorite');
 // 设置较长超时，防止 CI 环境慢导致失败
 jest.setTimeout(30000);
 
-describe('专项覆盖率补充测试 (Coverage Supplement)', () => {
+describe('补充测试 (Coverage Supplement)', () => {
     let adminToken, merchantToken, userToken, user2Token;
     let merchantId, userId, user2Id;
     let hotelId, roomId;
 
     // === 环境准备 ===
     beforeAll(async () => {
-        const TEST_URI = process.env.MONGODB_URI_TEST || 'mongodb://127.0.0.1:27017/yisu-test-more-failures';
+        const TEST_URI = process.env.MONGODB_URI_TEST || 'mongodb://127.0.0.1:27017/yisu-test-more-failures-1';
         if (mongoose.connection.readyState === 0) {
             await mongoose.connect(TEST_URI);
         }
