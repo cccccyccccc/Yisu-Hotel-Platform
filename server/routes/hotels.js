@@ -14,8 +14,8 @@ router.post('/', authMiddleware, async (req, res) => {
         }
 
         const { name, nameEn, city, address, starRating, price, description, tags, openingTime, location } = req.body;
-
-        const existingHotel = await Hotel.findOne({ name });
+        const safeName = String(name);
+        const existingHotel = await Hotel.findOne({ name: safeName });
         if (existingHotel) {
             return res.status(400).json({ msg: '该酒店名称已存在' });
         }
@@ -80,8 +80,8 @@ router.get('/', async (req, res) => {
 
         // 日期可用性筛选逻辑
         if (checkInDate && checkOutDate) {
-            const start = new Date(checkInDate);
-            const end = new Date(checkOutDate);
+            const start = new Date(String(checkInDate));
+            const end = new Date(String(checkOutDate));
 
             // 找出该时间段内所有"已占用"库存的订单
             // 逻辑：订单的入住时间段与用户查询的时间段有重叠
@@ -123,7 +123,7 @@ router.get('/', async (req, res) => {
             }
         }
 
-        if (city) baseQuery.city = city;
+        if (city) baseQuery.city = String(city);
         if (starRating) baseQuery.starRating = Number(starRating);
         if (minPrice || maxPrice) {
             baseQuery.price = {};
@@ -132,7 +132,7 @@ router.get('/', async (req, res) => {
         }
 
         if (keyword) {
-            const safeKeyword = keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            const safeKeyword = String(keyword).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
             baseQuery.$or = [
                 { name: { $regex: safeKeyword, $options: 'i' } },
                 { address: { $regex: safeKeyword, $options: 'i' } }
@@ -140,7 +140,7 @@ router.get('/', async (req, res) => {
         }
 
         if (tags) {
-            const tagsArray = tags.split(',').map(t => t.trim()).filter(t => t);
+            const tagsArray = String(tags).split(',').map(t => t.trim()).filter(t => t);
             if (tagsArray.length > 0) {
                 baseQuery.tags = { $all: tagsArray };
             }
