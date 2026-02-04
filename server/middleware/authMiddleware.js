@@ -21,7 +21,9 @@ module.exports = function authMiddleware(req, res, next) {
         req.user = decoded;
         next(); // 放行，进入下一个环节
     } catch (err) {
-        console.error('Token 验证失败:', err.message);
+        if (process.env.NODE_ENV !== 'test') {
+            console.error('Token 验证失败:', err.message);
+        }
         res.status(401).json({ msg: 'Token 无效或已过期' });
     }
 };

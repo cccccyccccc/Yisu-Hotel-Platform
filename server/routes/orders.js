@@ -55,7 +55,7 @@ router.post('/', authMiddleware, async (req, res) => {
             status: { $in: ['paid', 'confirmed', 'pending'] },
             checkInDate: { $lt: end },
             checkOutDate: { $gt: start }
-        }).sort({ createdAt: 1 }); // 按时间排序
+        }).sort({ createdAt: 1, _id: 1 });// 按时间排序
 
         let isOverSold = false;
         let failureReason = '';
