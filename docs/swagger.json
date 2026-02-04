@@ -55,6 +55,19 @@
           "score": { "type": "number", "description": "综合评分 (自动计算)", "example": 4.8 },
           "price": { "type": "number", "description": "起始价格", "example": 9999 },
           "openingTime": { "type": "string", "example": "2021年" },
+          "location": {
+            "type": "object",
+            "required": ["type", "coordinates"],
+            "properties": {
+              "type": { "type": "string", "default": "Point", "example": "Point" },
+              "coordinates": {
+                "type": "array",
+                "items": { "type": "number" },
+                "description": "[经度(Lng), 纬度(Lat)] - 注意顺序！",
+                "example": [121.505, 31.233]
+              }
+            }
+          },
           "description": { "type": "string", "example": "云端体验" },
           "tags": { "type": "array", "items": { "type": "string" }, "example": ["地标", "奢华"] },
           "images": { "type": "array", "items": { "type": "string" }, "example": ["/uploads/hotel1.jpg"] },
@@ -412,9 +425,11 @@
           { "name": "maxPrice", "in": "query", "schema": { "type": "number" }, "description": "最高价" },
           {
             "name": "sortType", "in": "query",
-            "schema": { "type": "string", "enum": ["default", "price_asc", "price_desc", "score_desc"] },
+            "schema": { "type": "string", "enum": ["default", "price_asc", "price_desc", "score_desc", "distance"] },
             "description": "排序方式"
           },
+          { "name": "userLat", "in": "query", "schema": { "type": "number" }, "description": "用户当前纬度 (用于距离排序)" },
+          { "name": "userLng", "in": "query", "schema": { "type": "number" }, "description": "用户当前经度 (用于距离排序)" },
           { "name": "page", "in": "query", "schema": { "type": "integer", "default": 1 }, "description": "页码" },
           { "name": "limit", "in": "query", "schema": { "type": "integer", "default": 10 }, "description": "每页条数" }
         ],
