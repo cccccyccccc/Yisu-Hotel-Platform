@@ -6,6 +6,97 @@ const RoomType = require('../models/RoomType');
 const mongoose = require('mongoose');
 const authMiddleware = require('../middleware/authMiddleware');
 
+async function getAvailableHotelIds(checkIn, checkOut) {
+    if (!checkIn || !checkOut) return null;
+
+    const start = new Date(String(checkIn));
+    const end = new Date(String(checkOut));
+
+    const overlappingOrders = await Order.find({
+        status: { $in: ['paid', 'completed', 'pending'] },
+        checkInDate: { $lt: end },
+        checkOutDate: { $gt: start }
+    }).select('roomTypeId quantity');
+
+    const bookedMap = {};
+    overlappingOrders.forEach(order => {
+        const rId = order.roomTypeId.toString();
+        bookedMap[rId] = (bookedMap[rId] || 0) + order.quantity;
+    });
+
+    const allRoomTypes = await RoomType.find({}).select('hotelId stock _id');
+    const availableHotelIds = new Set();
+
+    allRoomTypes.forEach(room => {
+        const bookedCount = bookedMap[room._id.toString()] || 0;
+        if (room.stock > bookedCount) {
+            availableHotelIds.add(room.hotelId.toString());
+        }
+    });
+
+    return Array.from(availableHotelIds);
+}
+
+function buildFilterQuery(query, availableIds) {
+    const { city, keyword, starRating, minPrice, maxPrice, tags } = query;
+    const dbQuery = { status: 1 };
+
+    if (availableIds !== null) {
+        if (availableIds.length === 0) return { _id: null };
+        dbQuery._id = { $in: availableIds };
+    }
+
+    if (city) dbQuery.city = String(city);
+    if (starRating) dbQuery.starRating = Number(starRating);
+
+    if (minPrice || maxPrice) {
+        dbQuery.price = {};
+        if (minPrice) dbQuery.price.$gte = Number(minPrice);
+        if (maxPrice) dbQuery.price.$lte = Number(maxPrice);
+    }
+
+    if (keyword) {
+        const safeKeyword = String(keyword).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        dbQuery.$or = [
+            { name: { $regex: safeKeyword, $options: 'i' } },
+            { address: { $regex: safeKeyword, $options: 'i' } }
+        ];
+    }
+
+    if (tags) {
+        const tagsArray = String(tags).split(',').map(t => t.trim()).filter(t => t);
+        if (tagsArray.length > 0) {
+            dbQuery.tags = { $all: tagsArray };
+        }
+    }
+
+    return dbQuery;
+}
+
+function buildSortLogic(sortType, userLat, userLng) {
+    let sort = {};
+    let locationQuery = null;
+
+    if (sortType === 'distance' && userLat && userLng) {
+        locationQuery = {
+            $near: {
+                $geometry: {
+                    type: "Point",
+                    coordinates: [parseFloat(userLng), parseFloat(userLat)]
+                }
+            }
+        };
+    } else {
+        switch (sortType) {
+            case 'price_asc': sort = { price: 1 }; break;
+            case 'price_desc': sort = { price: -1 }; break;
+            case 'score_desc': sort = { score: -1 }; break;
+            default: sort = { createdAt: -1 };
+        }
+    }
+    return { sort, locationQuery };
+}
+
 // 发布新酒店 (POST /api/hotels)
 router.post('/', authMiddleware, async (req, res) => {
     try {
@@ -68,114 +159,23 @@ router.get('/admin/list', authMiddleware, async (req, res) => {
 // 首页搜索接口 (GET /api/hotels)
 router.get('/', async (req, res) => {
     try {
-        const {
-            city, keyword, starRating, minPrice, maxPrice,
-            sortType, page = 1, limit = 10,
-            userLat, userLng,
-            tags,
-            checkInDate, checkOutDate // 获取日期参数
-        } = req.query;
+        const { checkInDate, checkOutDate, sortType, userLat, userLng, page = 1, limit = 10 } = req.query;
+        const availableIds = await getAvailableHotelIds(checkInDate, checkOutDate);
+        const baseQuery = buildFilterQuery(req.query, availableIds);
+        const findQuery = { ...baseQuery };
+        const countQuery = { ...baseQuery };
+        const { sort, locationQuery } = buildSortLogic(sortType, userLat, userLng);
 
-        let baseQuery = { status: 1 };
-
-        // 日期可用性筛选逻辑
-        if (checkInDate && checkOutDate) {
-            const start = new Date(String(checkInDate));
-            const end = new Date(String(checkOutDate));
-
-            // 找出该时间段内所有"已占用"库存的订单
-            // 逻辑：订单的入住时间段与用户查询的时间段有重叠
-            // 重叠条件：(订单入住 < 查询离店) && (订单离店 > 查询入住)
-            const overlappingOrders = await Order.find({
-                status: { $in: ['paid', 'completed', 'pending'] }, // 排除 cancelled
-                checkInDate: { $lt: end },
-                checkOutDate: { $gt: start }
-            }).select('roomTypeId quantity');
-
-            // 统计每个房型已被占用的数量
-            const bookedMap = {}; // { roomTypeId: count }
-            overlappingOrders.forEach(order => {
-                const rId = order.roomTypeId.toString();
-                bookedMap[rId] = (bookedMap[rId] || 0) + order.quantity;
-            });
-
-            // 找出所有房型，判断剩余库存
-            // 注意：这里为了简化逻辑，查出了所有房型。
-            // 生产环境中，建议配合 city 等条件先缩小 RoomType 的查询范围
-            const allRoomTypes = await RoomType.find({}).select('hotelId stock _id');
-
-            // 筛选出"有房"的酒店ID集合
-            const availableHotelIds = new Set();
-
-            allRoomTypes.forEach(room => {
-                const bookedCount = bookedMap[room._id.toString()] || 0;
-                // 如果 总库存 > 已预订量，说明该房型有房
-                if (room.stock > bookedCount) {
-                    availableHotelIds.add(room.hotelId.toString());
-                }
-            });
-
-            // 将有房的酒店ID加入 baseQuery
-            if (availableHotelIds.size === 0) {
-                baseQuery._id = null;
-            } else {
-                baseQuery._id = { $in: Array.from(availableHotelIds) };
-            }
+        if (locationQuery) {
+            findQuery.location = locationQuery;
         }
-
-        if (city) baseQuery.city = String(city);
-        if (starRating) baseQuery.starRating = Number(starRating);
-        if (minPrice || maxPrice) {
-            baseQuery.price = {};
-            if (minPrice) baseQuery.price.$gte = Number(minPrice);
-            if (maxPrice) baseQuery.price.$lte = Number(maxPrice);
-        }
-
-        if (keyword) {
-            const safeKeyword = String(keyword).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-            baseQuery.$or = [
-                { name: { $regex: safeKeyword, $options: 'i' } },
-                { address: { $regex: safeKeyword, $options: 'i' } }
-            ];
-        }
-
-        if (tags) {
-            const tagsArray = String(tags).split(',').map(t => t.trim()).filter(t => t);
-            if (tagsArray.length > 0) {
-                baseQuery.tags = { $all: tagsArray };
-            }
-        }
-
-        let findQuery = { ...baseQuery };
-        let countQuery = { ...baseQuery };
-        let sort = {};
-
-        if (sortType === 'distance' && userLat && userLng) {
-            findQuery.location = {
-                $near: {
-                    $geometry: {
-                        type: "Point",
-                        coordinates: [parseFloat(userLng), parseFloat(userLat)]
-                    }
-                }
-            };
-            sort = {};
-        } else {
-            switch (sortType) {
-                case 'price_asc':  sort = { price: 1 }; break;
-                case 'price_desc': sort = { price: -1 }; break;
-                case 'score_desc': sort = { score: -1 }; break;
-                default:           sort = { createdAt: -1 };
-            }
-        }
-
         const pageNum = Math.max(1, parseInt(page));
         const limitNum = Math.max(1, parseInt(limit));
         const skip = (pageNum - 1) * limitNum;
 
         const [hotels, total] = await Promise.all([
             Hotel.find(findQuery).sort(sort).skip(skip).limit(limitNum),
-            Hotel.countDocuments(countQuery)
+            Hotel.countDocuments(countQuery) // 使用干净的 countQuery
         ]);
 
         res.json({
@@ -189,9 +189,9 @@ router.get('/', async (req, res) => {
         });
 
     } catch (err) {
-        console.error(err);
+        if (process.env.NODE_ENV !== 'test') console.error(err.message);
         if (err.message && err.message.includes('index')) {
-            return res.status(500).json({ msg: 'Database Index Missing' });
+            return res.status(500).json({ msg: 'LBS Index Missing' });
         }
         res.status(500).json({ msg: 'Server Error' });
     }
