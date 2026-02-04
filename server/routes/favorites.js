@@ -9,10 +9,6 @@ router.post('/:hotelId', authMiddleware, async (req, res) => {
     try {
         const hotelId = String(req.params.hotelId);
 
-        if (!mongoose.Types.ObjectId.isValid(hotelId)) {
-            return res.status(400).json({ msg: '无效的酒店ID' });
-        }
-
         // 验证酒店是否存在
         const hotel = await Hotel.findById(hotelId);
         if (!hotel) return res.status(404).json({ msg: '酒店不存在' });
