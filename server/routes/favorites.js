@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const Favorite = require('../models/Favorite');
+const mongoose = require('mongoose');
 const Hotel = require('../models/Hotel');
 const authMiddleware = require('../middleware/authMiddleware');
 
@@ -8,6 +9,10 @@ const authMiddleware = require('../middleware/authMiddleware');
 router.post('/:hotelId', authMiddleware, async (req, res) => {
     try {
         const hotelId = String(req.params.hotelId);
+
+        if (!mongoose.Types.ObjectId.isValid(hotelId)) {
+            return res.status(400).json({ msg: '无效的酒店ID格式' });
+        }
 
         // 验证酒店是否存在
         const hotel = await Hotel.findById(hotelId);
