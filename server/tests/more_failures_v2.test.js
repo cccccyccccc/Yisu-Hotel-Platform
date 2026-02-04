@@ -168,7 +168,7 @@ describe('more failures test', () => {
             const res = await request(app)
                 .delete(`/api/favorites/${hotelId}`)
                 .set('Authorization', `Bearer ${userToken}`);
-            expect(res.statusCode).toBe(200); // 通常幂等操作返回 200
+            expect(res.statusCode).toBe(404);
         });
     });
 
