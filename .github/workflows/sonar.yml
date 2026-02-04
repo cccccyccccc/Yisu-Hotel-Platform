@@ -57,7 +57,7 @@ jobs:
         env:
           MONGODB_URI_TEST: mongodb://localhost:27017/yisu-test-ci
           JWT_SECRET: test_secret_key_for_ci
-        run: npm test -- --coverage --runInBand
+        run: npm test -- --coverage
 
       # SonarCloud 扫描
       - name: SonarCloud Scan
