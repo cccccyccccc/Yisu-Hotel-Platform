@@ -49,7 +49,7 @@ router.post('/', authMiddleware, async (req, res) => {
 // 获取某酒店的评价列表 (GET /api/reviews/:hotelId)
 router.get('/:hotelId', async (req, res) => {
     try {
-        const reviews = await Review.find({ hotelId: req.params.hotelId })
+        const reviews = await Review.find({ hotelId: String(req.params.hotelId) })
             .populate('userId', 'username avatar') // 关联显示评价人的头像和名字
             .sort({ createdAt: -1 }); // 最新评价在前面
         res.json(reviews);

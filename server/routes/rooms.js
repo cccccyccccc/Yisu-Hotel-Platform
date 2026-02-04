@@ -51,7 +51,7 @@ router.get('/:hotelId', async (req, res) => {
             return res.status(400).json({ msg: 'Invalid ID' });
         }
 
-        const rooms = await RoomType.find({ hotelId: req.params.hotelId }).sort({ price: 1 });
+        const rooms = await RoomType.find({ hotelId: String(req.params.hotelId) }).sort({ price: 1 });
         res.json(rooms);
     } catch (err) {
         res.status(500).json({ msg: 'Server Error' });

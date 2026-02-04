@@ -6,10 +6,11 @@ const authMiddleware = require('../middleware/authMiddleware');
 
 function getDateRange(start, end) {
     const dates = [];
-    let cur = new Date(start);
-    while (cur < end) {
-        dates.push(new Date(cur));
-        cur.setDate(cur.getDate() + 1);
+    const startTime = new Date(start).getTime();
+    const endTime = new Date(end).getTime();
+    const oneDay = 24 * 60 * 60 * 1000;
+    for (let time = startTime; time < endTime; time += oneDay) {
+        dates.push(new Date(time));
     }
     return dates;
 }
@@ -18,8 +19,9 @@ function getDateRange(start, end) {
 // 策略：使用原子操作(Atomic Operation)进行双重校验，彻底解决并发超卖
 router.post('/', authMiddleware, async (req, res) => {
     try {
-        const { hotelId, roomTypeId, checkInDate, checkOutDate, quantity = 1 } = req.body;
-
+        const { checkInDate, checkOutDate, quantity = 1 } = req.body;
+        const hotelId = String(req.body.hotelId);
+        const roomTypeId = String(req.body.roomTypeId);
         // 参数校验
         if (Number(quantity) <= 0) return res.status(400).json({ msg: '数量必须大于0' });
         const start = new Date(checkInDate);
@@ -149,7 +151,8 @@ router.get('/my', authMiddleware, async (req, res) => {
 // 取消订单 (PUT /api/orders/:id/cancel)
 router.put('/:id/cancel', authMiddleware, async (req, res) => {
     try {
-        const order = await Order.findById(req.params.id);
+        const orderId = String(req.params.id);
+        const order = await Order.findById(orderId);
         if (!order) return res.status(404).json({ msg: '订单不存在' });
         if (order.userId.toString() !== req.user.userId) return res.status(403).json({ msg: '无权操作' });
 
