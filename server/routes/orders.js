@@ -15,6 +15,45 @@ function getDateRange(start, end) {
     return dates;
 }
 
+function checkInventoryStatus(room, existingOrders, quantity, checkDates, myOrderId = null) {
+    for (const dateObj of checkDates) {
+        const dateStr = dateObj.toISOString().split('T')[0];
+
+        // 确定当日总库存
+        let dailyLimit = room.stock;
+        if (room.priceCalendar) {
+            const cal = room.priceCalendar.find(c => c.date === dateStr);
+            if (cal && cal.stock !== undefined) dailyLimit = cal.stock;
+        }
+
+        // 计算已占用
+        let currentUsage = 0;
+        for (const order of existingOrders) {
+            const oStart = new Date(order.checkInDate);
+            const oEnd = new Date(order.checkOutDate);
+
+            if (dateObj >= oStart && dateObj < oEnd) {
+                currentUsage += order.quantity;
+
+                // 如果是 Post-Check 阶段 (myOrderId 存在)
+                // 且当前订单就是"我"，且此时加上我已经超标，说明我挤占了名额，必须失败
+                if (myOrderId && currentUsage > dailyLimit) {
+                    if (order._id.toString() === myOrderId.toString()) {
+                        return { success: false, reason: `日期 ${dateStr} 库存不足` };
+                    }
+                }
+            }
+        }
+
+        // 如果是 Pre-Check 阶段 (myOrderId 为空)
+        // 简单判断：现有 + 新增 > 上限
+        if (!myOrderId && (currentUsage + quantity > dailyLimit)) {
+            return { success: false, reason: `日期 ${dateStr} 库存不足` };
+        }
+    }
+    return { success: true };
+}
+
 // 创建订单 (POST /api/orders)
 // 策略：使用原子操作(Atomic Operation)进行双重校验，彻底解决并发超卖
 router.post('/', authMiddleware, async (req, res) => {
@@ -22,7 +61,8 @@ router.post('/', authMiddleware, async (req, res) => {
         const { checkInDate, checkOutDate, quantity = 1 } = req.body;
         const hotelId = String(req.body.hotelId);
         const roomTypeId = String(req.body.roomTypeId);
-        // 参数校验
+
+        // 基础校验
         if (Number(quantity) <= 0) return res.status(400).json({ msg: '数量必须大于0' });
         const start = new Date(checkInDate);
         const end = new Date(checkOutDate);
@@ -32,46 +72,22 @@ router.post('/', authMiddleware, async (req, res) => {
         const room = await RoomType.findById(roomTypeId);
         if (!room) return res.status(404).json({ msg: '房型不存在' });
 
-        // 使用更稳健的"查-占-核"机制
-        // 先查出当前所有的有效订单 (Snapshot)
-        // 注意：这里不做 limit 检查，而是先获取全量数据，在内存中进行严格计算
         const checkDates = getDateRange(start, end);
 
-        const existingOrders = await Order.find({
+        // 第一轮检查 (Pre-Check): 内存预演
+        const preOrders = await Order.find({
             roomTypeId: roomTypeId,
             status: { $in: ['paid', 'confirmed', 'pending'] },
             checkInDate: { $lt: end },
             checkOutDate: { $gt: start }
-        }); // 这里不需要排序，我们需要的是总数
+        });
 
-        // 内存中进行严格的库存预演 (Pre-Check)
-        // 在写入数据库之前，先算一遍。如果现在都已经满了，直接拒绝，不要去写库。
-        for (const dateObj of checkDates) {
-            const dateStr = dateObj.toISOString().split('T')[0];
-
-            // 获取当日限额
-            let dailyLimit = room.stock;
-            if (room.priceCalendar) {
-                const cal = room.priceCalendar.find(c => c.date === dateStr);
-                if (cal && cal.stock !== undefined) dailyLimit = cal.stock;
-            }
-
-            // 计算当日已用
-            let currentUsage = 0;
-            for (const order of existingOrders) {
-                const oStart = new Date(order.checkInDate);
-                const oEnd = new Date(order.checkOutDate);
-                if (dateObj >= oStart && dateObj < oEnd) {
-                    currentUsage += order.quantity;
-                }
-            }
-            // 预判：如果现在加进去会超，直接拒绝
-            if (currentUsage + quantity > dailyLimit) {
-                return res.status(400).json({ msg: `日期 ${dateStr} 库存不足` });
-            }
+        const preCheck = checkInventoryStatus(room, preOrders, quantity, checkDates);
+        if (!preCheck.success) {
+            return res.status(400).json({ msg: preCheck.reason });
         }
 
-        // 写入订单 (乐观锁尝试)
+        // 写入订单 (乐观锁)
         const totalPrice = room.price * quantity * diffDays;
         const newOrder = new Order({
             userId: req.user.userId,
@@ -80,48 +96,19 @@ router.post('/', authMiddleware, async (req, res) => {
         });
         await newOrder.save();
 
-        // 写入后的再次核对 (Post-Check)
-        // 为了防止两个请求同时通过了步骤3的检查，我们需要在写入后再次查询。
-        // 这次我们查询包括"自己"在内的所有订单。
-        const verifyOrders = await Order.find({
+        // 第二轮检查 (Post-Check): 最终核实
+        // 必须按 _id 排序以保证公平性
+        const postOrders = await Order.find({
             roomTypeId: roomTypeId,
             status: { $in: ['paid', 'confirmed', 'pending'] },
             checkInDate: { $lt: end },
             checkOutDate: { $gt: start }
-        }).sort({ createdAt: 1, _id: 1 }); // 保持稳定的排序
+        }).sort({ createdAt: 1, _id: 1 });
 
-        let isOverSold = false;
+        const postCheck = checkInventoryStatus(room, postOrders, quantity, checkDates, newOrder._id);
 
-        for (const dateObj of checkDates) {
-            const dateStr = dateObj.toISOString().split('T')[0];
-            let dailyLimit = room.stock;
-            if (room.priceCalendar) {
-                const cal = room.priceCalendar.find(c => c.date === dateStr);
-                if (cal && cal.stock !== undefined) dailyLimit = cal.stock;
-            }
-
-            let usage = 0;
-            for (const order of verifyOrders) {
-                const oStart = new Date(order.checkInDate);
-                const oEnd = new Date(order.checkOutDate);
-                if (dateObj >= oStart && dateObj < oEnd) {
-                    usage += order.quantity;
-
-                    // 如果超标了，且当前遍历到的订单是"我" (或者在我之后)
-                    // 那么"我"就是导致超标的那个（因为我排在后面）
-                    if (usage > dailyLimit) {
-                        if (order._id.toString() === newOrder._id.toString()) {
-                            isOverSold = true;
-                        }
-                    }
-                }
-            }
-            if (isOverSold) break;
-        }
-
-        if (isOverSold) {
-            // 回滚：删除刚才创建的订单
-            await Order.findByIdAndDelete(newOrder._id);
+        if (!postCheck.success) {
+            await Order.findByIdAndDelete(newOrder._id); // 回滚
             return res.status(400).json({ msg: '抢购失败，库存不足' });
         }
 
