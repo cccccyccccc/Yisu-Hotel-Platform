@@ -1,6 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const Hotel = require('../models/Hotel');
+const Order = require('../models/Order');
+const RoomType = require('../models/RoomType');
 const mongoose = require('mongoose');
 const authMiddleware = require('../middleware/authMiddleware');
 
@@ -69,9 +71,58 @@ router.get('/', async (req, res) => {
         const {
             city, keyword, starRating, minPrice, maxPrice,
             sortType, page = 1, limit = 10,
-            userLat, userLng
+            userLat, userLng,
+            tags,
+            checkInDate, checkOutDate // 获取日期参数
         } = req.query;
+
         let baseQuery = { status: 1 };
+
+        // 日期可用性筛选逻辑
+        if (checkInDate && checkOutDate) {
+            const start = new Date(checkInDate);
+            const end = new Date(checkOutDate);
+
+            // 找出该时间段内所有"已占用"库存的订单
+            // 逻辑：订单的入住时间段与用户查询的时间段有重叠
+            // 重叠条件：(订单入住 < 查询离店) && (订单离店 > 查询入住)
+            const overlappingOrders = await Order.find({
+                status: { $in: ['paid', 'completed', 'pending'] }, // 排除 cancelled
+                checkInDate: { $lt: end },
+                checkOutDate: { $gt: start }
+            }).select('roomTypeId quantity');
+
+            // 统计每个房型已被占用的数量
+            const bookedMap = {}; // { roomTypeId: count }
+            overlappingOrders.forEach(order => {
+                const rId = order.roomTypeId.toString();
+                bookedMap[rId] = (bookedMap[rId] || 0) + order.quantity;
+            });
+
+            // 找出所有房型，判断剩余库存
+            // 注意：这里为了简化逻辑，查出了所有房型。
+            // 生产环境中，建议配合 city 等条件先缩小 RoomType 的查询范围
+            const allRoomTypes = await RoomType.find({}).select('hotelId stock _id');
+
+            // 筛选出"有房"的酒店ID集合
+            const availableHotelIds = new Set();
+
+            allRoomTypes.forEach(room => {
+                const bookedCount = bookedMap[room._id.toString()] || 0;
+                // 如果 总库存 > 已预订量，说明该房型有房
+                if (room.stock > bookedCount) {
+                    availableHotelIds.add(room.hotelId.toString());
+                }
+            });
+
+            // 将有房的酒店ID加入 baseQuery
+            if (availableHotelIds.size === 0) {
+                baseQuery._id = null;
+            } else {
+                baseQuery._id = { $in: Array.from(availableHotelIds) };
+            }
+        }
+
         if (city) baseQuery.city = city;
         if (starRating) baseQuery.starRating = Number(starRating);
         if (minPrice || maxPrice) {
@@ -79,6 +130,7 @@ router.get('/', async (req, res) => {
             if (minPrice) baseQuery.price.$gte = Number(minPrice);
             if (maxPrice) baseQuery.price.$lte = Number(maxPrice);
         }
+
         if (keyword) {
             const safeKeyword = keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
             baseQuery.$or = [
@@ -87,27 +139,28 @@ router.get('/', async (req, res) => {
             ];
         }
 
-        // 分离 findQuery (用于查数据) 和 countQuery (用于查总数)
+        if (tags) {
+            const tagsArray = tags.split(',').map(t => t.trim()).filter(t => t);
+            if (tagsArray.length > 0) {
+                baseQuery.tags = { $all: tagsArray };
+            }
+        }
+
         let findQuery = { ...baseQuery };
         let countQuery = { ...baseQuery };
         let sort = {};
 
-        // 2. 地理位置排序
         if (sortType === 'distance' && userLat && userLng) {
-            // 使用 $near，这需要 location 字段有 2dsphere 索引
             findQuery.location = {
                 $near: {
                     $geometry: {
                         type: "Point",
                         coordinates: [parseFloat(userLng), parseFloat(userLat)]
                     }
-                    // 可选：$maxDistance: 50000
                 }
             };
-            // $near 隐式包含排序，不需要 sort 字段
             sort = {};
         } else {
-            // 常规排序
             switch (sortType) {
                 case 'price_asc':  sort = { price: 1 }; break;
                 case 'price_desc': sort = { price: -1 }; break;
@@ -120,10 +173,9 @@ router.get('/', async (req, res) => {
         const limitNum = Math.max(1, parseInt(limit));
         const skip = (pageNum - 1) * limitNum;
 
-        // 3. 执行查询
         const [hotels, total] = await Promise.all([
             Hotel.find(findQuery).sort(sort).skip(skip).limit(limitNum),
-            Hotel.countDocuments(countQuery) // 使用不带 $near 的条件查总数
+            Hotel.countDocuments(countQuery)
         ]);
 
         res.json({
@@ -138,7 +190,6 @@ router.get('/', async (req, res) => {
 
     } catch (err) {
         console.error(err);
-        // 如果这里报错，说明索引还是没建好
         if (err.message && err.message.includes('index')) {
             return res.status(500).json({ msg: 'Database Index Missing' });
         }

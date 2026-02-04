@@ -86,7 +86,7 @@
         "properties": {
           "hotelId": { "type": "string", "description": "关联酒店ID", "example": "609c1..." },
           "title": { "type": "string", "example": "云端大床房" },
-          "price": { "type": "number", "description": "实际价格", "example": 5000 },
+          "price": { "type": "number", "description": "实际价格 (平日基准价)", "example": 5000 },
           "originalPrice": { "type": "number", "description": "原价(可选)", "example": 8888 },
           "capacity": { "type": "integer", "default": 2, "example": 2 },
           "bedInfo": { "type": "string", "example": "1张2米特大床" },
@@ -96,6 +96,18 @@
             "type": "array",
             "items": { "type": "string" },
             "example": ["/uploads/room1.jpg"]
+          },
+          "priceCalendar": {
+            "type": "array",
+            "description": "特定日期价格日历",
+            "items": {
+              "type": "object",
+              "properties": {
+                "date": { "type": "string", "format": "date", "example": "2026-05-01" },
+                "price": { "type": "number", "example": 6000 },
+                "stock": { "type": "integer", "example": 5 }
+              }
+            }
           }
         }
       },
@@ -428,6 +440,26 @@
             "schema": { "type": "string", "enum": ["default", "price_asc", "price_desc", "score_desc", "distance"] },
             "description": "排序方式"
           },
+          {
+            "name": "tags",
+            "in": "query",
+            "schema": { "type": "string" },
+            "description": "快捷标签筛选，多个标签用逗号分隔 (如: 亲子,免费停车)"
+          },
+          {
+            "name": "checkInDate",
+            "in": "query",
+            "schema": { "type": "string", "format": "date" },
+            "description": "入住日期 (用于筛选有房酒店)",
+            "example": "2026-05-01"
+          },
+          {
+            "name": "checkOutDate",
+            "in": "query",
+            "schema": { "type": "string", "format": "date" },
+            "description": "离店日期 (用于筛选有房酒店)",
+            "example": "2026-05-03"
+          },
           { "name": "userLat", "in": "query", "schema": { "type": "number" }, "description": "用户当前纬度 (用于距离排序)" },
           { "name": "userLng", "in": "query", "schema": { "type": "number" }, "description": "用户当前经度 (用于距离排序)" },
           { "name": "page", "in": "query", "schema": { "type": "integer", "default": 1 }, "description": "页码" },
@@ -617,6 +649,36 @@
       }
     },
     "/api/rooms/{id}": {
+      "put": {
+        "summary": "修改房型信息 (仅商户)",
+        "tags": ["Rooms"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title": { "type": "string" },
+                  "price": { "type": "number" },
+                  "originalPrice": { "type": "number" },
+                  "stock": { "type": "integer" },
+                  "capacity": { "type": "integer" },
+                  "bedInfo": { "type": "string" },
+                  "size": { "type": "string" },
+                  "images": { "type": "array", "items": { "type": "string" } }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "修改成功" }
+        }
+      },
       "delete": {
         "summary": "删除房型 (仅商户)",
         "tags": ["Rooms"],
@@ -626,6 +688,78 @@
         ],
         "responses": {
           "200": { "description": "删除成功" }
+        }
+      }
+    },
+    "/api/rooms/{id}/calendar": {
+      "get": {
+        "summary": "获取房型价格日历",
+        "tags": ["Rooms"],
+        "description": "返回基础价格和特殊日期价格列表",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "获取成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "basePrice": { "type": "number" },
+                    "calendar": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "date": { "type": "string" },
+                          "price": { "type": "number" },
+                          "stock": { "type": "integer" }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "summary": "设置/更新价格日历 (仅商户)",
+        "tags": ["Rooms"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["calendarData"],
+                "properties": {
+                  "calendarData": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "required": ["date", "price"],
+                      "properties": {
+                        "date": { "type": "string", "example": "2026-10-01" },
+                        "price": { "type": "number", "example": 999 },
+                        "stock": { "type": "integer", "example": 5 }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "更新成功" }
         }
       }
     },

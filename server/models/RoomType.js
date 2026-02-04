@@ -21,6 +21,14 @@ const roomTypeSchema = new mongoose.Schema({
     },
     images: [String],                        // 房型图片
 
+    priceCalendar: [
+        {
+            date: { type: String, required: true }, // 格式: "YYYY-MM-DD"
+            price: { type: Number, required: true }, // 该特定日期的价格
+            stock: { type: Number }                 // 该特定日期的库存
+        }
+    ],
+
     createdAt: { type: Date, default: Date.now }
 });
 

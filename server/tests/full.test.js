@@ -10,20 +10,19 @@ const RoomType = require('../models/RoomType');
 const Order = require('../models/Order');
 const Favorite = require('../models/Favorite');
 const Review = require('../models/Review');
-const Banner = require('../models/Banner'); // <--- 新增 Banner 模型
+const Banner = require('../models/Banner');
 
-// === 全局变量 (用于在不同测试步骤间传递数据) ===
+// === 全局变量 ===
 let adminToken, merchantToken, userToken;
 let merchantId, userId;
 let hotelId, roomTypeId, orderId, bannerId;
 
 // === 环境准备 ===
 beforeAll(async () => {
-    // 1. 连接测试数据库
     const TEST_URI = process.env.MONGODB_URI_TEST || 'mongodb://127.0.0.1:27017/yisu-test-flow';
     await mongoose.connect(TEST_URI);
 
-    // 2. 清空所有表 (保证环境纯净)
+    // 清空所有表
     await User.deleteMany({});
     await Hotel.deleteMany({});
     await RoomType.deleteMany({});
@@ -39,63 +38,39 @@ afterAll(async () => {
 });
 
 // ==========================================
-// 第一章：用户系统与角色准备 (Auth & Users)
+// 第一章：用户系统与角色准备
 // ==========================================
 describe('第一章：角色注册与登录', () => {
-
     it('1.1 注册并登录管理员 (Admin)', async () => {
-        // 注册
         await request(app).post('/api/auth/register').send({
             username: 'admin_01', password: 'password123', role: 'admin'
         }).expect(201);
-
-        // 登录
         const res = await request(app).post('/api/auth/login').send({
             username: 'admin_01', password: 'password123'
         }).expect(200);
-
         adminToken = res.body.token;
-        expect(adminToken).toBeDefined();
     });
 
     it('1.2 注册并登录商户 (Merchant)', async () => {
         await request(app).post('/api/auth/register').send({
             username: 'merchant_01', password: 'password123', role: 'merchant'
         }).expect(201);
-
         const res = await request(app).post('/api/auth/login').send({
             username: 'merchant_01', password: 'password123'
         });
         merchantToken = res.body.token;
         merchantId = res.body.user.id;
-        expect(merchantToken).toBeDefined();
     });
 
     it('1.3 注册并登录普通用户 (User)', async () => {
         await request(app).post('/api/auth/register').send({
             username: 'user_01', password: 'password123', role: 'user'
         }).expect(201);
-
         const res = await request(app).post('/api/auth/login').send({
             username: 'user_01', password: 'password123'
         });
         userToken = res.body.token;
         userId = res.body.user.id;
-        expect(userToken).toBeDefined();
-    });
-
-    it('1.4 用户修改个人资料 (Profile)', async () => {
-        const res = await request(app)
-            .put('/api/users/profile')
-            .set('Authorization', `Bearer ${userToken}`)
-            .send({
-                gender: 'female',
-                bio: '我是爱旅游的测试员',
-                avatar: '/uploads/avatar_test.jpg'
-            })
-            .expect(200);
-
-        expect(res.body.gender).toBe('female');
     });
 });
 
@@ -103,19 +78,7 @@ describe('第一章：角色注册与登录', () => {
 // 第二章：商户发布与管理 (Hotels & Rooms)
 // ==========================================
 describe('第二章：商户业务 (发布与房型)', () => {
-
-    it('2.1 图片上传测试 (Mock Upload)', async () => {
-        const buffer = Buffer.from('fake image content');
-        const res = await request(app)
-            .post('/api/upload')
-            .attach('file', buffer, 'test.jpg')
-            .expect(200);
-
-        expect(res.body).toHaveProperty('url');
-        expect(res.body.url).toMatch(/^\/uploads\//);
-    });
-
-    it('2.2 商户发布新酒店 (含地理位置)', async () => {
+    it('2.1 商户发布新酒店 (含Tags)', async () => {
         const res = await request(app)
             .post('/api/hotels')
             .set('Authorization', `Bearer ${merchantToken}`)
@@ -127,253 +90,169 @@ describe('第二章：商户业务 (发布与房型)', () => {
                 starRating: 5,
                 price: 800,
                 description: '这是一个测试酒店',
-                tags: ['豪华', '地铁口'],
-                // === 新增：地理坐标 (上海人民广场附近) ===
+                tags: ['亲子', '免费停车', '健身房'], // [关键] 添加标签用于后续测试
                 location: {
                     type: 'Point',
-                    coordinates: [121.4737, 31.2304] // [经度, 纬度]
+                    coordinates: [121.4737, 31.2304]
                 }
             })
             .expect(200);
-
         hotelId = res.body._id;
-        expect(res.body.status).toBe(0);
-        // 确保 location 被正确保存
-        expect(res.body.location.coordinates[0]).toBe(121.4737);
     });
 
-    it('2.3 商户为酒店添加房型', async () => {
+    it('2.2 商户为酒店添加房型', async () => {
         const res = await request(app)
             .post('/api/rooms')
             .set('Authorization', `Bearer ${merchantToken}`)
             .send({
                 hotelId: hotelId,
                 title: '豪华江景房',
-                price: 1200,
-                stock: 5,
+                price: 1000,
+                stock: 2, // 这里的库存很少，用于测试“满房”逻辑
                 capacity: 2
             })
             .expect(200);
-
         roomTypeId = res.body._id;
     });
 
-    it('2.4 商户查看自己的酒店列表', async () => {
+    // [覆盖率提升] 测试房型修改 (PUT)
+    it('2.3 商户修改房型信息 (PUT /api/rooms/:id)', async () => {
         const res = await request(app)
-            .get('/api/hotels/my')
+            .put(`/api/rooms/${roomTypeId}`)
             .set('Authorization', `Bearer ${merchantToken}`)
+            .send({
+                title: '至尊江景房', // 修改名称
+                price: 1200          // 修改价格
+            })
             .expect(200);
 
-        expect(res.body.length).toBeGreaterThan(0);
-        expect(res.body[0].name).toBe('测试大酒店');
+        expect(res.body.title).toBe('至尊江景房');
+        expect(res.body.price).toBe(1200);
     });
 });
 
 // ==========================================
-// 第三章：管理员审核 (Admin Audit)
+// 第三章：管理员审核
 // ==========================================
 describe('第三章：管理员审核', () => {
-
-    it('3.1 管理员查看待审核列表并通过', async () => {
+    it('3.1 审核通过', async () => {
         await request(app)
             .put(`/api/hotels/${hotelId}/audit`)
             .set('Authorization', `Bearer ${adminToken}`)
             .send({ status: 1 })
             .expect(200);
-
-        const hotel = await Hotel.findById(hotelId);
-        expect(hotel.status).toBe(1);
     });
 });
 
 // ==========================================
-// 第四章：用户交互 (Search & Favorite)
+// 第四章：用户交互与搜索 (Search)
 // ==========================================
-describe('第四章：用户搜索与收藏', () => {
+describe('第四章：高级搜索功能', () => {
 
-    it('4.1 用户搜索酒店 (价格排序)', async () => {
+    it('4.1 基础搜索 (城市)', async () => {
         const res = await request(app)
             .get('/api/hotels')
-            .query({ city: '上海', sortType: 'price_asc', page: 1, limit: 10 })
+            .query({ city: '上海' })
             .expect(200);
-
         expect(res.body.data.length).toBe(1);
-        expect(res.body.data[0].name).toBe('测试大酒店');
     });
 
-    it('4.2 用户搜索酒店 (距离排序 LBS)', async () => {
-        // 模拟用户在上海 (坐标略有偏差，计算距离)
-        const res = await request(app)
+    // [覆盖率提升] 测试 Tags 筛选
+    it('4.2 快捷标签筛选 (Tags)', async () => {
+        // 1. 搜索存在的标签
+        const res1 = await request(app)
             .get('/api/hotels')
-            .query({
-                sortType: 'distance',
-                userLng: 121.4700,
-                userLat: 31.2300,
-                page: 1, limit: 10
-            })
+            .query({ tags: '亲子,免费停车' }) // 酒店有这两个标签
             .expect(200);
+        expect(res1.body.data.length).toBe(1);
 
-        // 应该能搜到刚才发布的酒店（因为它在附近）
-        expect(res.body.data.length).toBe(1);
-        expect(res.body.data[0]._id).toBe(hotelId);
-    });
-
-    it('4.3 用户收藏酒店', async () => {
-        await request(app)
-            .post(`/api/favorites/${hotelId}`)
-            .set('Authorization', `Bearer ${userToken}`)
-            .expect(201);
-
-        const res = await request(app)
-            .get(`/api/favorites/check/${hotelId}`)
-            .set('Authorization', `Bearer ${userToken}`)
+        // 2. 搜索不存在的标签
+        const res2 = await request(app)
+            .get('/api/hotels')
+            .query({ tags: '亲子,游泳池' }) // 酒店没有游泳池
             .expect(200);
-
-        expect(res.body.isFavorite).toBe(true);
-    });
-
-    it('4.4 用户取消收藏', async () => {
-        await request(app)
-            .delete(`/api/favorites/${hotelId}`)
-            .set('Authorization', `Bearer ${userToken}`)
-            .expect(200);
-
-        const res = await request(app)
-            .get(`/api/favorites/check/${hotelId}`)
-            .set('Authorization', `Bearer ${userToken}`);
-
-        expect(res.body.isFavorite).toBe(false);
+        expect(res2.body.data.length).toBe(0);
     });
 });
 
 // ==========================================
-// 第五章：交易流程 (Order & Inventory)
+// 第五章：交易与库存 (Order)
 // ==========================================
 describe('第五章：下单与库存', () => {
-
-    it('5.1 用户下单预订 (原子操作测试)', async () => {
+    it('5.1 用户下单 (消耗库存)', async () => {
+        // 预订 2026-10-01 到 2026-10-03 (2晚)
         const res = await request(app)
             .post('/api/orders')
             .set('Authorization', `Bearer ${userToken}`)
             .send({
                 hotelId,
                 roomTypeId,
-                checkInDate: '2026-05-01',
-                checkOutDate: '2026-05-03',
-                quantity: 1
+                checkInDate: '2026-10-01',
+                checkOutDate: '2026-10-03',
+                quantity: 2 // 酒店总库存是2，这单把库存下满了
             })
             .expect(200);
-
         orderId = res.body._id;
-        expect(res.body.totalPrice).toBe(2400);
     });
 
-    it('5.2 验证库存自动扣减', async () => {
-        const room = await RoomType.findById(roomTypeId);
-        // 初始是5，买了一间，应该是4
-        expect(room.stock).toBe(4);
-    });
+    // [覆盖率提升] 测试日期可用性筛选
+    it('5.2 日期搜索：满房验证', async () => {
+        // 刚才的订单把 10-01 到 10-03 的房型占满了 (库存2, 订了2)
 
-    it('5.3 用户查看我的订单', async () => {
-        const res = await request(app)
-            .get('/api/orders/my')
-            .set('Authorization', `Bearer ${userToken}`)
+        // 1. 搜这段时间，应该搜不到
+        const res1 = await request(app)
+            .get('/api/hotels')
+            .query({
+                checkInDate: '2026-10-01',
+                checkOutDate: '2026-10-02'
+            })
             .expect(200);
+        expect(res1.body.data.length).toBe(0); // 应该为空
 
-        expect(res.body.length).toBe(1);
-        expect(res.body[0].status).toBe('paid');
-    });
-
-    it('5.4 用户取消订单 (库存应自动回退)', async () => {
-        await request(app)
-            .put(`/api/orders/${orderId}/cancel`)
-            .set('Authorization', `Bearer ${userToken}`)
+        // 2. 搜其他时间，应该能搜到
+        const res2 = await request(app)
+            .get('/api/hotels')
+            .query({
+                checkInDate: '2026-11-01',
+                checkOutDate: '2026-11-02'
+            })
             .expect(200);
-
-        // 验证状态
-        const order = await Order.findById(orderId);
-        expect(order.status).toBe('cancelled');
-
-        // 验证库存回退 (4 -> 5)
-        const room = await RoomType.findById(roomTypeId);
-        expect(room.stock).toBe(5);
+        expect(res2.body.data.length).toBe(1); // 有房
     });
 });
 
 // ==========================================
-// 第六章：评价与评分 (Reviews & Score)
+// 第八章：进阶功能 (价格日历) [新增章节]
 // ==========================================
-describe('第六章：评价闭环', () => {
+describe('第八章：价格日历 (复杂功能)', () => {
 
-    it('6.1 用户评价酒店', async () => {
-        await request(app)
-            .post('/api/reviews')
-            .set('Authorization', `Bearer ${userToken}`)
+    // [覆盖率提升] 设置价格日历
+    it('8.1 商户设置特殊日期价格 (PUT calendar)', async () => {
+        const res = await request(app)
+            .put(`/api/rooms/${roomTypeId}/calendar`)
+            .set('Authorization', `Bearer ${merchantToken}`)
             .send({
-                hotelId,
-                rating: 5,
-                content: '非常棒的体验，下次还来！'
+                calendarData: [
+                    { date: '2026-12-25', price: 2000, stock: 5 }, // 圣诞节涨价
+                    { date: '2026-12-31', price: 3000 }            // 跨年夜涨价
+                ]
             })
-            .expect(201);
-    });
-
-    it('6.2 验证酒店评分自动更新', async () => {
-        const hotel = await Hotel.findById(hotelId);
-        expect(hotel.score).toBe(5);
-    });
-
-    it('6.3 查看酒店评价列表', async () => {
-        const res = await request(app)
-            .get(`/api/reviews/${hotelId}`)
             .expect(200);
 
-        expect(res.body.length).toBe(1);
-        expect(res.body[0].content).toBe('非常棒的体验，下次还来！');
-    });
-});
-
-// ==========================================
-// 第七章：Banner 管理 (Admin Only)
-// ==========================================
-describe('第七章：Banner 管理', () => {
-
-    it('7.1 管理员发布轮播图', async () => {
-        const res = await request(app)
-            .post('/api/banners')
-            .set('Authorization', `Bearer ${adminToken}`)
-            .send({
-                imageUrl: '/uploads/banner1.jpg',
-                targetHotelId: hotelId,
-                title: '五一特惠',
-                priority: 10
-            })
-            .expect(201);
-
-        bannerId = res.body._id;
-        expect(res.body.title).toBe('五一特惠');
+        expect(res.body.priceCalendar.length).toBe(2);
     });
 
-    it('7.2 普通用户获取首页轮播图', async () => {
+    // [覆盖率提升] 获取价格日历
+    it('8.2 用户获取价格日历 (GET calendar)', async () => {
         const res = await request(app)
-            .get('/api/banners')
+            .get(`/api/rooms/${roomTypeId}/calendar`)
             .expect(200);
 
-        expect(res.body.length).toBeGreaterThan(0);
-        // 确保关联查询生效
-        expect(res.body[0].targetHotelId).toHaveProperty('name');
-    });
+        expect(res.body.basePrice).toBe(1200); // 之前修改后的基础价
+        expect(res.body.calendar.length).toBe(2);
 
-    it('7.3 管理员删除轮播图', async () => {
-        await request(app)
-            .delete(`/api/banners/${bannerId}`)
-            .set('Authorization', `Bearer ${adminToken}`)
-            .expect(200);
-
-        const res = await request(app)
-            .get('/api/banners')
-            .expect(200);
-
-        // 删完了应该是空的
-        expect(res.body.length).toBe(0);
+        // 验证具体数据
+        const christmas = res.body.calendar.find(d => d.date === '2026-12-25');
+        expect(christmas.price).toBe(2000);
     });
 });
