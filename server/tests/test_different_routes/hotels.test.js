@@ -130,8 +130,8 @@ describe('酒店模块路由测试 (Hotel Routes)', () => {
 
         // 准备更多数据以测试筛选
         beforeAll(async () => {
-            // 酒店 B: 便宜, 3星, 北京
             await Hotel.create({
+                merchantId: merchantId,
                 name: '北京快捷酒店',
                 city: '北京',
                 address: '三环',
@@ -141,11 +141,18 @@ describe('酒店模块路由测试 (Hotel Routes)', () => {
                 status: 1, // 已上线
                 tags: ['性价比', '地铁']
             });
+
+            // [修复] 添加 merchantId
             // 酒店 C: 待审核 (不应被搜到)
             await Hotel.create({
+                merchantId: merchantId, // <--- 关键修复
                 name: '未审核酒店',
-                status: 0,
-                price: 100
+                city: '上海',           // 补充必填项，防止报错
+                address: '未知路',      // 补充必填项
+                starRating: 3,          // 补充必填项
+                price: 100,
+                location: { type: 'Point', coordinates: [0, 0] }, // 补充必填项
+                status: 0
             });
         });
 
@@ -197,15 +204,17 @@ describe('酒店模块路由测试 (Hotel Routes)', () => {
         it('3.6 日期空房筛选 (核心业务逻辑)', async () => {
             // 1. 为北京酒店创建一个房型，库存 1
             const hotel = await Hotel.findOne({ name: '北京快捷酒店' });
-            const room = await RoomType.create({ hotelId: hotel._id, title: '大床房', stock: 1 });
+            const room = await RoomType.create({ hotelId: hotel._id, title: '大床房', stock: 1, price: 100 });
 
             // 2. 创建一个订单，把 5.1-5.3 占满
             await Order.create({
+                userId: userId,
                 hotelId: hotel._id,
                 roomTypeId: room._id,
                 checkInDate: '2026-05-01',
                 checkOutDate: '2026-05-03',
                 quantity: 1, // 占满库存
+                totalPrice: 200,
                 status: 'paid'
             });
 
