@@ -1,11 +1,11 @@
 const request = require('supertest');
 const mongoose = require('mongoose');
-const app = require('../app');
-const User = require('../models/User');
-const Hotel = require('../models/Hotel');
-const RoomType = require('../models/RoomType');
-const Banner = require('../models/Banner');
-const Favorite = require('../models/Favorite');
+const app = require('../../app');
+const User = require('../../models/User');
+const Hotel = require('../../models/Hotel');
+const RoomType = require('../../models/RoomType');
+const Banner = require('../../models/Banner');
+const Favorite = require('../../models/Favorite');
 
 // 设置较长超时，防止 CI 环境慢导致失败
 jest.setTimeout(30000);

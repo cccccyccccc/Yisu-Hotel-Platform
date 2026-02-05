@@ -2,9 +2,9 @@
 
 const request = require('supertest');
 const mongoose = require('mongoose');
-const app = require('../app');
-const User = require('../models/User');
-const Order = require('../models/Order');
+const app = require('../../app');
+const User = require('../../models/User');
+const Order = require('../../models/Order');
 
 describe('安全专项测试 (Security: IDOR & Injection)', () => {
     let attackerToken, victimToken;

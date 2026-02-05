@@ -2,9 +2,9 @@
 
 const request = require('supertest');
 const mongoose = require('mongoose');
-const app = require('../app');
-const Order = require('../models/Order');
-const User = require('../models/User');
+const app = require('../../app');
+const Order = require('../../models/Order');
+const User = require('../../models/User');
 
 describe('订单状态流转与限制测试 (Order State Machine)', () => {
     let userToken, userId;

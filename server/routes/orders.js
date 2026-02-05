@@ -4,35 +4,42 @@ const Order = require('../models/Order');
 const RoomType = require('../models/RoomType');
 const authMiddleware = require('../middleware/authMiddleware');
 
+/**
+ * 生成日期时间戳范围
+ */
 function getDateRange(start, end) {
     const dates = [];
     const startTime = new Date(start).getTime();
     const endTime = new Date(end).getTime();
     const oneDay = 24 * 60 * 60 * 1000;
+
     for (let time = startTime; time < endTime; time += oneDay) {
         dates.push(new Date(time));
     }
     return dates;
 }
 
+/**
+ * 获取某一天的库存上限
+ */
 function getDailyLimit(room, dateStr) {
     let limit = room.stock;
-    if (room.priceCalendar) {
-        const cal = room.priceCalendar.find(c => c.date === dateStr);
-        // 注意 0 也是有效库存，必须判断 undefined
-        if (cal?.stock !== undefined) {
-            limit = cal.stock;
-        }
+    // 如果 priceCalendar 存在且能在里面找到对应日期，且 stock 有定义
+    const cal = room.priceCalendar?.find(c => c.date === dateStr);
+    if (cal?.stock !== undefined) {
+        limit = cal.stock;
     }
     return limit;
 }
 
+/**
+ * 预检查 (Pre-Check)
+ */
 function checkPreAvailability(room, existingOrders, quantity, checkDates) {
     for (const dateObj of checkDates) {
         const dateStr = dateObj.toISOString().split('T')[0];
         const dailyLimit = getDailyLimit(room, dateStr);
 
-        // 使用 reduce 计算当日已用总量
         const currentUsage = existingOrders.reduce((total, order) => {
             const oStart = new Date(order.checkInDate);
             const oEnd = new Date(order.checkOutDate);
@@ -49,29 +56,42 @@ function checkPreAvailability(room, existingOrders, quantity, checkDates) {
     return { success: true };
 }
 
+/**
+ * 将这部分逻辑提取出来，checkPostAvailability 的复杂度瞬间从 16 降到 2
+ */
+
+function isMyOrderCulprit(sortedOrders, dateObj, dailyLimit, myOrderId) {
+    let runningTotal = 0;
+    for (const order of sortedOrders) {
+        const oStart = new Date(order.checkInDate);
+        const oEnd = new Date(order.checkOutDate);
+
+        // 简化嵌套：如果不重叠，直接跳过
+        if (dateObj < oStart || dateObj >= oEnd) continue;
+
+        runningTotal += order.quantity;
+
+        // 核心判断：超标了，且当前这个订单就是我
+        if (runningTotal > dailyLimit && order._id.toString() === myOrderId.toString()) {
+            return true;
+        }
+    }
+    return false;
+}
+
+/**
+ * 后置检查 (Post-Check)
+ * 现在这个函数非常简单，只负责遍历日期
+ */
+
 function checkPostAvailability(room, sortedOrders, myOrderId, checkDates) {
     for (const dateObj of checkDates) {
         const dateStr = dateObj.toISOString().split('T')[0];
         const dailyLimit = getDailyLimit(room, dateStr);
 
-        let runningTotal = 0;
-
-        for (const order of sortedOrders) {
-            const oStart = new Date(order.checkInDate);
-            const oEnd = new Date(order.checkOutDate);
-
-            if (dateObj >= oStart && dateObj < oEnd) {
-                runningTotal += order.quantity;
-
-                // 如果累加到现在已经超标了
-                if (runningTotal > dailyLimit) {
-                    // 如果当前累加到的订单正好是"我"，说明是我把库存挤爆的 -> 我得走人
-                    if (order._id.toString() === myOrderId.toString()) {
-                        return { success: false, reason: `日期 ${dateStr} 库存不足` };
-                    }
-                    // 如果是别人(排在我后面的人)挤爆的，我不受影响，继续循环
-                }
-            }
+        // 调用辅助函数，复杂度大幅降低
+        if (isMyOrderCulprit(sortedOrders, dateObj, dailyLimit, myOrderId)) {
+            return { success: false, reason: `日期 ${dateStr} 库存不足` };
         }
     }
     return { success: true };
@@ -83,14 +103,12 @@ router.post('/', authMiddleware, async (req, res) => {
     try {
         const { checkInDate, checkOutDate, quantity = 1 } = req.body;
 
-        // 安全转换与校验
-        // 强制转 String 防止 NoSQL 注入
-        const hotelId = req.body.hotelId ? String(req.body.hotelId) : null;
+        // 安全转换
         const roomTypeId = req.body.roomTypeId ? String(req.body.roomTypeId) : null;
+        const hotelId = req.body.hotelId ? String(req.body.hotelId) : null;
 
         if (Number(quantity) <= 0) return res.status(400).json({ msg: '数量必须大于0' });
 
-        // 强制转 Date 防止对象注入
         const start = new Date(checkInDate ? String(checkInDate) : null);
         const end = new Date(checkOutDate ? String(checkOutDate) : null);
 
@@ -106,8 +124,7 @@ router.post('/', authMiddleware, async (req, res) => {
 
         const checkDates = getDateRange(start, end);
 
-        // 第一轮检查 (Pre-Check)
-        // 目的：快速拦截明显库存不足的请求，减少数据库写入压力
+        // Pre-Check
         const preOrders = await Order.find({
             roomTypeId: roomTypeId,
             status: { $in: ['paid', 'confirmed', 'pending'] },
@@ -120,7 +137,7 @@ router.post('/', authMiddleware, async (req, res) => {
             return res.status(400).json({ msg: preResult.reason });
         }
 
-        // 写入订单 (占位)
+        // Save
         const totalPrice = room.price * quantity * diffDays;
         const newOrder = new Order({
             userId: req.user.userId,
@@ -129,19 +146,17 @@ router.post('/', authMiddleware, async (req, res) => {
         });
         await newOrder.save();
 
-        // 第二轮检查 (Post-Check)
-        // 目的：利用数据库原子写入顺序和 _id 排序，解决并发竞态条件
+        // Post-Check
         const postOrders = await Order.find({
             roomTypeId: roomTypeId,
             status: { $in: ['paid', 'confirmed', 'pending'] },
             checkInDate: { $lt: end },
             checkOutDate: { $gt: start }
-        }).sort({ createdAt: 1, _id: 1 }); // 关键排序
+        }).sort({ createdAt: 1, _id: 1 });
 
         const postResult = checkPostAvailability(room, postOrders, newOrder._id, checkDates);
 
         if (!postResult.success) {
-            // 抢购失败，回滚删除
             await Order.findByIdAndDelete(newOrder._id);
             return res.status(400).json({ msg: '抢购失败，库存不足' });
         }

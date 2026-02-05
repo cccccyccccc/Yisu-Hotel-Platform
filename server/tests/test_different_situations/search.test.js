@@ -2,10 +2,10 @@
 
 const request = require('supertest');
 const mongoose = require('mongoose');
-const app = require('../app');
-const Hotel = require('../models/Hotel');
-const RoomType = require('../models/RoomType');
-const User = require('../models/User'); // 假如你需要创建用户来做距离计算
+const app = require('../../app');
+const Hotel = require('../../models/Hotel');
+const RoomType = require('../../models/RoomType');
+const User = require('../../models/User'); // 假如你需要创建用户来做距离计算
 
 describe('高级搜索与筛选逻辑测试 (Search & Filtering)', () => {
 

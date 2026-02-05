@@ -2,11 +2,11 @@
 
 const request = require('supertest');
 const mongoose = require('mongoose');
-const app = require('../app');
-const User = require('../models/User');
-const Hotel = require('../models/Hotel');
-const RoomType = require('../models/RoomType');
-const Order = require('../models/Order');
+const app = require('../../app');
+const User = require('../../models/User');
+const Hotel = require('../../models/Hotel');
+const RoomType = require('../../models/RoomType');
+const Order = require('../../models/Order');
 
 // 增加超时设置
 jest.setTimeout(30000);
