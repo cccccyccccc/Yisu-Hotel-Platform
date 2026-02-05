@@ -3,7 +3,7 @@ const router = express.Router();
 const RoomType = require('../models/RoomType');
 const mongoose = require('mongoose');
 const Hotel = require('../models/Hotel');
-const logger = require('../utils/logger');
+
 const authMiddleware = require('../middleware/authMiddleware');
 const { asyncHandler, AppError } = require('../middleware/errorHandler');
 const { roomValidators } = require('../middleware/validators');

@@ -30,18 +30,18 @@ describe('酒店模块路由测试 (Hotel Routes)', () => {
 
         // 2. 注册角色
         // Admin
-        const resAdmin = await request(app).post('/api/auth/register').send({ username: 'hotel_admin', password: '123', role: 'admin' });
+        await request(app).post('/api/auth/register').send({ username: 'hotel_admin', password: '123', role: 'admin' });
         const loginAdmin = await request(app).post('/api/auth/login').send({ username: 'hotel_admin', password: '123' });
         adminToken = loginAdmin.body.token;
 
         // Merchant
-        const resMer = await request(app).post('/api/auth/register').send({ username: 'hotel_mer', password: '123', role: 'merchant' });
+        await request(app).post('/api/auth/register').send({ username: 'hotel_mer', password: '123', role: 'merchant' });
         const loginMer = await request(app).post('/api/auth/login').send({ username: 'hotel_mer', password: '123' });
         merchantToken = loginMer.body.token;
         merchantId = loginMer.body.user.id;
 
         // User
-        const resUser = await request(app).post('/api/auth/register').send({ username: 'hotel_user', password: '123', role: 'user' });
+        await request(app).post('/api/auth/register').send({ username: 'hotel_user', password: '123', role: 'user' });
         const loginUser = await request(app).post('/api/auth/login').send({ username: 'hotel_user', password: '123' });
         userToken = loginUser.body.token;
         userId = loginUser.body.user.id;
@@ -282,7 +282,7 @@ describe('酒店模块路由测试 (Hotel Routes)', () => {
 
         it('4.2 权限拒绝：非本人商户无法修改', async () => {
             // 注册另一个商户
-            const resOther = await request(app).post('/api/auth/register').send({ username: 'other_mer', password: '123', role: 'merchant' });
+            await request(app).post('/api/auth/register').send({ username: 'other_mer', password: '123', role: 'merchant' });
             const tokenOther = (await request(app).post('/api/auth/login').send({ username: 'other_mer', password: '123' })).body.token;
 
             const res = await request(app)

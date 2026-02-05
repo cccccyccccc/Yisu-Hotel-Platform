@@ -116,7 +116,7 @@ describe('全系统防御性与异常处理测试 (Comprehensive Failure Scenari
 
         it('2.3 [房型] 删除不属于自己的房型应被拒绝 (403/404)', async () => {
             // 商户 A 创建房型
-            const merchantA = await getToken('merchant');
+            await getToken('merchant');
             // 先快速创建一个酒店和房型 (模拟数据)
             const hotel = await Hotel.create({ merchantId: new mongoose.Types.ObjectId(), name: 'H', city: 'C', address: 'A', starRating: 5, price: 100, location: { type: 'Point', coordinates: [0, 0] } });
             const room = await RoomType.create({ hotelId: hotel._id, title: 'R', price: 100, stock: 10 });
@@ -179,7 +179,7 @@ describe('全系统防御性与异常处理测试 (Comprehensive Failure Scenari
 
         it('3.3 [取消] 操作他人的订单应被拒绝 (403)', async () => {
             // 用户 A 下单
-            const userA = await request(app).post('/api/auth/register').send({ username: 'UA', password: 'password123', role: 'user' });
+            await request(app).post('/api/auth/register').send({ username: 'UA', password: 'password123', role: 'user' });
             const tokenA = (await request(app).post('/api/auth/login').send({ username: 'UA', password: 'password123' })).body.token;
             const userIdA = (await request(app).get('/api/users/profile').set('Authorization', `Bearer ${tokenA}`)).body._id;
 

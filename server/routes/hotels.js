@@ -4,7 +4,7 @@ const Hotel = require('../models/Hotel');
 const Order = require('../models/Order');
 const RoomType = require('../models/RoomType');
 const mongoose = require('mongoose');
-const logger = require('../utils/logger');
+
 const cache = require('../middleware/cache');
 const authMiddleware = require('../middleware/authMiddleware');
 const { asyncHandler, AppError } = require('../middleware/errorHandler');

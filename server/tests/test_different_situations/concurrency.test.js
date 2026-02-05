@@ -12,7 +12,7 @@ const Order = require('../../models/Order');
 const INITIAL_STOCK = 5;       // 只有 5 间房
 const CONCURRENT_REQUESTS = 20; // 20 人同时抢
 
-let userToken, userId;
+let userToken;
 let hotelId, roomTypeId;
 
 beforeAll(async () => {
@@ -33,7 +33,7 @@ beforeAll(async () => {
         username: 'concurrent_user', password: 'password123'
     });
     userToken = loginRes.body.token;
-    userId = loginRes.body.user.id;
+
 
     // 2. 准备酒店
     const hotel = await Hotel.create({

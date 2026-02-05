@@ -8,7 +8,6 @@ const User = require('../../models/User');
 
 describe('订单状态流转与限制测试 (Order State Machine)', () => {
     let userToken, userId;
-    let orderId;
 
     beforeAll(async () => {
         const TEST_URI = process.env.MONGODB_URI_TEST || 'mongodb://127.0.0.1:27017/yisu-test-state';

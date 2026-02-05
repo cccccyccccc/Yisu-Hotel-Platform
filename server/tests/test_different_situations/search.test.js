@@ -5,7 +5,7 @@ const mongoose = require('mongoose');
 const app = require('../../app');
 const Hotel = require('../../models/Hotel');
 const RoomType = require('../../models/RoomType');
-const User = require('../../models/User'); // 假如你需要创建用户来做距离计算
+
 
 describe('高级搜索与筛选逻辑测试 (Search & Filtering)', () => {
 
@@ -19,7 +19,7 @@ describe('高级搜索与筛选逻辑测试 (Search & Filtering)', () => {
 
         // === 准备测试数据 (3家酒店) ===
         // 酒店 A: 上海, 5星, 1000元, 标签: [亲子, 泳池], 位置: 人民广场 (0,0)
-        const hotelA = await Hotel.create({
+        await Hotel.create({
             merchantId: new mongoose.Types.ObjectId(),
             name: '上海核心大酒店',
             city: '上海',
@@ -33,7 +33,7 @@ describe('高级搜索与筛选逻辑测试 (Search & Filtering)', () => {
         });
 
         // 酒店 B: 上海, 3星, 300元, 标签: [亲子], 位置: 郊区 (远)
-        const hotelB = await Hotel.create({
+        await Hotel.create({
             merchantId: new mongoose.Types.ObjectId(),
             name: '上海郊区亲子民宿',
             city: '上海',
@@ -47,7 +47,7 @@ describe('高级搜索与筛选逻辑测试 (Search & Filtering)', () => {
         });
 
         // 酒店 C: 北京, 5星, 2000元, 标签: [泳池]
-        const hotelC = await Hotel.create({
+        await Hotel.create({
             merchantId: new mongoose.Types.ObjectId(),
             name: '北京奢华酒店',
             city: '北京',

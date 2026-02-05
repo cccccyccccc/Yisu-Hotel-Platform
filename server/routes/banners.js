@@ -1,13 +1,12 @@
 const express = require('express');
 const router = express.Router();
 const Banner = require('../models/Banner');
-const logger = require('../utils/logger');
+
 const cache = require('../middleware/cache');
 const authMiddleware = require('../middleware/authMiddleware');
 const { asyncHandler, AppError } = require('../middleware/errorHandler');
 const { bannerValidators } = require('../middleware/validators');
 
-// 获取首页轮播图 (公开接口) GET /api/banners
 // 获取首页轮播图 (公开接口) GET /api/banners
 router.get('/', cache(300), asyncHandler(async (req, res) => {
     // 只查询状态为 1 (上线) 的轮播图

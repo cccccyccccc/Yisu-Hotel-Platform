@@ -12,7 +12,7 @@ jest.setTimeout(30000);
 describe('房型模块路由测试 (Room Routes)', () => {
 
     let merchantToken, userToken;
-    let merchantId, otherMerchantId;
+    let merchantId;
     let hotelId;
     let roomId;
 
@@ -30,18 +30,18 @@ describe('房型模块路由测试 (Room Routes)', () => {
 
         // 2. 注册账号
         // Merchant A (Owner)
-        const resMer = await request(app).post('/api/auth/register').send({ username: 'room_mer', password: '123', role: 'merchant' });
+        await request(app).post('/api/auth/register').send({ username: 'room_mer', password: '123', role: 'merchant' });
         const loginMer = await request(app).post('/api/auth/login').send({ username: 'room_mer', password: '123' });
         merchantToken = loginMer.body.token;
         merchantId = loginMer.body.user.id;
 
         // Merchant B (Other)
-        const resOther = await request(app).post('/api/auth/register').send({ username: 'other_mer', password: '123', role: 'merchant' });
-        const loginOther = (await request(app).post('/api/auth/login').send({ username: 'other_mer', password: '123' }));
-        otherMerchantId = loginOther.body.user.id; // 获取不到 token 也没事，如果是为了鉴权可以用 token
+        await request(app).post('/api/auth/register').send({ username: 'other_mer', password: '123', role: 'merchant' });
+        await request(app).post('/api/auth/login').send({ username: 'other_mer', password: '123' });
+        // otherMerchantId unused
 
         // User (No permission)
-        const resUser = await request(app).post('/api/auth/register').send({ username: 'room_user', password: '123', role: 'user' });
+        await request(app).post('/api/auth/register').send({ username: 'room_user', password: '123', role: 'user' });
         userToken = (await request(app).post('/api/auth/login').send({ username: 'room_user', password: '123' })).body.token;
 
         // 3. 创建酒店 (属于 Merchant A)

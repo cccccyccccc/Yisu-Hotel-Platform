@@ -3,7 +3,7 @@ const router = express.Router();
 const Review = require('../models/Review');
 const Hotel = require('../models/Hotel');
 const authMiddleware = require('../middleware/authMiddleware');
-const { asyncHandler, AppError } = require('../middleware/errorHandler');
+const { asyncHandler } = require('../middleware/errorHandler');
 const { reviewValidators } = require('../middleware/validators');
 
 // 发表评价 (POST /api/reviews)

@@ -200,7 +200,7 @@ module.exports = {
   hotelValidators,
   orderValidators,
   reviewValidators,
-  reviewValidators,
+
   roomValidators,
   userValidators,
   bannerValidators,

@@ -37,6 +37,7 @@ const notFoundHandler = (req, res, next) => {
  * 全局错误处理中间件
  * 统一格式化错误响应
  */
+// eslint-disable-next-line no-unused-vars
 const errorHandler = (err, req, res, next) => {
   // 设置默认值
   err.statusCode = err.statusCode || 500;

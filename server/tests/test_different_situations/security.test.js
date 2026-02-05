@@ -7,7 +7,7 @@ const User = require('../../models/User');
 const Order = require('../../models/Order');
 
 describe('安全专项测试 (Security: IDOR & Injection)', () => {
-    let attackerToken, victimToken;
+    let attackerToken;
     let victimOrderId;
 
     beforeAll(async () => {
@@ -17,9 +17,9 @@ describe('安全专项测试 (Security: IDOR & Injection)', () => {
         await Order.deleteMany({});
 
         // 1. 创建受害者 (Victim)
-        const vRes = await request(app).post('/api/auth/register').send({ username: 'victim', password: 'secure_password', role: 'user' });
+        await request(app).post('/api/auth/register').send({ username: 'victim', password: 'secure_password', role: 'user' });
         const vLogin = await request(app).post('/api/auth/login').send({ username: 'victim', password: 'secure_password' });
-        victimToken = vLogin.body.token;
+
         const victimId = vLogin.body.user.id;
 
         // 受害者创建了一个订单
@@ -36,7 +36,7 @@ describe('安全专项测试 (Security: IDOR & Injection)', () => {
         victimOrderId = order._id;
 
         // 2. 创建攻击者 (Attacker)
-        const aRes = await request(app).post('/api/auth/register').send({ username: 'attacker', password: '123', role: 'user' });
+        await request(app).post('/api/auth/register').send({ username: 'attacker', password: '123', role: 'user' });
         const aLogin = await request(app).post('/api/auth/login').send({ username: 'attacker', password: '123' });
         attackerToken = aLogin.body.token;
     });

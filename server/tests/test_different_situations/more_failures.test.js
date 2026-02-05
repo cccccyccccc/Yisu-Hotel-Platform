@@ -11,8 +11,8 @@ const Favorite = require('../../models/Favorite');
 jest.setTimeout(30000);
 
 describe('补充测试', () => {
-    let adminToken, merchantToken, userToken, user2Token;
-    let merchantId, userId, user2Id;
+    let adminToken, merchantToken, userToken;
+    let merchantId;
     let hotelId, roomId;
 
     // === 环境准备 ===
@@ -44,13 +44,13 @@ describe('补充测试', () => {
         await request(app).post('/api/auth/register').send({ username: 'cov_user1', password: '123', role: 'user' });
         const resUser = await request(app).post('/api/auth/login').send({ username: 'cov_user1', password: '123' });
         userToken = resUser.body.token;
-        userId = resUser.body.user.id;
+
 
         // 4. 注册 User 2 (用于测试权限冲突)
         await request(app).post('/api/auth/register').send({ username: 'cov_user2', password: '123', role: 'user' });
-        const resUser2 = await request(app).post('/api/auth/login').send({ username: 'cov_user2', password: '123' });
-        user2Token = resUser2.body.token;
-        user2Id = resUser2.body.user.id;
+        await request(app).post('/api/auth/login').send({ username: 'cov_user2', password: '123' });
+
+
 
         // 5. 准备基础数据 (酒店)
         const hotel = await Hotel.create({

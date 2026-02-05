@@ -1,9 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const Favorite = require('../models/Favorite');
-const mongoose = require('mongoose');
 const Hotel = require('../models/Hotel');
-const logger = require('../utils/logger');
 const authMiddleware = require('../middleware/authMiddleware');
 const { asyncHandler, AppError } = require('../middleware/errorHandler');
 const { favoriteValidators } = require('../middleware/validators');

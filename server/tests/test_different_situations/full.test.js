@@ -17,7 +17,7 @@ const MONGO_URI = process.env.MONGODB_URI_TEST || 'mongodb://127.0.0.1:27017/yis
 
 // === 全局变量 ===
 let adminToken, merchantToken, userToken;
-let merchantId;
+
 let hotelId, roomTypeId, orderId, bannerId;
 
 // === 环境准备 ===
@@ -73,7 +73,7 @@ describe('第一章：角色注册与登录', () => {
         });
         expect(res.statusCode).toBe(200);
         merchantToken = res.body.token;
-        merchantId = res.body.user.id;
+
         expect(merchantToken).toBeDefined();
     });
 

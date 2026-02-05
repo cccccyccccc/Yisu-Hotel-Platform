@@ -10,7 +10,7 @@ jest.setTimeout(30000);
 
 describe('评价模块路由测试 (Review Routes)', () => {
 
-  let merchantToken, userToken, user2Token;
+  let userToken, user2Token;
   let merchantId, userId, user2Id;
   let hotelId;
 
@@ -29,7 +29,7 @@ describe('评价模块路由测试 (Review Routes)', () => {
     // 注册商户
     await request(app).post('/api/auth/register').send({ username: 'review_mer', password: '123', role: 'merchant' });
     const loginMer = await request(app).post('/api/auth/login').send({ username: 'review_mer', password: '123' });
-    merchantToken = loginMer.body.token;
+
     merchantId = loginMer.body.user.id;
 
     // 注册用户1

@@ -42,7 +42,9 @@ async function compressImage(inputPath, options = {}) {
     const dir = path.dirname(inputPath);
 
     // 创建 sharp 实例
-    let image = sharp(inputPath);
+    // Windows file locking fix: read to buffer first
+    const inputBuffer = fs.readFileSync(inputPath);
+    let image = sharp(inputBuffer);
     const metadata = await image.metadata();
 
     // 如果图片超过最大尺寸，进行缩放
@@ -54,7 +56,6 @@ async function compressImage(inputPath, options = {}) {
     }
 
     // 根据格式进行压缩
-    let compressedPath = inputPath;
     if (['.jpg', '.jpeg'].includes(ext)) {
       image = image.jpeg({ quality: config.jpegQuality });
     } else if (ext === '.png') {
@@ -65,6 +66,13 @@ async function compressImage(inputPath, options = {}) {
 
     // 输出压缩后的文件（覆盖原文件）
     const outputBuffer = await image.toBuffer();
+    try {
+      if (fs.existsSync(inputPath)) {
+        fs.unlinkSync(inputPath);
+      }
+    } catch (e) {
+      logger.warn(`Failed to unlink ${inputPath}: ${e.message}`);
+    }
     fs.writeFileSync(inputPath, outputBuffer);
 
     // 计算节省的空间
