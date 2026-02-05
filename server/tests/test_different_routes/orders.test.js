@@ -271,4 +271,48 @@ describe('订单模块路由测试 (Order Routes)', () => {
       expect(res.body.msg).toBe('无法取消');
     });
   });
+
+  // ==========================================
+  // 4. 附加测试 (Additional Tests)
+  // ==========================================
+  describe('附加测试', () => {
+
+    it('4.1 订单列表包含酒店和房型信息 (populate 测试)', async () => {
+      await Order.deleteMany({});
+      await Order.create({
+        userId: userId,
+        hotelId: hotelId,
+        roomTypeId: roomId,
+        checkInDate: new Date('2026-12-01'),
+        checkOutDate: new Date('2026-12-03'),
+        quantity: 1,
+        totalPrice: 1000,
+        status: 'paid'
+      });
+
+      const res = await request(app)
+        .get('/api/orders/my')
+        .set('Authorization', `Bearer ${userToken}`);
+
+      expect(res.statusCode).toBe(200);
+      expect(res.body.length).toBe(1);
+      // 检查关联信息是否被填充
+      expect(res.body[0].hotelId).toBeDefined();
+      expect(res.body[0].roomTypeId).toBeDefined();
+    });
+
+    it('4.2 无认证下单返回 401', async () => {
+      const res = await request(app)
+        .post('/api/orders')
+        .send({
+          hotelId: hotelId,
+          roomTypeId: roomId,
+          checkInDate: '2026-12-10',
+          checkOutDate: '2026-12-12',
+          quantity: 1
+        });
+
+      expect(res.statusCode).toBe(401);
+    });
+  });
 });

@@ -173,4 +173,62 @@ describe('用户模块路由测试 (User Routes)', () => {
       expect(user.username).toBe('profile_user');
     });
   });
+
+  // ==========================================
+  // 3. 错误处理测试 (Error Handling)
+  // ==========================================
+  describe('错误处理测试', () => {
+    it('3.1 GET - 用户不存在返回 404', async () => {
+      // 删除用户后尝试获取
+      const tempUser = await User.create({
+        username: 'temp_delete_user',
+        password: 'hashedpwd',
+        role: 'user'
+      });
+      const jwt = require('jsonwebtoken');
+      const tempToken = jwt.sign(
+        { userId: tempUser._id, role: 'user' },
+        process.env.JWT_SECRET || 'test_secret',
+        { expiresIn: '1h' }
+      );
+
+      // 删除用户
+      await User.findByIdAndDelete(tempUser._id);
+
+      // 尝试获取已删除用户的 profile
+      const res = await request(app)
+        .get('/api/users/profile')
+        .set('Authorization', `Bearer ${tempToken}`);
+
+      expect(res.statusCode).toBe(404);
+      expect(res.body.msg).toBe('用户不存在');
+    });
+
+    it('3.2 PUT - 用户不存在返回 404', async () => {
+      // 创建临时用户并获取 token
+      const tempUser = await User.create({
+        username: 'temp_put_user',
+        password: 'hashedpwd',
+        role: 'user'
+      });
+      const jwt = require('jsonwebtoken');
+      const tempToken = jwt.sign(
+        { userId: tempUser._id, role: 'user' },
+        process.env.JWT_SECRET || 'test_secret',
+        { expiresIn: '1h' }
+      );
+
+      // 删除用户
+      await User.findByIdAndDelete(tempUser._id);
+
+      // 尝试更新已删除用户的 profile
+      const res = await request(app)
+        .put('/api/users/profile')
+        .set('Authorization', `Bearer ${tempToken}`)
+        .send({ bio: 'test' });
+
+      expect(res.statusCode).toBe(404);
+      expect(res.body.msg).toBe('用户不存在');
+    });
+  });
 });

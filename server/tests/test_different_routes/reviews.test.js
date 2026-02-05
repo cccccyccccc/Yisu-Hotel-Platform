@@ -208,4 +208,35 @@ describe('评价模块路由测试 (Review Routes)', () => {
       expect(res.body.length).toBe(0);
     });
   });
+
+  // ==========================================
+  // 3. 附加测试 (Additional Tests)
+  // ==========================================
+  describe('附加测试', () => {
+
+    it('3.1 评价包含用户信息 (populate 测试)', async () => {
+      // 先创建评价
+      await Review.create({
+        userId: userId,
+        hotelId: hotelId,
+        rating: 5,
+        content: '测试 populate'
+      });
+
+      const res = await request(app).get(`/api/reviews/${hotelId}`);
+
+      expect(res.statusCode).toBe(200);
+      expect(res.body.length).toBe(1);
+      // 检查用户信息是否被填充
+      expect(res.body[0].userId).toBeDefined();
+    });
+
+    it('3.2 无认证发评价返回 401', async () => {
+      const res = await request(app)
+        .post('/api/reviews')
+        .send({ hotelId: hotelId, rating: 5, content: '无认证测试' });
+
+      expect(res.statusCode).toBe(401);
+    });
+  });
 });
