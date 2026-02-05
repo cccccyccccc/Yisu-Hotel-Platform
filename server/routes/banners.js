@@ -1,10 +1,12 @@
 const express = require('express');
 const router = express.Router();
 const Banner = require('../models/Banner');
+const logger = require('../utils/logger');
+const cache = require('../middleware/cache');
 const authMiddleware = require('../middleware/authMiddleware');
 
 // 获取首页轮播图 (公开接口) GET /api/banners
-router.get('/', async (req, res) => {
+router.get('/', cache(300), async (req, res) => {
     try {
         // 只查询状态为 1 (上线) 的轮播图
         const banners = await Banner.find({ status: 1 })
@@ -13,7 +15,7 @@ router.get('/', async (req, res) => {
 
         res.json(banners);
     } catch (err) {
-        console.error(err);
+        logger.error(err);
         res.status(500).json({ msg: 'Server Error' });
     }
 });
@@ -44,7 +46,7 @@ router.post('/', authMiddleware, async (req, res) => {
         res.status(201).json(newBanner);
 
     } catch (err) {
-        console.error(err);
+        logger.error(err);
         res.status(500).json({ msg: 'Server Error' });
     }
 });
@@ -64,7 +66,7 @@ router.delete('/:id', authMiddleware, async (req, res) => {
 
         res.json({ msg: '删除成功' });
     } catch (err) {
-        console.error(err);
+        logger.error(err);
         res.status(500).json({ msg: 'Server Error' });
     }
 });

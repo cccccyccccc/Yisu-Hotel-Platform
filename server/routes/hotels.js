@@ -4,6 +4,8 @@ const Hotel = require('../models/Hotel');
 const Order = require('../models/Order');
 const RoomType = require('../models/RoomType');
 const mongoose = require('mongoose');
+const logger = require('../utils/logger');
+const cache = require('../middleware/cache');
 const authMiddleware = require('../middleware/authMiddleware');
 
 async function getAvailableHotelIds(checkIn, checkOut) {
@@ -121,7 +123,7 @@ router.post('/', authMiddleware, async (req, res) => {
         const hotel = await newHotel.save();
         res.json(hotel);
     } catch (err) {
-        console.error(err);
+        logger.error(err);
         if (err.name === 'ValidationError') {
             return res.status(400).json({ msg: err.message });
         }
@@ -136,7 +138,7 @@ router.get('/my', authMiddleware, async (req, res) => {
             .sort({ createdAt: -1 });
         res.json(hotels);
     } catch (err) {
-        console.error(err);
+        logger.error(err);
         res.status(500).json({ msg: '服务器错误' });
     }
 });
@@ -152,13 +154,13 @@ router.get('/admin/list', authMiddleware, async (req, res) => {
 
         res.json(hotels);
     } catch (err) {
-        console.error(err);
+        logger.error(err);
         res.status(500).json({ msg: 'Server Error' });
     }
 });
 
 // 首页搜索接口 (GET /api/hotels)
-router.get('/', async (req, res) => {
+router.get('/', cache(300), async (req, res) => {
     try {
         const { checkInDate, checkOutDate, sortType, userLat, userLng, page = 1, limit = 10 } = req.query;
         const availableIds = await getAvailableHotelIds(checkInDate, checkOutDate);
@@ -190,7 +192,7 @@ router.get('/', async (req, res) => {
         });
 
     } catch (err) {
-        if (process.env.NODE_ENV !== 'test') console.error(err.message);
+        if (process.env.NODE_ENV !== 'test') logger.error(err.message);
         if (err.message?.includes('index')) {
             return res.status(500).json({ msg: 'LBS Index Missing' });
         }
@@ -199,7 +201,7 @@ router.get('/', async (req, res) => {
 });
 
 // 获取单个酒店详情 (GET /api/hotels/:id)
-router.get('/:id', async (req, res) => {
+router.get('/:id', cache(600), async (req, res) => {
     try {
         if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
             return res.status(400).json({ msg: 'Invalid ID format' });
@@ -252,7 +254,7 @@ router.put('/:id', authMiddleware, async (req, res) => {
         await hotel.save();
         res.json(hotel);
     } catch (err) {
-        console.error(err);
+        logger.error(err);
         res.status(500).json({ msg: 'Server Error' });
     }
 });
@@ -275,7 +277,7 @@ router.put('/:id/audit', authMiddleware, async (req, res) => {
         await hotel.save();
         res.json(hotel);
     } catch (err) {
-        console.error(err);
+        logger.error(err);
         res.status(500).json({ msg: 'Server Error' });
     }
 });
@@ -312,7 +314,7 @@ router.put('/:id/status', authMiddleware, async (req, res) => {
         res.json({ msg: '操作成功', status: hotel.status });
 
     } catch (err) {
-        console.error(err);
+        logger.error(err);
         res.status(500).json({ msg: 'Server Error' });
     }
 });

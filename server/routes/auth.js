@@ -4,6 +4,7 @@ const router = express.Router();
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
+const logger = require('../utils/logger');
 
 // 从配置文件中拿取密钥
 const JWT_SECRET = process.env.JWT_SECRET;
@@ -40,7 +41,7 @@ router.post('/register', async (req, res) => {
         res.status(201).json({ msg: '注册成功！请登录' });
 
     } catch (err) {
-        console.error(err);
+        logger.error(err);
         res.status(500).json({ msg: '服务器错误' });
     }
 });
@@ -85,7 +86,7 @@ router.post('/login', async (req, res) => {
             }
         });
     } catch (err) {
-        console.error(err);
+        logger.error(err);
         res.status(500).json({ msg: '服务器错误' });
     }
 });

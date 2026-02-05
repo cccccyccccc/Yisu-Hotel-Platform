@@ -15,6 +15,9 @@ Thumbs.db
 secret.json
 config/keys.js
 
+# 日志
+logs
+
 # 构建产物
 dist/
 build/

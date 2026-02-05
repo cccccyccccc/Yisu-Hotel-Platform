@@ -1,9 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const User = require('../models/User');
+const logger = require('../utils/logger');
 const authMiddleware = require('../middleware/authMiddleware');
 
-// 1. 获取个人详细信息 (GET /api/users/profile)
+// 获取个人详细信息 (GET /api/users/profile)
 // 登录后，进入“我的”页面时调用，保证看到的是最新数据
 router.get('/profile', authMiddleware, async (req, res) => {
     try {
@@ -12,12 +13,12 @@ router.get('/profile', authMiddleware, async (req, res) => {
         if (!user) return res.status(404).json({ msg: '用户不存在' });
         res.json(user);
     } catch (err) {
-        console.error(err);
+        logger.error(err);
         res.status(500).json({ msg: '服务器错误' });
     }
 });
 
-// 2. 修改个人资料 (PUT /api/users/profile)
+// 修改个人资料 (PUT /api/users/profile)
 router.put('/profile', authMiddleware, async (req, res) => {
     try {
         const { avatar, gender, bio } = req.body;
@@ -39,7 +40,7 @@ router.put('/profile', authMiddleware, async (req, res) => {
         res.json(userObj);
 
     } catch (err) {
-        console.error(err);
+        logger.error(err);
         res.status(500).json({ msg: '服务器错误' });
     }
 });

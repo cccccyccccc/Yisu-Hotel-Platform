@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const Order = require('../models/Order');
 const RoomType = require('../models/RoomType');
+const logger = require('../utils/logger');
 const authMiddleware = require('../middleware/authMiddleware');
 
 /**
@@ -164,7 +165,7 @@ router.post('/', authMiddleware, async (req, res) => {
         res.json(newOrder);
 
     } catch (err) {
-        if (process.env.NODE_ENV !== 'test') console.error('Order Error:', err.message);
+        if (process.env.NODE_ENV !== 'test') logger.error('Order Error:', err.message);
         res.status(500).json({ msg: '服务器错误' });
     }
 });
@@ -179,7 +180,7 @@ router.get('/my', authMiddleware, async (req, res) => {
             .sort({ createdAt: -1 });
         res.json(orders);
     } catch (err) {
-        console.error(err);
+        logger.error(err);
         res.status(500).json({ msg: 'Server Error' });
     }
 });
@@ -201,7 +202,7 @@ router.put('/:id/cancel', authMiddleware, async (req, res) => {
             res.status(400).json({ msg: '无法取消' });
         }
     } catch (err) {
-        console.error(err);
+        logger.error(err);
         res.status(500).json({ msg: 'Server Error' });
     }
 });

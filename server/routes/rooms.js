@@ -3,6 +3,7 @@ const router = express.Router();
 const RoomType = require('../models/RoomType');
 const mongoose = require('mongoose');
 const Hotel = require('../models/Hotel');
+const logger = require('../utils/logger');
 const authMiddleware = require('../middleware/authMiddleware');
 
 // 添加房型 (POST /api/rooms)
@@ -39,7 +40,7 @@ router.post('/', authMiddleware, async (req, res) => {
 
         res.json(newRoom);
     } catch (err) {
-        console.error(err);
+        logger.error(err);
         res.status(500).json({ msg: 'Server Error' });
     }
 });
@@ -54,7 +55,7 @@ router.get('/:hotelId', async (req, res) => {
         const rooms = await RoomType.find({ hotelId: String(req.params.hotelId) }).sort({ price: 1 });
         res.json(rooms);
     } catch (err) {
-        console.error(err);
+        logger.error(err);
         res.status(500).json({ msg: 'Server Error' });
     }
 });
@@ -78,7 +79,7 @@ router.delete('/:id', authMiddleware, async (req, res) => {
         await RoomType.findByIdAndDelete(req.params.id);
         res.json({ msg: '删除成功' });
     } catch (err) {
-        console.error(err);
+        logger.error(err);
         res.status(500).json({ msg: 'Server Error' });
     }
 });
@@ -132,7 +133,7 @@ router.put('/:id', authMiddleware, async (req, res) => {
 
         res.json(updatedRoom);
     } catch (err) {
-        console.error(err);
+        logger.error(err);
         res.status(500).json({ msg: 'Server Error' });
     }
 });
@@ -194,7 +195,7 @@ router.put('/:id/calendar', authMiddleware, async (req, res) => {
         res.json({ msg: '价格日历更新成功', priceCalendar: room.priceCalendar });
 
     } catch (err) {
-        console.error(err);
+        logger.error(err);
         res.status(500).json({ msg: 'Server Error' });
     }
 });
@@ -214,7 +215,7 @@ router.get('/:id/calendar', async (req, res) => {
             calendar: room.priceCalendar || []
         });
     } catch (err) {
-        console.error(err);
+        logger.error(err);
         res.status(500).json({ msg: 'Server Error' });
     }
 });

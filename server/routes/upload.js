@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const logger = require('../utils/logger');
 const multer = require('multer');
 const path = require('node:path');
 
@@ -49,7 +50,7 @@ router.post('/', upload.single('file'), (req, res) => {
             url: fileUrl  // 前端拿到这个 url 后，把它塞进 Hotel 或 Room 的 images 数组里
         });
     } catch (err) {
-        console.error(err);
+        logger.error(err);
         res.status(500).json({ msg: err.message });
     }
 });

@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const Review = require('../models/Review');
 const Hotel = require('../models/Hotel');
+const logger = require('../utils/logger');
 const authMiddleware = require('../middleware/authMiddleware');
 
 // 发表评价 (POST /api/reviews)
@@ -54,7 +55,7 @@ router.get('/:hotelId', async (req, res) => {
             .sort({ createdAt: -1 }); // 最新评价在前面
         res.json(reviews);
     } catch (err) {
-        console.error(err);
+        logger.error(err);
         res.status(500).json({ msg: '服务器错误' });
     }
 });

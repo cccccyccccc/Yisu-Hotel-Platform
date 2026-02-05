@@ -7,13 +7,38 @@ const cors = require('cors');
 const path = require('node:path');
 const setupSwagger = require('./swagger');
 
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
+const morgan = require('morgan');
+const logger = require('./utils/logger');
+
 const app = express();
 const PORT = process.env.PORT || 5000;
 
 app.disable('x-powered-by');
 
+app.use(helmet({
+    crossOriginResourcePolicy: false, // 允许跨域加载静态资源 (图片)
+}));
+
 // 允许跨域访问并且连接数据库
-app.use(cors());
+const corsOptions = {
+    origin: process.env.NODE_ENV === 'production' ? false : '*', // 简单起见，生产环境需按需配置
+    optionsSuccessStatus: 200
+};
+app.use(cors(corsOptions));
+
+const limiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 100,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { msg: '请求过于频繁，请稍后再试' }
+});
+// 应用限流到所有 /api 路由
+app.use('/api', limiter);
+
+app.use(morgan('combined', { stream: logger.stream }));
 app.use(express.json());
 app.use('/uploads', express.static(path.join(__dirname, 'public/uploads')));
 
