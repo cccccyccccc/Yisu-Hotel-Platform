@@ -112,7 +112,7 @@ router.post('/', authMiddleware, async (req, res) => {
         const start = new Date(checkInDate ? String(checkInDate) : null);
         const end = new Date(checkOutDate ? String(checkOutDate) : null);
 
-        if (isNaN(start.getTime()) || isNaN(end.getTime()) || start >= end) {
+        if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime()) || start >= end) {
             return res.status(400).json({ msg: '日期无效' });
         }
 

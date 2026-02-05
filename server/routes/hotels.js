@@ -56,7 +56,7 @@ function buildFilterQuery(query, availableIds) {
     }
 
     if (keyword) {
-        const safeKeyword = String(keyword).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const safeKeyword = String(keyword).replace(/[.*+?^${}()|[\]\\]/g, String.raw`\$&`); // NOSONAR
         dbQuery.$or = [
             { name: { $regex: safeKeyword, $options: 'i' } },
             { address: { $regex: safeKeyword, $options: 'i' } }
@@ -64,7 +64,7 @@ function buildFilterQuery(query, availableIds) {
     }
 
     if (tags) {
-        const tagsArray = String(tags).split(',').map(t => t.trim()).filter(t => t);
+        const tagsArray = String(tags).split(',').map(t => t.trim()).filter(Boolean);
         if (tagsArray.length > 0) {
             dbQuery.tags = { $all: tagsArray };
         }
