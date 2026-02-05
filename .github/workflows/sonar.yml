@@ -3,7 +3,7 @@ name: SonarCloud Analysis
 on:
   push:
     branches: [ "main", "master" ]
-    paths: [ "server/**" ] # 只有 server 目录变动才触发分析，节省资源
+    paths: [ "server/**" ]
   pull_request:
     branches: [ "main", "master" ]
     paths: [ "server/**" ]
@@ -15,55 +15,57 @@ permissions:
 jobs:
   Analysis:
     runs-on: ubuntu-latest
-
-    # 1. 关键配置：所有命令行步骤默认在 server 目录下运行
     defaults:
       run:
         working-directory: ./server
 
-    # 2. 启动 MongoDB 服务 (测试需要)
+    # 添加 Redis 服务
     services:
       mongodb:
         image: mongo:6.0
         ports:
           - 27017:27017
+      redis:
+        image: redis
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
 
     steps:
-      # 拉取代码 (根目录)
       - name: Checkout code
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      # 安装 Node.js
       - name: Set up Node.js 20
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          # 启用缓存，加速安装 (指向 server 目录下的 lock 文件)
           cache: 'npm'
           cache-dependency-path: server/package-lock.json
 
-      # 安装依赖 (现在会在 server 目录下执行，能找到 package-lock.json 了)
       - name: Install dependencies
         run: npm ci
 
-      # 创建上传目录 (防止 500 错误)
       - name: Create uploads directory
         run: mkdir -p uploads
 
-      # 运行测试并生成覆盖率
+      # 注入 Redis 环境变量和 NODE_ENV
       - name: Run Tests with Coverage
         env:
           MONGODB_URI_TEST: mongodb://localhost:27017/yisu-test-ci
           JWT_SECRET: test_secret_key_for_ci
+          REDIS_URL: redis://localhost:6379  # 指向本地映射的 Service
+          NODE_ENV: test                     # 确保进入测试模式（禁用缓存中间件）
         run: npm test -- --coverage --runInBand
 
-      # SonarCloud 扫描
       - name: SonarCloud Scan
         uses: SonarSource/sonarcloud-github-action@master
         with:
-          # 3. 关键配置：告诉 SonarCloud 配置文件和源码都在 server 目录
           projectBaseDir: server
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
