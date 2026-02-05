@@ -152,6 +152,7 @@ router.get('/admin/list', authMiddleware, async (req, res) => {
 
         res.json(hotels);
     } catch (err) {
+        console.error(err);
         res.status(500).json({ msg: 'Server Error' });
     }
 });
@@ -251,6 +252,7 @@ router.put('/:id', authMiddleware, async (req, res) => {
         await hotel.save();
         res.json(hotel);
     } catch (err) {
+        console.error(err);
         res.status(500).json({ msg: 'Server Error' });
     }
 });
@@ -273,6 +275,7 @@ router.put('/:id/audit', authMiddleware, async (req, res) => {
         await hotel.save();
         res.json(hotel);
     } catch (err) {
+        console.error(err);
         res.status(500).json({ msg: 'Server Error' });
     }
 });
@@ -309,6 +312,7 @@ router.put('/:id/status', authMiddleware, async (req, res) => {
         res.json({ msg: '操作成功', status: hotel.status });
 
     } catch (err) {
+        console.error(err);
         res.status(500).json({ msg: 'Server Error' });
     }
 });

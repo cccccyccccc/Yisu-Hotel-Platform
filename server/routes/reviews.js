@@ -54,6 +54,7 @@ router.get('/:hotelId', async (req, res) => {
             .sort({ createdAt: -1 }); // 最新评价在前面
         res.json(reviews);
     } catch (err) {
+        console.error(err);
         res.status(500).json({ msg: '服务器错误' });
     }
 });

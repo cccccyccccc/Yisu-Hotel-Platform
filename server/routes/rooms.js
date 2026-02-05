@@ -54,6 +54,7 @@ router.get('/:hotelId', async (req, res) => {
         const rooms = await RoomType.find({ hotelId: String(req.params.hotelId) }).sort({ price: 1 });
         res.json(rooms);
     } catch (err) {
+        console.error(err);
         res.status(500).json({ msg: 'Server Error' });
     }
 });
@@ -77,6 +78,7 @@ router.delete('/:id', authMiddleware, async (req, res) => {
         await RoomType.findByIdAndDelete(req.params.id);
         res.json({ msg: '删除成功' });
     } catch (err) {
+        console.error(err);
         res.status(500).json({ msg: 'Server Error' });
     }
 });
@@ -212,6 +214,7 @@ router.get('/:id/calendar', async (req, res) => {
             calendar: room.priceCalendar || []
         });
     } catch (err) {
+        console.error(err);
         res.status(500).json({ msg: 'Server Error' });
     }
 });

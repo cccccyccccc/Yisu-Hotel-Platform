@@ -179,6 +179,7 @@ router.get('/my', authMiddleware, async (req, res) => {
             .sort({ createdAt: -1 });
         res.json(orders);
     } catch (err) {
+        console.error(err);
         res.status(500).json({ msg: 'Server Error' });
     }
 });
@@ -200,6 +201,7 @@ router.put('/:id/cancel', authMiddleware, async (req, res) => {
             res.status(400).json({ msg: '无法取消' });
         }
     } catch (err) {
+        console.error(err);
         res.status(500).json({ msg: 'Server Error' });
     }
 });
