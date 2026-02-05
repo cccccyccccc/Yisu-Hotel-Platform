@@ -106,7 +106,7 @@ router.post('/', authMiddleware, async (req, res) => {
             return res.status(403).json({ msg: '只有商户权限才能发布酒店' });
         }
 
-        const { name, nameEn, city, address, starRating, price, description, tags, openingTime, location } = req.body;
+        const { name, nameEn, city, address, starRating, price, description, tags, openingTime, location, nearbyAttractions, nearbyTransport, nearbyMalls } = req.body;
         const safeName = String(name);
         const existingHotel = await Hotel.findOne({ name: safeName });
         if (existingHotel) {
@@ -116,7 +116,7 @@ router.post('/', authMiddleware, async (req, res) => {
         const newHotel = new Hotel({
             merchantId: req.user.userId,
             name, nameEn, city, address, starRating, price, description, tags, openingTime,
-            location,
+            location, nearbyAttractions, nearbyTransport, nearbyMalls,
             status: 0
         });
 
@@ -226,7 +226,7 @@ router.put('/:id', authMiddleware, async (req, res) => {
             return res.status(400).json({ msg: 'Invalid ID format' });
         }
 
-        const { name, nameEn, city, address, starRating, price, description, tags, openingTime } = req.body;
+        const { name, nameEn, city, address, starRating, price, description, tags, openingTime, nearbyAttractions, nearbyTransport, nearbyMalls } = req.body;
 
         const hotel = await Hotel.findById(req.params.id);
         if (!hotel) return res.status(404).json({ msg: '酒店不存在' });
@@ -246,6 +246,10 @@ router.put('/:id', authMiddleware, async (req, res) => {
         if (description) hotel.description = description;
         if (tags) hotel.tags = tags;
         if (openingTime) hotel.openingTime = openingTime;
+        // 附近信息字段
+        if (nearbyAttractions) hotel.nearbyAttractions = nearbyAttractions;
+        if (nearbyTransport) hotel.nearbyTransport = nearbyTransport;
+        if (nearbyMalls) hotel.nearbyMalls = nearbyMalls;
 
         // 如果原本是“已发布”或“不通过”，修改后重置为“待审核”
         if (hotel.status === 1 || hotel.status === 2) {

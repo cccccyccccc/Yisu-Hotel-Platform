@@ -106,6 +106,30 @@ describe('酒店模块路由测试 (Hotel Routes)', () => {
             // mongoose validation error
             expect(res.statusCode).toBe(400);
         });
+
+        it('1.5 携带附近信息字段发布成功', async () => {
+            const hotelWithNearby = {
+                name: '北京附近信息测试酒店',
+                city: '北京',
+                address: '王府井大街',
+                starRating: 5,
+                price: 1500,
+                location: { type: 'Point', coordinates: [116.4, 39.9] },
+                nearbyAttractions: ['故宫', '天安门广场', '王府井'],
+                nearbyTransport: ['地铁1号线王府井站步行5分钟', '首都机场30公里'],
+                nearbyMalls: ['王府井百货', '东方新天地']
+            };
+
+            const res = await request(app)
+                .post('/api/hotels')
+                .set('Authorization', `Bearer ${merchantToken}`)
+                .send(hotelWithNearby);
+
+            expect(res.statusCode).toBe(200);
+            expect(res.body.nearbyAttractions).toEqual(['故宫', '天安门广场', '王府井']);
+            expect(res.body.nearbyTransport).toEqual(['地铁1号线王府井站步行5分钟', '首都机场30公里']);
+            expect(res.body.nearbyMalls).toEqual(['王府井百货', '东方新天地']);
+        });
     });
 
     // ==========================================
@@ -267,6 +291,22 @@ describe('酒店模块路由测试 (Hotel Routes)', () => {
                 .send({ price: 100 });
 
             expect(res.statusCode).toBe(401);
+        });
+
+        it('4.3 修改附近信息字段成功', async () => {
+            const res = await request(app)
+                .put(`/api/hotels/${hotelId}`)
+                .set('Authorization', `Bearer ${merchantToken}`)
+                .send({
+                    nearbyAttractions: ['东方明珠', '外滩'],
+                    nearbyTransport: ['地铁2号线陆家嘴站'],
+                    nearbyMalls: ['正大广场', '国金中心']
+                });
+
+            expect(res.statusCode).toBe(200);
+            expect(res.body.nearbyAttractions).toEqual(['东方明珠', '外滩']);
+            expect(res.body.nearbyTransport).toEqual(['地铁2号线陆家嘴站']);
+            expect(res.body.nearbyMalls).toEqual(['正大广场', '国金中心']);
         });
     });
 

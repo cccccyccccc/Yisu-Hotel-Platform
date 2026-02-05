@@ -40,6 +40,11 @@ const hotelSchema = new mongoose.Schema({
     tags: [String],                // 标签，如 ["免费停车", "亲子"]
     images: [String],              // 图片路径数组
 
+    // 可选维度：酒店附近信息
+    nearbyAttractions: [String],   // 热门景点，如 ["故宫", "天安门广场"]
+    nearbyTransport: [String],     // 交通信息，如 ["地铁1号线王府井站步行5分钟", "首都机场30公里"]
+    nearbyMalls: [String],         // 商场信息，如 ["王府井百货", "东方新天地"]
+
     // 审核状态
     // 0: 待审核, 1: 已发布(通过), 2: 审核不通过, 3: 已下线
     status: {
