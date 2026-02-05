@@ -60,7 +60,7 @@ describe('认证模块路由测试 (Auth Routes)', () => {
                 });
 
             expect(res.statusCode).toBe(400);
-            expect(res.body.msg).toBe('账号和密码不能为空');
+            expect(res.body.msg).toBe('用户名不能为空');
         });
 
         it('1.3 参数缺失：缺少 password 应返回 400', async () => {
@@ -71,7 +71,7 @@ describe('认证模块路由测试 (Auth Routes)', () => {
                 });
 
             expect(res.statusCode).toBe(400);
-            expect(res.body.msg).toBe('账号和密码不能为空');
+            expect(res.body.msg).toBe('密码不能为空');
         });
 
         it('1.4 重复注册：账号已存在应返回 400', async () => {
@@ -104,7 +104,7 @@ describe('认证模块路由测试 (Auth Routes)', () => {
                 .send({ username: 'err_user', password: '123' });
 
             expect(res.statusCode).toBe(500);
-            expect(res.body.msg).toBe('服务器错误');
+            expect(res.body.msg).toBe('Database connection failed');
 
             // 恢复 Mock
             spy.mockRestore();
@@ -188,7 +188,7 @@ describe('认证模块路由测试 (Auth Routes)', () => {
                 .send({ username: 'any', password: 'any' });
 
             expect(res.statusCode).toBe(500);
-            expect(res.body.msg).toBe('服务器错误');
+            expect(res.body.msg).toBe('Database Error');
 
             spy.mockRestore();
         });

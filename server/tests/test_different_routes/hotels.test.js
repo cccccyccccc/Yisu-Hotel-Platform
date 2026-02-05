@@ -290,7 +290,7 @@ describe('酒店模块路由测试 (Hotel Routes)', () => {
                 .set('Authorization', `Bearer ${tokenOther}`)
                 .send({ price: 100 });
 
-            expect(res.statusCode).toBe(401);
+            expect(res.statusCode).toBe(403);
         });
 
         it('4.3 修改附近信息字段成功', async () => {

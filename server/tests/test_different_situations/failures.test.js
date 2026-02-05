@@ -34,16 +34,17 @@ describe('全系统防御性与异常处理测试 (Comprehensive Failure Scenari
     });
 
     // === 辅助工具：获取不同角色的 Token ===
+    // === 辅助工具：获取不同角色的 Token ===
     async function getToken(role = 'user') {
-        const username = `test_${role}_${Date.now()}`;
+        const username = `${role.substr(0, 1)}_${Date.now().toString().slice(-8)}`;
         await request(app).post('/api/auth/register').send({
             username,
-            password: '123',
+            password: 'password123',
             role
         });
         const res = await request(app).post('/api/auth/login').send({
             username,
-            password: '123'
+            password: 'password123'
         });
         return res.body.token;
     }
@@ -66,8 +67,8 @@ describe('全系统防御性与异常处理测试 (Comprehensive Failure Scenari
         });
 
         it('1.3 [注册] 重复用户名应报错 (400)', async () => {
-            await request(app).post('/api/auth/register').send({ username: 'u1', password: '1' });
-            const res = await request(app).post('/api/auth/register').send({ username: 'u1', password: '1' });
+            await request(app).post('/api/auth/register').send({ username: 'u1', password: 'password123' });
+            const res = await request(app).post('/api/auth/register').send({ username: 'u1', password: 'password123' });
             expect(res.statusCode).toBe(400);
         });
 
@@ -83,7 +84,11 @@ describe('全系统防御性与异常处理测试 (Comprehensive Failure Scenari
             const merchantToken = await getToken('merchant');
             const res = await request(app).post('/api/banners')
                 .set('Authorization', `Bearer ${merchantToken}`)
-                .send({ title: '非法广告' });
+                .send({
+                    imageUrl: 'https://example.com/ad.jpg',
+                    targetHotelId: '5f8d0d55b54764421b7156c9', // valid dummy ID
+                    title: '非法广告'
+                });
             expect(res.statusCode).toBe(403);
         });
     });
@@ -113,7 +118,7 @@ describe('全系统防御性与异常处理测试 (Comprehensive Failure Scenari
             // 商户 A 创建房型
             const merchantA = await getToken('merchant');
             // 先快速创建一个酒店和房型 (模拟数据)
-            const hotel = await Hotel.create({ merchantId: new mongoose.Types.ObjectId(), name: 'H', city: 'C', address: 'A', starRating: 5, price: 100, location: {type:'Point', coordinates:[0,0]} });
+            const hotel = await Hotel.create({ merchantId: new mongoose.Types.ObjectId(), name: 'H', city: 'C', address: 'A', starRating: 5, price: 100, location: { type: 'Point', coordinates: [0, 0] } });
             const room = await RoomType.create({ hotelId: hotel._id, title: 'R', price: 100, stock: 10 });
 
             // 商户 B 尝试删除
@@ -174,8 +179,8 @@ describe('全系统防御性与异常处理测试 (Comprehensive Failure Scenari
 
         it('3.3 [取消] 操作他人的订单应被拒绝 (403)', async () => {
             // 用户 A 下单
-            const userA = await request(app).post('/api/auth/register').send({ username: 'UA', password: '1', role: 'user' });
-            const tokenA = (await request(app).post('/api/auth/login').send({ username: 'UA', password: '1' })).body.token;
+            const userA = await request(app).post('/api/auth/register').send({ username: 'UA', password: 'password123', role: 'user' });
+            const tokenA = (await request(app).post('/api/auth/login').send({ username: 'UA', password: 'password123' })).body.token;
             const userIdA = (await request(app).get('/api/users/profile').set('Authorization', `Bearer ${tokenA}`)).body._id;
 
             // 手动创建一个属于 A 的订单

@@ -10,7 +10,7 @@ const validate = (req, res, next) => {
   if (!errors.isEmpty()) {
     return res.status(400).json({
       success: false,
-      msg: '参数校验失败',
+      msg: errors.array()[0].msg, // 使用第一个错误信息作为主消息
       code: 'VALIDATION_ERROR',
       errors: errors.array().map(err => ({
         field: err.path,
@@ -76,6 +76,16 @@ const hotelValidators = {
     query('minPrice').optional().isFloat({ min: 0 }).withMessage('最低价格必须大于等于0'),
     query('maxPrice').optional().isFloat({ min: 0 }).withMessage('最高价格必须大于等于0'),
     validate
+  ],
+  audit: [
+    param('id').isMongoId().withMessage('无效的酒店ID'),
+    body('status').isIn([1, 2]).withMessage('状态值无效'),
+    validate
+  ],
+  status: [
+    param('id').isMongoId().withMessage('无效的酒店ID'),
+    body('status').isIn([1, 3]).withMessage('状态值无效'),
+    validate
   ]
 };
 
@@ -94,7 +104,7 @@ const orderValidators = {
       .isISO8601().withMessage('离店日期格式无效'),
     body('quantity')
       .optional()
-      .isInt({ min: 1 }).withMessage('房间数必须大于0'),
+      .isInt({ min: 1 }).withMessage('预订数量必须大于0'),
     validate
   ],
   cancel: [
@@ -140,6 +150,47 @@ const roomValidators = {
     body('price').optional().isFloat({ min: 0 }).withMessage('价格必须大于等于0'),
     body('stock').optional().isInt({ min: 0 }).withMessage('库存必须大于等于0'),
     validate
+  ],
+  calendar: [
+    param('id').isMongoId().withMessage('无效的房型ID'),
+    body('calendarData').isArray().withMessage('日历数据必须是数组'),
+    body('calendarData.*.date').matches(/^\d{4}-\d{2}-\d{2}$/).withMessage('日期格式无效'),
+    body('calendarData.*.price').isFloat({ min: 0 }).withMessage('价格必须大于等于0'),
+    validate
+  ]
+};
+
+// ==========================================
+// 用户相关校验规则
+// ==========================================
+const userValidators = {
+  updateProfile: [
+    body('avatar').optional().isString().withMessage('头像地址必须是字符串'),
+    body('gender').optional().isIn(['male', 'female', 'other', 'unknown']).withMessage('性别无效'), // Assuming common values, or relax to string
+    body('bio').optional().isString().isLength({ max: 200 }).withMessage('简介不能超过200字'),
+    validate
+  ]
+};
+
+// ==========================================
+// 轮播图相关校验规则
+// ==========================================
+const bannerValidators = {
+  create: [
+    body('imageUrl').notEmpty().withMessage('图片地址不能为空'),
+    body('targetHotelId').isMongoId().withMessage('目标酒店ID无效'),
+    body('priority').optional().isInt().withMessage('优先级必须是整数'),
+    validate
+  ]
+};
+
+// ==========================================
+// 收藏相关校验规则
+// ==========================================
+const favoriteValidators = {
+  hotelIdParam: [
+    param('hotelId').isMongoId().withMessage('无效的酒店ID格式'),
+    validate
   ]
 };
 
@@ -149,5 +200,9 @@ module.exports = {
   hotelValidators,
   orderValidators,
   reviewValidators,
-  roomValidators
+  reviewValidators,
+  roomValidators,
+  userValidators,
+  bannerValidators,
+  favoriteValidators
 };

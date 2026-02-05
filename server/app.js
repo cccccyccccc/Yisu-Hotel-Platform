@@ -86,6 +86,15 @@ app.use('/api/health', healthRoutes);
 
 setupSwagger(app); // 开启swagger
 
+// 导入错误处理中间件
+const { notFoundHandler, errorHandler } = require('./middleware/errorHandler');
+
+// 404 处理 - 必须在所有路由之后
+app.use(notFoundHandler);
+
+// 全局错误处理 - 必须在最后
+app.use(errorHandler);
+
 // 后端服务开启
 if (process.env.NODE_ENV !== 'test') {
     app.listen(PORT, () => {

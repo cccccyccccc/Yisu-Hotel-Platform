@@ -1,0 +1,38 @@
+# 依赖目录
+node_modules
+npm-debug.log
+
+# Git
+.git
+.gitignore
+
+# 环境变量 (敏感信息)
+.env
+.env.local
+.env.*.local
+
+# 日志
+logs
+*.log
+
+# 测试
+tests
+coverage
+jest.config.js
+
+# IDE
+.vscode
+.idea
+
+# 操作系统
+.DS_Store
+Thumbs.db
+
+# 上传的文件 (生产环境使用持久化卷)
+public/uploads/*
+!public/uploads/.gitkeep
+
+# 文档
+*.md
+!README.md
+docs

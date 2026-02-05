@@ -2,8 +2,9 @@ const express = require('express');
 const router = express.Router();
 const Order = require('../models/Order');
 const RoomType = require('../models/RoomType');
-const logger = require('../utils/logger');
 const authMiddleware = require('../middleware/authMiddleware');
+const { asyncHandler, AppError } = require('../middleware/errorHandler');
+const { orderValidators } = require('../middleware/validators');
 
 /**
  * 生成日期时间戳范围
@@ -99,112 +100,105 @@ function checkPostAvailability(room, sortedOrders, myOrderId, checkDates) {
 }
 
 // 创建订单 (POST /api/orders)
-// 使用原子操作(Atomic Operation)进行双重校验，彻底解决并发超卖
-router.post('/', authMiddleware, async (req, res) => {
-    try {
-        const { checkInDate, checkOutDate, quantity = 1 } = req.body;
+router.post('/', authMiddleware, orderValidators.create, asyncHandler(async (req, res) => {
+    const { checkInDate, checkOutDate, quantity = 1 } = req.body;
 
-        // 安全转换
-        const roomTypeId = req.body.roomTypeId ? String(req.body.roomTypeId) : null;
-        const hotelId = req.body.hotelId ? String(req.body.hotelId) : null;
+    const roomTypeId = req.body.roomTypeId ? String(req.body.roomTypeId) : null;
+    const hotelId = req.body.hotelId ? String(req.body.hotelId) : null;
 
-        if (Number(quantity) <= 0) return res.status(400).json({ msg: '数量必须大于0' });
-
-        const start = new Date(checkInDate ? String(checkInDate) : null);
-        const end = new Date(checkOutDate ? String(checkOutDate) : null);
-
-        if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime()) || start >= end) {
-            return res.status(400).json({ msg: '日期无效' });
-        }
-
-        const diffDays = Math.ceil((end - start) / (1000 * 60 * 60 * 24));
-        if (diffDays <= 0) return res.status(400).json({ msg: '日期无效' });
-
-        const room = await RoomType.findById(roomTypeId);
-        if (!room) return res.status(404).json({ msg: '房型不存在' });
-
-        const checkDates = getDateRange(start, end);
-
-        // Pre-Check
-        const preOrders = await Order.find({
-            roomTypeId: roomTypeId,
-            status: { $in: ['paid', 'confirmed', 'pending'] },
-            checkInDate: { $lt: end },
-            checkOutDate: { $gt: start }
-        });
-
-        const preResult = checkPreAvailability(room, preOrders, quantity, checkDates);
-        if (!preResult.success) {
-            return res.status(400).json({ msg: preResult.reason });
-        }
-
-        // Save
-        const totalPrice = room.price * quantity * diffDays;
-        const newOrder = new Order({
-            userId: req.user.userId,
-            hotelId, roomTypeId, checkInDate: start, checkOutDate: end,
-            quantity, totalPrice, status: 'paid'
-        });
-        await newOrder.save();
-
-        // Post-Check
-        const postOrders = await Order.find({
-            roomTypeId: roomTypeId,
-            status: { $in: ['paid', 'confirmed', 'pending'] },
-            checkInDate: { $lt: end },
-            checkOutDate: { $gt: start }
-        }).sort({ createdAt: 1, _id: 1 });
-
-        const postResult = checkPostAvailability(room, postOrders, newOrder._id, checkDates);
-
-        if (!postResult.success) {
-            await Order.findByIdAndDelete(newOrder._id);
-            return res.status(400).json({ msg: '抢购失败，库存不足' });
-        }
-
-        res.json(newOrder);
-
-    } catch (err) {
-        if (process.env.NODE_ENV !== 'test') logger.error('Order Error:', err.message);
-        res.status(500).json({ msg: '服务器错误' });
+    if (Number(quantity) <= 0) {
+        throw new AppError('数量必须大于0', 400, 'INVALID_QUANTITY');
     }
-});
+
+    const start = new Date(checkInDate ? String(checkInDate) : null);
+    const end = new Date(checkOutDate ? String(checkOutDate) : null);
+
+    if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime()) || start >= end) {
+        throw new AppError('日期无效', 400, 'INVALID_DATE');
+    }
+
+    const diffDays = Math.ceil((end - start) / (1000 * 60 * 60 * 24));
+    if (diffDays <= 0) {
+        throw new AppError('日期无效', 400, 'INVALID_DATE');
+    }
+
+    const room = await RoomType.findById(roomTypeId);
+    if (!room) {
+        throw new AppError('房型不存在', 404, 'ROOM_NOT_FOUND');
+    }
+
+    const checkDates = getDateRange(start, end);
+
+    // Pre-Check
+    const preOrders = await Order.find({
+        roomTypeId: roomTypeId,
+        status: { $in: ['paid', 'confirmed', 'pending'] },
+        checkInDate: { $lt: end },
+        checkOutDate: { $gt: start }
+    });
+
+    const preResult = checkPreAvailability(room, preOrders, quantity, checkDates);
+    if (!preResult.success) {
+        throw new AppError(preResult.reason, 400, 'INSUFFICIENT_STOCK');
+    }
+
+    // Save
+    const totalPrice = room.price * quantity * diffDays;
+    const newOrder = new Order({
+        userId: req.user.userId,
+        hotelId, roomTypeId, checkInDate: start, checkOutDate: end,
+        quantity, totalPrice, status: 'paid'
+    });
+    await newOrder.save();
+
+    // Post-Check
+    const postOrders = await Order.find({
+        roomTypeId: roomTypeId,
+        status: { $in: ['paid', 'confirmed', 'pending'] },
+        checkInDate: { $lt: end },
+        checkOutDate: { $gt: start }
+    }).sort({ createdAt: 1, _id: 1 });
+
+    const postResult = checkPostAvailability(room, postOrders, newOrder._id, checkDates);
+
+    if (!postResult.success) {
+        await Order.findByIdAndDelete(newOrder._id);
+        throw new AppError('抢购失败，库存不足', 400, 'INSUFFICIENT_STOCK');
+    }
+
+    res.json(newOrder);
+}));
 
 
 // 获取我的订单 (GET /api/orders/my)
-router.get('/my', authMiddleware, async (req, res) => {
-    try {
-        const orders = await Order.find({ userId: req.user.userId })
-            .populate('hotelId', 'name city')
-            .populate('roomTypeId', 'title images')
-            .sort({ createdAt: -1 });
-        res.json(orders);
-    } catch (err) {
-        logger.error(err);
-        res.status(500).json({ msg: 'Server Error' });
-    }
-});
+router.get('/my', authMiddleware, asyncHandler(async (req, res) => {
+    const orders = await Order.find({ userId: req.user.userId })
+        .populate('hotelId', 'name city')
+        .populate('roomTypeId', 'title images')
+        .sort({ createdAt: -1 });
+    res.json(orders);
+}));
 
 
 // 取消订单 (PUT /api/orders/:id/cancel)
-router.put('/:id/cancel', authMiddleware, async (req, res) => {
-    try {
-        const orderId = String(req.params.id);
-        const order = await Order.findById(orderId);
-        if (!order) return res.status(404).json({ msg: '订单不存在' });
-        if (order.userId.toString() !== req.user.userId) return res.status(403).json({ msg: '无权操作' });
+router.put('/:id/cancel', authMiddleware, orderValidators.cancel, asyncHandler(async (req, res) => {
+    const orderId = String(req.params.id);
+    const order = await Order.findById(orderId);
 
-        if (['paid', 'pending'].includes(order.status)) {
-            order.status = 'cancelled';
-            await order.save();
-            res.json(order);
-        } else {
-            res.status(400).json({ msg: '无法取消' });
-        }
-    } catch (err) {
-        logger.error(err);
-        res.status(500).json({ msg: 'Server Error' });
+    if (!order) {
+        throw new AppError('订单不存在', 404, 'ORDER_NOT_FOUND');
     }
-});
+    if (order.userId.toString() !== req.user.userId) {
+        throw new AppError('无权操作', 403, 'FORBIDDEN');
+    }
+
+    if (['paid', 'pending'].includes(order.status)) {
+        order.status = 'cancelled';
+        await order.save();
+        res.json(order);
+    } else {
+        throw new AppError('无法取消', 400, 'CANNOT_CANCEL');
+    }
+}));
 
 module.exports = router;

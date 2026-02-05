@@ -122,7 +122,7 @@ describe('订单模块路由测试 (Order Routes)', () => {
         });
 
       expect(res.statusCode).toBe(400);
-      expect(res.body.msg).toBe('数量必须大于0');
+      expect(res.body.msg).toBe('预订数量必须大于0');
     });
 
     it('1.4 房型不存在', async () => {

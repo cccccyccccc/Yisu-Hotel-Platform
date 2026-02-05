@@ -115,7 +115,7 @@ describe('评价模块路由测试 (Review Routes)', () => {
         });
 
       expect(res.statusCode).toBe(400);
-      expect(res.body.msg).toBe('评分和内容不能为空');
+      expect(res.body.msg).toBe('评分不能为空');
     });
 
     it('1.4 参数缺失：缺少内容', async () => {
@@ -128,7 +128,7 @@ describe('评价模块路由测试 (Review Routes)', () => {
         });
 
       expect(res.statusCode).toBe(400);
-      expect(res.body.msg).toBe('评分和内容不能为空');
+      expect(res.body.msg).toBe('评价内容不能为空');
     });
 
     it('1.5 重复评价：同一用户对同一酒店只能评价一次', async () => {
@@ -145,7 +145,7 @@ describe('评价模块路由测试 (Review Routes)', () => {
         .send({ hotelId: hotelId, rating: 4, content: '第二次评价' });
 
       expect(res.statusCode).toBe(400);
-      expect(res.body.msg).toBe('您已经评价过该酒店了');
+      expect(res.body.msg).toBe('数据已存在');
     });
 
     it('1.6 评分范围校验', async () => {

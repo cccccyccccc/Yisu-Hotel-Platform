@@ -1,0 +1,96 @@
+version: '3.8'
+
+services:
+  # =====================================
+  # 后端应用
+  # =====================================
+  app:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+      args:
+        - DOCKER_REGISTRY=${DOCKER_REGISTRY:-docker.io}
+    container_name: yisu-backend
+    restart: unless-stopped
+    ports:
+      - "${PORT:-5000}:5000"
+    environment:
+      - NODE_ENV=${NODE_ENV:-production}
+      - PORT=5000
+      - MONGODB_URI=mongodb://mongodb:27017/yisu-hotel
+      - REDIS_URL=redis://redis:6379
+      - JWT_SECRET=${JWT_SECRET:?JWT_SECRET is required}
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - uploads_data:/app/public/uploads
+      - logs_data:/app/logs
+    networks:
+      - yisu-network
+    healthcheck:
+      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:5000/api/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  # =====================================
+  # MongoDB 数据库
+  # =====================================
+  mongodb:
+    image: ${DOCKER_REGISTRY:-docker.io}/mongo:6
+    container_name: yisu-mongodb
+    restart: unless-stopped
+    environment:
+      - MONGO_INITDB_DATABASE=yisu-hotel
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - yisu-network
+    healthcheck:
+      test: [ "CMD", "mongosh", "--eval", "db.adminCommand('ping')" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  # =====================================
+  # Redis 缓存
+  # =====================================
+  redis:
+    image: ${DOCKER_REGISTRY:-docker.io}/redis:7-alpine
+    container_name: yisu-redis
+    restart: unless-stopped
+    volumes:
+      - redis_data:/data
+    networks:
+      - yisu-network
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+# =====================================
+# 数据卷
+# =====================================
+volumes:
+  mongodb_data:
+    name: yisu-mongodb-data
+  redis_data:
+    name: yisu-redis-data
+  uploads_data:
+    name: yisu-uploads-data
+  logs_data:
+    name: yisu-logs-data
+
+# =====================================
+# 网络
+# =====================================
+networks:
+  yisu-network:
+    name: yisu-network
+    driver: bridge
