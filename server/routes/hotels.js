@@ -82,7 +82,7 @@ function buildSortLogic(sortType, userLat, userLng) {
             $near: {
                 $geometry: {
                     type: "Point",
-                    coordinates: [parseFloat(userLng), parseFloat(userLat)]
+                    coordinates: [Number.parseFloat(userLng), Number.parseFloat(userLat)]
                 }
             }
         };
@@ -169,8 +169,8 @@ router.get('/', async (req, res) => {
         if (locationQuery) {
             findQuery.location = locationQuery;
         }
-        const pageNum = Math.max(1, parseInt(page));
-        const limitNum = Math.max(1, parseInt(limit));
+        const pageNum = Math.max(1, Number.parseInt(page));
+        const limitNum = Math.max(1, Number.parseInt(limit));
         const skip = (pageNum - 1) * limitNum;
 
         const [hotels, total] = await Promise.all([
@@ -190,7 +190,7 @@ router.get('/', async (req, res) => {
 
     } catch (err) {
         if (process.env.NODE_ENV !== 'test') console.error(err.message);
-        if (err.message && err.message.includes('index')) {
+        if (err.message?.includes('index')) {
             return res.status(500).json({ msg: 'LBS Index Missing' });
         }
         res.status(500).json({ msg: 'Server Error' });

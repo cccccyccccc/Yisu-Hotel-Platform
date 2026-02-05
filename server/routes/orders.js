@@ -15,34 +15,63 @@ function getDateRange(start, end) {
     return dates;
 }
 
-function checkInventoryStatus(room, existingOrders, quantity, checkDates, myOrderId = null) {
+function getDailyLimit(room, dateStr) {
+    let limit = room.stock;
+    if (room.priceCalendar) {
+        const cal = room.priceCalendar.find(c => c.date === dateStr);
+        // 注意 0 也是有效库存，必须判断 undefined
+        if (cal?.stock !== undefined) {
+            limit = cal.stock;
+        }
+    }
+    return limit;
+}
+
+function checkPreAvailability(room, existingOrders, quantity, checkDates) {
     for (const dateObj of checkDates) {
         const dateStr = dateObj.toISOString().split('T')[0];
+        const dailyLimit = getDailyLimit(room, dateStr);
 
-        // 确定当日总库存
-        let dailyLimit = room.stock;
-        if (room.priceCalendar) {
-            const cal = room.priceCalendar.find(c => c.date === dateStr);
-            if (cal && cal.stock !== undefined) dailyLimit = cal.stock;
+        // 使用 reduce 计算当日已用总量
+        const currentUsage = existingOrders.reduce((total, order) => {
+            const oStart = new Date(order.checkInDate);
+            const oEnd = new Date(order.checkOutDate);
+            if (dateObj >= oStart && dateObj < oEnd) {
+                return total + order.quantity;
+            }
+            return total;
+        }, 0);
+
+        if (currentUsage + quantity > dailyLimit) {
+            return { success: false, reason: `日期 ${dateStr} 库存不足` };
         }
+    }
+    return { success: true };
+}
 
-        // 计算已占用
-        let currentUsage = 0;
-        for (const order of existingOrders) {
+function checkPostAvailability(room, sortedOrders, myOrderId, checkDates) {
+    for (const dateObj of checkDates) {
+        const dateStr = dateObj.toISOString().split('T')[0];
+        const dailyLimit = getDailyLimit(room, dateStr);
+
+        let runningTotal = 0;
+
+        for (const order of sortedOrders) {
             const oStart = new Date(order.checkInDate);
             const oEnd = new Date(order.checkOutDate);
 
             if (dateObj >= oStart && dateObj < oEnd) {
-                currentUsage += order.quantity;
-                if (myOrderId && currentUsage > dailyLimit) {
+                runningTotal += order.quantity;
+
+                // 如果累加到现在已经超标了
+                if (runningTotal > dailyLimit) {
+                    // 如果当前累加到的订单正好是"我"，说明是我把库存挤爆的 -> 我得走人
                     if (order._id.toString() === myOrderId.toString()) {
                         return { success: false, reason: `日期 ${dateStr} 库存不足` };
                     }
+                    // 如果是别人(排在我后面的人)挤爆的，我不受影响，继续循环
                 }
             }
-        }
-        if (!myOrderId && (currentUsage + quantity > dailyLimit)) {
-            return { success: false, reason: `日期 ${dateStr} 库存不足` };
         }
     }
     return { success: true };
@@ -53,13 +82,22 @@ function checkInventoryStatus(room, existingOrders, quantity, checkDates, myOrde
 router.post('/', authMiddleware, async (req, res) => {
     try {
         const { checkInDate, checkOutDate, quantity = 1 } = req.body;
-        const hotelId = String(req.body.hotelId);
-        const roomTypeId = String(req.body.roomTypeId);
 
-        // 基础校验
+        // 安全转换与校验
+        // 强制转 String 防止 NoSQL 注入
+        const hotelId = req.body.hotelId ? String(req.body.hotelId) : null;
+        const roomTypeId = req.body.roomTypeId ? String(req.body.roomTypeId) : null;
+
         if (Number(quantity) <= 0) return res.status(400).json({ msg: '数量必须大于0' });
-        const start = new Date(checkInDate);
-        const end = new Date(checkOutDate);
+
+        // 强制转 Date 防止对象注入
+        const start = new Date(checkInDate ? String(checkInDate) : null);
+        const end = new Date(checkOutDate ? String(checkOutDate) : null);
+
+        if (isNaN(start.getTime()) || isNaN(end.getTime()) || start >= end) {
+            return res.status(400).json({ msg: '日期无效' });
+        }
+
         const diffDays = Math.ceil((end - start) / (1000 * 60 * 60 * 24));
         if (diffDays <= 0) return res.status(400).json({ msg: '日期无效' });
 
@@ -68,7 +106,8 @@ router.post('/', authMiddleware, async (req, res) => {
 
         const checkDates = getDateRange(start, end);
 
-        // 第一轮检查 (Pre-Check): 内存预演
+        // 第一轮检查 (Pre-Check)
+        // 目的：快速拦截明显库存不足的请求，减少数据库写入压力
         const preOrders = await Order.find({
             roomTypeId: roomTypeId,
             status: { $in: ['paid', 'confirmed', 'pending'] },
@@ -76,12 +115,12 @@ router.post('/', authMiddleware, async (req, res) => {
             checkOutDate: { $gt: start }
         });
 
-        const preCheck = checkInventoryStatus(room, preOrders, quantity, checkDates);
-        if (!preCheck.success) {
-            return res.status(400).json({ msg: preCheck.reason });
+        const preResult = checkPreAvailability(room, preOrders, quantity, checkDates);
+        if (!preResult.success) {
+            return res.status(400).json({ msg: preResult.reason });
         }
 
-        // 写入订单 (乐观锁)
+        // 写入订单 (占位)
         const totalPrice = room.price * quantity * diffDays;
         const newOrder = new Order({
             userId: req.user.userId,
@@ -89,18 +128,26 @@ router.post('/', authMiddleware, async (req, res) => {
             quantity, totalPrice, status: 'paid'
         });
         await newOrder.save();
+
+        // 第二轮检查 (Post-Check)
+        // 目的：利用数据库原子写入顺序和 _id 排序，解决并发竞态条件
         const postOrders = await Order.find({
             roomTypeId: roomTypeId,
             status: { $in: ['paid', 'confirmed', 'pending'] },
             checkInDate: { $lt: end },
             checkOutDate: { $gt: start }
-        }).sort({ createdAt: 1, _id: 1 });
-        const postCheck = checkInventoryStatus(room, postOrders, quantity, checkDates, newOrder._id);
-        if (!postCheck.success) {
-            await Order.findByIdAndDelete(newOrder._id); // 回滚
+        }).sort({ createdAt: 1, _id: 1 }); // 关键排序
+
+        const postResult = checkPostAvailability(room, postOrders, newOrder._id, checkDates);
+
+        if (!postResult.success) {
+            // 抢购失败，回滚删除
+            await Order.findByIdAndDelete(newOrder._id);
             return res.status(400).json({ msg: '抢购失败，库存不足' });
         }
+
         res.json(newOrder);
+
     } catch (err) {
         if (process.env.NODE_ENV !== 'test') console.error('Order Error:', err.message);
         res.status(500).json({ msg: '服务器错误' });

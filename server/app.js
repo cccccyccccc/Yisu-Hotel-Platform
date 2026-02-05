@@ -17,16 +17,19 @@ app.use(cors());
 app.use(express.json());
 app.use('/uploads', express.static(path.join(__dirname, 'public/uploads')));
 
+const connectDB = async () => {
+    try {
+        const dbUri = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/yisu-hotel-platform';
+        await mongoose.connect(dbUri);
+        console.log('✅ MongoDB 连接成功!');
+    } catch (err) {
+        console.error('❌ MongoDB 连接失败:', err.message);
+    }
+};
+
+// 在非测试环境下调用
 if (process.env.NODE_ENV !== 'test') {
-    (async () => {
-        try {
-            const dbUri = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/yisu-hotel';
-            await mongoose.connect(dbUri);
-            console.log('✅ MongoDB 数据库连接成功！');
-        } catch (err) {
-            console.error('❌ MongoDB 连接失败:', err);
-        }
-    })();
+    void connectDB();
 }
 
 app.get('/', (req, res) => {

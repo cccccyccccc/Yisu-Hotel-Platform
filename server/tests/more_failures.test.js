@@ -10,7 +10,7 @@ const Favorite = require('../models/Favorite');
 // 设置较长超时，防止 CI 环境慢导致失败
 jest.setTimeout(30000);
 
-describe('补充测试 (Coverage Supplement)', () => {
+describe('补充测试', () => {
     let adminToken, merchantToken, userToken, user2Token;
     let merchantId, userId, user2Id;
     let hotelId, roomId;
@@ -70,9 +70,6 @@ describe('补充测试 (Coverage Supplement)', () => {
         await mongoose.connection.close();
     });
 
-    // ==========================================
-    // 1. 针对 banners.js (0% -> 100%)
-    // ==========================================
     describe('Banners 模块覆盖', () => {
         let bannerId;
 
