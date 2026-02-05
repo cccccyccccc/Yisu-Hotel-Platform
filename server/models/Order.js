@@ -36,4 +36,10 @@ const orderSchema = new mongoose.Schema({
     createdAt: { type: Date, default: Date.now }
 });
 
+// 索引优化：加速用户订单查询 (我的订单列表)
+orderSchema.index({ userId: 1, createdAt: -1 });
+
+// 索引优化：加速库存检查查询 (创建订单时查重叠订单)
+orderSchema.index({ roomTypeId: 1, status: 1, checkInDate: 1, checkOutDate: 1 });
+
 module.exports = mongoose.model('Order', orderSchema);

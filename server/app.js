@@ -71,6 +71,7 @@ const favoriteRoutes = require('./routes/favorites');
 const userRoutes = require('./routes/users');
 const reviewRoutes = require('./routes/reviews');
 const bannerRoutes = require('./routes/banners');
+const healthRoutes = require('./routes/health');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/hotels', hotelRoutes);
@@ -81,6 +82,7 @@ app.use('/api/favorites', favoriteRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/reviews', reviewRoutes);
 app.use('/api/banners', bannerRoutes);
+app.use('/api/health', healthRoutes);
 
 setupSwagger(app); // 开启swagger
 

@@ -71,6 +71,24 @@
           "description": { "type": "string", "example": "云端体验" },
           "tags": { "type": "array", "items": { "type": "string" }, "example": ["地标", "奢华"] },
           "images": { "type": "array", "items": { "type": "string" }, "example": ["/uploads/hotel1.jpg"] },
+          "nearbyAttractions": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "附近热门景点",
+            "example": ["故宫", "天安门广场", "王府井"]
+          },
+          "nearbyTransport": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "交通信息",
+            "example": ["地铁1号线王府井站步行5分钟", "首都机场30公里"]
+          },
+          "nearbyMalls": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "附近商场",
+            "example": ["王府井百货", "东方新天地"]
+          },
           "status": {
             "type": "integer",
             "enum": [0, 1, 2, 3],

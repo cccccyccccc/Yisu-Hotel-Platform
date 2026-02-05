@@ -61,4 +61,14 @@ const hotelSchema = new mongoose.Schema({
 });
 
 hotelSchema.index({ location: '2dsphere' });
+
+// 索引优化：加速城市筛选搜索
+hotelSchema.index({ city: 1, status: 1 });
+
+// 索引优化：加速价格排序搜索
+hotelSchema.index({ status: 1, price: 1 });
+
+// 索引优化：加速商户酒店列表查询
+hotelSchema.index({ merchantId: 1, createdAt: -1 });
+
 module.exports = mongoose.model('Hotel', hotelSchema);
