@@ -1,6 +1,6 @@
 const winston = require('winston');
 require('winston-daily-rotate-file');
-const path = require('path');
+const path = require('node:path');
 
 // 定义日志存储路径 (在 server/logs 下)
 const logDirectory = path.join(__dirname, '../logs');
