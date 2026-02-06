@@ -117,8 +117,6 @@ router.put('/:id', authMiddleware, roomValidators.update, asyncHandler(async (re
 
 
 // 设置/更新价格日历 (PUT /api/rooms/:id/calendar)
-// 场景：商户在后台点击日历，设置 "2026-10-01" 的价格为 999 元
-// 设置/更新价格日历 (PUT /api/rooms/:id/calendar)
 router.put('/:id/calendar', authMiddleware, roomValidators.calendar, asyncHandler(async (req, res) => {
     // 权限校验
     if (req.user.role !== 'merchant') {
@@ -143,9 +141,6 @@ router.put('/:id/calendar', authMiddleware, roomValidators.calendar, asyncHandle
     let currentCalendar = room.priceCalendar || [];
 
     calendarData.forEach(newItem => {
-        // 简单校验日期格式 (YYYY-MM-DD) - Validator 已经做了，这里可以保留或移除
-        // if (!/^\d{4}-\d{2}-\d{2}$/.test(newItem.date)) return;
-
         const existingIndex = currentCalendar.findIndex(item => item.date === newItem.date);
         if (existingIndex > -1) {
             // 如果该日期已有特殊价格，更新它
@@ -173,7 +168,6 @@ router.get('/:id/calendar', asyncHandler(async (req, res) => {
     if (!room) {
         throw new AppError('房型不存在', 404, 'ROOM_NOT_FOUND');
     }
-
     // 这里的逻辑是：
     // 前端日历组件默认显示 room.price (基础价)
     // 如果 priceCalendar 中有某天的记录，则前端覆盖显示为特殊价格

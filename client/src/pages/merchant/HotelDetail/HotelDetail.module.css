@@ -1,0 +1,54 @@
+.container {
+  padding: 0;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.title {
+  font-size: 24px;
+  font-weight: 600;
+  color: #1a1a2e;
+  margin: 0;
+}
+
+.ratingDistribution {
+  padding: 16px;
+  background: #f9fafb;
+  border-radius: 8px;
+}
+
+.ratingRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.ratingRow:last-child {
+  margin-bottom: 0;
+}
+
+.ratingBar {
+  flex: 1;
+  height: 8px;
+  background: #e5e7eb;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.ratingFill {
+  height: 100%;
+  background: linear-gradient(90deg, #faad14 0%, #ffc53d 100%);
+  border-radius: 4px;
+  transition: width 0.3s;
+}
+
+.reviewDate {
+  color: #9ca3af;
+  font-size: 12px;
+}

@@ -201,4 +201,22 @@ router.put('/:id/cancel', authMiddleware, orderValidators.cancel, asyncHandler(a
     }
 }));
 
+// 商户：获取我的酒店的订单 (GET /api/orders/merchant)
+const Hotel = require('../models/Hotel');
+
+router.get('/merchant', authMiddleware, asyncHandler(async (req, res) => {
+    // 先获取该商户的所有酒店
+    const myHotels = await Hotel.find({ merchantId: req.user.userId }).select('_id');
+    const hotelIds = myHotels.map(h => h._id);
+
+    // 获取这些酒店的所有订单
+    const orders = await Order.find({ hotelId: { $in: hotelIds } })
+        .populate('hotelId', 'name city')
+        .populate('roomTypeId', 'title price stock')
+        .populate('userId', 'username')
+        .sort({ createdAt: -1 });
+
+    res.json(orders);
+}));
+
 module.exports = router;

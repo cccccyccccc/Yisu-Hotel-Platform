@@ -1,0 +1,75 @@
+.container {
+  padding: 0;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.title {
+  font-size: 24px;
+  font-weight: 600;
+  color: #1a1a2e;
+  margin: 0;
+}
+
+.tabs {
+  margin-bottom: 16px;
+}
+
+.tabs :global(.ant-badge) {
+  margin-left: 8px;
+}
+
+.hotelName {
+  display: flex;
+  flex-direction: column;
+}
+
+.mainName {
+  font-weight: 500;
+  color: #1a1a2e;
+}
+
+.enName {
+  font-size: 12px;
+  color: #9ca3af;
+}
+
+.price {
+  font-size: 16px;
+  font-weight: 600;
+  color: #ef4444;
+}
+
+.detail {
+  padding: 16px 0;
+}
+
+.detailRow {
+  margin-bottom: 16px;
+  display: flex;
+}
+
+.label {
+  font-weight: 500;
+  color: #6b7280;
+  width: 100px;
+  flex-shrink: 0;
+}
+
+.imageGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.image {
+  width: 100px;
+  height: 75px;
+  object-fit: cover;
+  border-radius: 8px;
+}

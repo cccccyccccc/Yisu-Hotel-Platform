@@ -1,0 +1,110 @@
+.registerForm {
+  width: 100%;
+}
+
+.formTitle {
+  text-align: center;
+  font-size: 22px;
+  font-weight: 600;
+  color: #1a1a2e;
+  margin: 0 0 28px 0;
+}
+
+.input {
+  height: 48px;
+  border-radius: 12px;
+  border: 2px solid #e5e7eb;
+  transition: all 0.3s ease;
+}
+
+.input:hover,
+.input:focus {
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.inputIcon {
+  color: #9ca3af;
+  font-size: 16px;
+}
+
+.roleLabel {
+  font-weight: 500;
+  color: #374151;
+}
+
+.roleGroup {
+  width: 100%;
+}
+
+.roleGroup :global(.ant-space) {
+  width: 100%;
+}
+
+.roleBtn {
+  width: 100%;
+  height: auto !important;
+  padding: 16px 20px !important;
+  border-radius: 12px !important;
+  border: 2px solid #e5e7eb !important;
+  display: flex !important;
+  align-items: center;
+  gap: 12px;
+  transition: all 0.3s ease !important;
+  text-align: left !important;
+}
+
+.roleBtn:hover {
+  border-color: #667eea !important;
+  background: rgba(102, 126, 234, 0.05) !important;
+}
+
+.roleBtn:global(.ant-radio-button-wrapper-checked) {
+  border-color: #667eea !important;
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%) !important;
+  color: #667eea !important;
+}
+
+.roleDesc {
+  display: block;
+  font-size: 12px;
+  color: #9ca3af;
+  font-weight: 400;
+  margin-top: 4px;
+  margin-left: 24px;
+}
+
+.submitBtn {
+  height: 48px;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 600;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border: none;
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+  transition: all 0.3s ease;
+  margin-top: 8px;
+}
+
+.submitBtn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
+}
+
+.footer {
+  text-align: center;
+  margin-top: 24px;
+  color: #6b7280;
+  font-size: 14px;
+}
+
+.link {
+  color: #667eea;
+  font-weight: 500;
+  margin-left: 8px;
+  transition: color 0.3s;
+}
+
+.link:hover {
+  color: #764ba2;
+}
