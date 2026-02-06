@@ -3,6 +3,7 @@ import AuthLayout from '@/layouts/AuthLayout/index';
 import MainLayout from '@/layouts/MainLayout/index';
 import Login from '@/pages/Login/index';
 import Register from '@/pages/Register/index';
+import MerchantDashboard from '@/pages/merchant/Dashboard/index';
 import MerchantHotels from '@/pages/merchant/HotelList/index';
 import MerchantHotelEdit from '@/pages/merchant/HotelEdit/index';
 import MerchantHotelDetail from '@/pages/merchant/HotelDetail/index';
@@ -10,6 +11,9 @@ import MerchantRooms from '@/pages/merchant/RoomList/index';
 import MerchantOrders from '@/pages/merchant/OrderList/index';
 import AdminHotels from '@/pages/admin/HotelList/index';
 import AdminBanners from '@/pages/admin/BannerList/index';
+import AdminUserList from '@/pages/admin/UserList/index';
+import AdminAnnouncementList from '@/pages/admin/AnnouncementList/index';
+import Profile from '@/pages/common/Profile/index';
 
 const router = createBrowserRouter([
   {
@@ -34,7 +38,16 @@ const router = createBrowserRouter([
     path: '/',
     element: <MainLayout />,
     children: [
+      // 通用页面
+      {
+        path: 'profile',
+        element: <Profile />,
+      },
       // 商户页面
+      {
+        path: 'merchant/dashboard',
+        element: <MerchantDashboard />,
+      },
       {
         path: 'merchant/hotels',
         element: <MerchantHotels />,
@@ -67,6 +80,14 @@ const router = createBrowserRouter([
       {
         path: 'admin/banners',
         element: <AdminBanners />,
+      },
+      {
+        path: 'admin/users',
+        element: <AdminUserList />,
+      },
+      {
+        path: 'admin/announcements',
+        element: <AdminAnnouncementList />,
       },
     ],
   },

@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { Form, Input, Button, message, Tabs } from 'antd';
-import { UserOutlined, LockOutlined } from '@ant-design/icons';
+import { Form, Input, Button, message } from 'antd';
+import { UserOutlined, LockOutlined, EyeOutlined, EyeInvisibleOutlined, BankOutlined } from '@ant-design/icons';
 import { useNavigate, Link } from 'react-router-dom';
 import { login } from '@/api/auth';
 import { useUserStore } from '@/stores';
@@ -10,6 +10,7 @@ const Login: React.FC = () => {
   const navigate = useNavigate();
   const setUser = useUserStore((state) => state.setUser);
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const onFinish = async (values: { username: string; password: string }) => {
     setLoading(true);
@@ -36,66 +37,95 @@ const Login: React.FC = () => {
   };
 
   return (
-    <div className={styles.loginForm}>
-      <Tabs
-        defaultActiveKey="login"
-        centered
-        items={[
-          {
-            key: 'login',
-            label: '账号登录',
-          },
-        ]}
-        className={styles.tabs}
-      />
+    <div className={styles.container}>
+      {/* 背景图片 */}
+      <div className={styles.background}>
+        <img
+          src="https://images.unsplash.com/photo-1566073771259-6a8506099945?w=1920&q=80"
+          alt="Hotel Background"
+          className={styles.bgImage}
+        />
+        <div className={styles.overlay} />
+      </div>
 
-      <Form
-        name="login"
-        onFinish={onFinish}
-        autoComplete="off"
-        size="large"
-        layout="vertical"
-      >
-        <Form.Item
-          name="username"
-          rules={[{ required: true, message: '请输入用户名' }]}
+      {/* 登录面板 */}
+      <div className={styles.glassPanel}>
+        {/* Logo 和标题 */}
+        <div className={styles.header}>
+          <div className={styles.logoBox}>
+            <BankOutlined className={styles.logoIcon} />
+          </div>
+          <h1 className={styles.title}>易宿酒店平台</h1>
+          <p className={styles.subtitle}>Yisu Hotel Platform</p>
+        </div>
+
+        {/* Tab 标签 */}
+        <div className={styles.tabBar}>
+          <button className={styles.tabActive}>账号登录</button>
+        </div>
+
+        {/* 登录表单 */}
+        <Form
+          name="login"
+          onFinish={onFinish}
+          autoComplete="off"
+          className={styles.form}
         >
-          <Input
-            prefix={<UserOutlined className={styles.inputIcon} />}
-            placeholder="用户名"
-            className={styles.input}
-          />
-        </Form.Item>
-
-        <Form.Item
-          name="password"
-          rules={[{ required: true, message: '请输入密码' }]}
-        >
-          <Input.Password
-            prefix={<LockOutlined className={styles.inputIcon} />}
-            placeholder="密码"
-            className={styles.input}
-          />
-        </Form.Item>
-
-        <Form.Item>
-          <Button
-            type="primary"
-            htmlType="submit"
-            loading={loading}
-            block
-            className={styles.submitBtn}
+          <Form.Item
+            name="username"
+            rules={[{ required: true, message: '请输入用户名' }]}
           >
-            登 录
-          </Button>
-        </Form.Item>
-      </Form>
+            <div className={styles.inputWrapper}>
+              <UserOutlined className={styles.inputIcon} />
+              <Input
+                placeholder="请输入账号"
+                className={styles.glassInput}
+                bordered={false}
+              />
+            </div>
+          </Form.Item>
 
-      <div className={styles.footer}>
-        <span>还没有账号？</span>
-        <Link to="/register" className={styles.link}>
-          立即注册
-        </Link>
+          <Form.Item
+            name="password"
+            rules={[{ required: true, message: '请输入密码' }]}
+          >
+            <div className={styles.inputWrapper}>
+              <LockOutlined className={styles.inputIcon} />
+              <Input
+                type={showPassword ? 'text' : 'password'}
+                placeholder="请输入密码"
+                className={styles.glassInput}
+                bordered={false}
+              />
+              <span
+                className={styles.eyeIcon}
+                onClick={() => setShowPassword(!showPassword)}
+              >
+                {showPassword ? <EyeOutlined /> : <EyeInvisibleOutlined />}
+              </span>
+            </div>
+          </Form.Item>
+
+          <Form.Item>
+            <Button
+              type="primary"
+              htmlType="submit"
+              loading={loading}
+              block
+              className={styles.submitBtn}
+            >
+              登 录
+            </Button>
+          </Form.Item>
+        </Form>
+
+        {/* 注册链接 */}
+        <div className={styles.footer}>
+          <span>还没有账号？</span>
+          <Link to="/register" className={styles.link}>
+            立即注册
+          </Link>
+        </div>
       </div>
     </div>
   );

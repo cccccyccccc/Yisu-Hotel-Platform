@@ -29,8 +29,8 @@ const corsOptions = {
 app.use(cors(corsOptions));
 
 const limiter = rateLimit({
-    windowMs: 15 * 60 * 1000,
-    max: 100,
+    windowMs: 1 * 60 * 1000,  // 1分钟
+    max: 500,                  // 每分钟最多500个请求
     standardHeaders: true,
     legacyHeaders: false,
     message: { msg: '请求过于频繁，请稍后再试' }
@@ -72,6 +72,8 @@ const userRoutes = require('./routes/users');
 const reviewRoutes = require('./routes/reviews');
 const bannerRoutes = require('./routes/banners');
 const healthRoutes = require('./routes/health');
+const merchantRoutes = require('./routes/merchant');
+const announcementRoutes = require('./routes/announcements');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/hotels', hotelRoutes);
@@ -83,6 +85,8 @@ app.use('/api/users', userRoutes);
 app.use('/api/reviews', reviewRoutes);
 app.use('/api/banners', bannerRoutes);
 app.use('/api/health', healthRoutes);
+app.use('/api/merchant', merchantRoutes);
+app.use('/api/announcements', announcementRoutes);
 
 setupSwagger(app); // 开启swagger
 

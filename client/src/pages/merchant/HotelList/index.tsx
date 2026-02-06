@@ -6,7 +6,7 @@ import {
 import {
   PlusOutlined, EditOutlined, EyeOutlined,
   MoreOutlined, ReloadOutlined, AppstoreOutlined,
-  ExclamationCircleOutlined
+  ExclamationCircleOutlined, CrownOutlined
 } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { getMyHotels, updateHotelStatus } from '@/api/hotels';
@@ -86,7 +86,12 @@ const MerchantHotelList: React.FC = () => {
       dataIndex: 'starRating',
       key: 'starRating',
       width: 120,
-      render: (val) => '⭐'.repeat(val),
+      render: (val) => (
+        <span className={styles.starRating}>
+          <CrownOutlined className={styles.crownIcon} />
+          <span>{val}星级</span>
+        </span>
+      ),
     },
     {
       title: '起价',

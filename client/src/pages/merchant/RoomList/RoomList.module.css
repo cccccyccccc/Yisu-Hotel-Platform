@@ -16,20 +16,20 @@
 }
 
 .title {
-  font-size: 24px;
+  font-size: 22px;
   font-weight: 600;
-  color: #1a1a2e;
+  color: #1e293b;
   margin: 0;
 }
 
 .addBtn {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border: none;
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+  background: linear-gradient(90deg, #4f8ef7 0%, #3b7ddd 100%) !important;
+  border: none !important;
+  box-shadow: 0 4px 12px rgba(79, 142, 247, 0.25) !important;
 }
 
 .addBtn:hover {
-  background: linear-gradient(135deg, #5a6fd6 0%, #6a4190 100%);
+  background: linear-gradient(90deg, #3b7ddd 0%, #2563eb 100%) !important;
 }
 
 .price {
@@ -43,4 +43,64 @@
   color: #9ca3af;
   text-decoration: line-through;
   margin-left: 8px;
+}
+
+/* 价格日历按钮 */
+.calendarBtn {
+  color: #4f8ef7 !important;
+}
+
+.calendarBtn:hover {
+  background: #eff6ff !important;
+}
+
+/* 价格日历弹窗 */
+.calendarContainer {
+  padding: 16px 0;
+}
+
+.calendarInfo {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  padding: 12px 16px;
+  background: #f8fafc;
+  border-radius: 8px;
+}
+
+.calendarInfo strong {
+  color: #2563eb;
+  font-size: 18px;
+}
+
+.calendarTip {
+  font-size: 13px;
+  color: #64748b;
+}
+
+/* 日历单元格 */
+.calendarCell {
+  font-size: 11px;
+}
+
+.stockBadge {
+  font-size: 10px;
+  color: #64748b;
+  margin-top: 2px;
+}
+
+/* 单日价格设置表单 */
+.dayPriceForm {
+  margin-top: 20px;
+  padding: 16px;
+  background: linear-gradient(135deg, #eff6ff 0%, #f0f9ff 100%);
+  border-radius: 12px;
+  border: 1px solid #dbeafe;
+}
+
+.dayPriceForm h4 {
+  margin: 0 0 16px 0;
+  color: #1e40af;
+  font-size: 15px;
 }

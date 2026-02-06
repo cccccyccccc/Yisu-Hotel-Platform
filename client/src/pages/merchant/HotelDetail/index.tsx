@@ -4,8 +4,10 @@ import {
   Statistic, Tag, message, Button, Space
 } from 'antd';
 import {
-  CommentOutlined, ArrowLeftOutlined
+  CommentOutlined, ArrowLeftOutlined, PieChartOutlined,
+  LineChartOutlined, BarChartOutlined
 } from '@ant-design/icons';
+import { Pie, Line, Column } from '@ant-design/charts';
 import { useNavigate, useParams } from 'react-router-dom';
 import { getHotelDetail } from '@/api/hotels';
 import { getHotelReviews } from '@/api/reviews';
@@ -71,13 +73,99 @@ const HotelDetail: React.FC = () => {
     ? (reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length).toFixed(1)
     : '暂无';
 
-  const ratingDistribution = [5, 4, 3, 2, 1].map(star => ({
-    star,
+  // 饼图数据 - 评分占比
+  const pieData = [5, 4, 3, 2, 1].map(star => ({
+    type: `${star}星`,
+    value: reviews.filter(r => r.rating === star).length,
+  })).filter(item => item.value > 0);
+
+  // 柱状图数据 - 各星级总数
+  const columnData = [5, 4, 3, 2, 1].map(star => ({
+    star: `${star}星`,
     count: reviews.filter(r => r.rating === star).length,
-    percent: reviews.length > 0
-      ? Math.round((reviews.filter(r => r.rating === star).length / reviews.length) * 100)
-      : 0
   }));
+
+  // 折线图数据 - 按日期统计评价趋势（最近30天）
+  const getLineData = () => {
+    const last30Days: string[] = [];
+    for (let i = 29; i >= 0; i--) {
+      last30Days.push(dayjs().subtract(i, 'day').format('MM-DD'));
+    }
+
+    const data: { date: string; star: string; count: number }[] = [];
+    [5, 4, 3, 2, 1].forEach(star => {
+      last30Days.forEach(date => {
+        const count = reviews.filter(r =>
+          dayjs(r.createdAt).format('MM-DD') === date && r.rating === star
+        ).length;
+        data.push({
+          date,
+          star: `${star}星`,
+          count,
+        });
+      });
+    });
+    return data;
+  };
+
+  const lineData = getLineData();
+
+  // 图表配置
+  const pieConfig = {
+    data: pieData,
+    angleField: 'value',
+    colorField: 'type',
+    radius: 0.8,
+    innerRadius: 0.6,
+    label: {
+      text: (d: { type: string; value: number }) => `${d.type}: ${d.value}`,
+      position: 'outside' as const,
+    },
+    legend: {
+      position: 'bottom' as const,
+    },
+    style: {
+      stroke: '#fff',
+      lineWidth: 2,
+    },
+  };
+
+  const columnConfig = {
+    data: columnData,
+    xField: 'star',
+    yField: 'count',
+    colorField: 'star',
+    label: {
+      text: (d: { count: number }) => d.count.toString(),
+      position: 'inside' as const,
+    },
+    legend: false as const,
+    style: {
+      radiusTopLeft: 4,
+      radiusTopRight: 4,
+    },
+  };
+
+  const lineConfig = {
+    data: lineData,
+    xField: 'date',
+    yField: 'count',
+    colorField: 'star',
+    smooth: true,
+    point: {
+      size: 3,
+    },
+    legend: {
+      position: 'top' as const,
+    },
+    axis: {
+      x: {
+        label: {
+          autoRotate: true,
+        },
+      },
+    },
+  };
 
   return (
     <div className={styles.container}>
@@ -133,24 +221,46 @@ const HotelDetail: React.FC = () => {
               </Space>
             }
           >
-            <Row gutter={24} style={{ marginBottom: 24 }}>
-              <Col span={12}>
-                <div className={styles.ratingDistribution}>
-                  {ratingDistribution.map(item => (
-                    <div key={item.star} className={styles.ratingRow}>
-                      <span>{item.star}星</span>
-                      <div className={styles.ratingBar}>
-                        <div
-                          className={styles.ratingFill}
-                          style={{ width: `${item.percent}%` }}
-                        />
+            {/* 统计图表区域 */}
+            {reviews.length > 0 && (
+              <div className={styles.chartsSection}>
+                <Row gutter={16}>
+                  <Col span={8}>
+                    <Card
+                      size="small"
+                      title={<><PieChartOutlined /> 评分占比</>}
+                      className={styles.chartCard}
+                    >
+                      <div className={styles.chartContainer}>
+                        <Pie {...pieConfig} />
                       </div>
-                      <span>{item.count}条</span>
-                    </div>
-                  ))}
-                </div>
-              </Col>
-            </Row>
+                    </Card>
+                  </Col>
+                  <Col span={8}>
+                    <Card
+                      size="small"
+                      title={<><BarChartOutlined /> 评分统计</>}
+                      className={styles.chartCard}
+                    >
+                      <div className={styles.chartContainer}>
+                        <Column {...columnConfig} />
+                      </div>
+                    </Card>
+                  </Col>
+                  <Col span={8}>
+                    <Card
+                      size="small"
+                      title={<><LineChartOutlined /> 评价趋势</>}
+                      className={styles.chartCard}
+                    >
+                      <div className={styles.chartContainer}>
+                        <Line {...lineConfig} />
+                      </div>
+                    </Card>
+                  </Col>
+                </Row>
+              </div>
+            )}
 
             {reviews.length > 0 ? (
               <List

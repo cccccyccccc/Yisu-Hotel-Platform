@@ -1,0 +1,114 @@
+/* =====================
+   浅色主题 Ant Design 覆盖
+   ===================== */
+
+/* 表格 */
+:global(.ant-table) {
+  background: transparent !important;
+}
+
+:global(.ant-table-thead > tr > th) {
+  background: #f8fafc !important;
+  color: #64748b !important;
+  font-weight: 600;
+  font-size: 13px;
+  border-bottom: 1px solid #e2e8f0 !important;
+}
+
+:global(.ant-table-tbody > tr > td) {
+  border-bottom: 1px solid #f1f5f9 !important;
+}
+
+:global(.ant-table-tbody > tr:hover > td) {
+  background: #f8fafc !important;
+}
+
+/* 卡片 */
+:global(.ant-card) {
+  background: rgba(255, 255, 255, 0.9) !important;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 12px !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04) !important;
+}
+
+:global(.ant-card-head) {
+  border-bottom: 1px solid #f1f5f9 !important;
+}
+
+/* 按钮 */
+:global(.ant-btn-primary) {
+  background: linear-gradient(90deg, #4f8ef7 0%, #3b7ddd 100%) !important;
+  border: none !important;
+  box-shadow: 0 4px 12px rgba(79, 142, 247, 0.25) !important;
+  font-weight: 500;
+}
+
+:global(.ant-btn-primary:hover) {
+  background: linear-gradient(90deg, #3b7ddd 0%, #2563eb 100%) !important;
+}
+
+/* 标签 */
+:global(.ant-tag-green) {
+  background: #ecfdf5 !important;
+  border-color: #a7f3d0 !important;
+  color: #059669 !important;
+}
+
+:global(.ant-tag-red) {
+  background: #fef2f2 !important;
+  border-color: #fecaca !important;
+  color: #dc2626 !important;
+}
+
+:global(.ant-tag-gold),
+:global(.ant-tag-orange) {
+  background: #fffbeb !important;
+  border-color: #fde68a !important;
+  color: #d97706 !important;
+}
+
+:global(.ant-tag-blue) {
+  background: #eff6ff !important;
+  border-color: #bfdbfe !important;
+  color: #2563eb !important;
+}
+
+/* 分页 */
+:global(.ant-pagination-item-active) {
+  background: #4f8ef7 !important;
+  border-color: #4f8ef7 !important;
+}
+
+:global(.ant-pagination-item-active a) {
+  color: #ffffff !important;
+}
+
+/* 模态框 */
+:global(.ant-modal-content) {
+  border-radius: 16px !important;
+  overflow: hidden;
+}
+
+/* 输入框 */
+:global(.ant-input:focus),
+:global(.ant-input-affix-wrapper-focused) {
+  border-color: #4f8ef7 !important;
+  box-shadow: 0 0 0 3px rgba(79, 142, 247, 0.1) !important;
+}
+
+/* 选择器 */
+:global(.ant-select-focused .ant-select-selector) {
+  border-color: #4f8ef7 !important;
+  box-shadow: 0 0 0 3px rgba(79, 142, 247, 0.1) !important;
+}
+
+/* 统计数字 */
+:global(.ant-statistic-title) {
+  color: #64748b !important;
+}
+
+:global(.ant-statistic-content) {
+  color: #1e293b !important;
+}

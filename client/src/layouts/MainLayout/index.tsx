@@ -4,12 +4,17 @@ import { Layout, Menu, Avatar, Dropdown, Button, message } from 'antd';
 import {
   ShopOutlined,
   AuditOutlined,
-  UserOutlined,
   LogoutOutlined,
   MenuFoldOutlined,
   MenuUnfoldOutlined,
   PictureOutlined,
   ShoppingOutlined,
+  BankOutlined,
+  BellOutlined,
+  HomeOutlined,
+  DashboardOutlined,
+  SettingOutlined,
+  TeamOutlined,
 } from '@ant-design/icons';
 import { useUserStore } from '@/stores';
 import styles from './MainLayout.module.css';
@@ -36,6 +41,11 @@ const MainLayout: React.FC = () => {
 
   const merchantMenuItems = [
     {
+      key: '/merchant/dashboard',
+      icon: <DashboardOutlined />,
+      label: '数据统计',
+    },
+    {
       key: '/merchant/hotels',
       icon: <ShopOutlined />,
       label: '我的酒店',
@@ -44,6 +54,11 @@ const MainLayout: React.FC = () => {
       key: '/merchant/orders',
       icon: <ShoppingOutlined />,
       label: '订单管理',
+    },
+    {
+      key: '/profile',
+      icon: <SettingOutlined />,
+      label: '个人设置',
     },
   ];
 
@@ -58,6 +73,21 @@ const MainLayout: React.FC = () => {
       icon: <PictureOutlined />,
       label: '轮播图管理',
     },
+    {
+      key: '/admin/users',
+      icon: <TeamOutlined />,
+      label: '用户管理',
+    },
+    {
+      key: '/admin/announcements',
+      icon: <BellOutlined />,
+      label: '公告管理',
+    },
+    {
+      key: '/profile',
+      icon: <SettingOutlined />,
+      label: '个人设置',
+    },
   ];
 
   const menuItems = user?.role === 'admin' ? adminMenuItems : merchantMenuItems;
@@ -71,8 +101,22 @@ const MainLayout: React.FC = () => {
     },
   ];
 
+  // 获取当前页面标题
+  const getPageTitle = () => {
+    const path = location.pathname;
+    if (path.includes('/merchant/dashboard')) return '数据统计';
+    if (path.includes('/merchant/hotels')) return '我的酒店';
+    if (path.includes('/merchant/orders')) return '订单管理';
+    if (path.includes('/admin/hotels')) return '酒店审核';
+    if (path.includes('/admin/banners')) return '轮播图管理';
+    if (path.includes('/admin/users')) return '用户管理';
+    if (path.includes('/profile')) return '个人设置';
+    return '首页';
+  };
+
   return (
     <Layout className={styles.layout}>
+      {/* 侧边栏 */}
       <Sider
         trigger={null}
         collapsible
@@ -80,41 +124,81 @@ const MainLayout: React.FC = () => {
         className={styles.sider}
         width={240}
       >
+        {/* Logo */}
         <div className={styles.logo}>
-          <span className={styles.logoIcon}>🏨</span>
-          {!collapsed && <span className={styles.logoText}>易宿管理</span>}
+          <div className={styles.logoBox}>
+            <BankOutlined className={styles.logoIcon} />
+          </div>
+          {!collapsed && (
+            <div className={styles.logoText}>
+              <span className={styles.logoTitle}>YISU HOTEL</span>
+              <span className={styles.logoSubtitle}>MANAGEMENT</span>
+            </div>
+          )}
         </div>
+
+        {/* 菜单分组标题 */}
+        {!collapsed && <div className={styles.menuGroup}>DASHBOARD</div>}
+
+        {/* 导航菜单 */}
         <Menu
-          theme="dark"
           mode="inline"
           selectedKeys={[location.pathname]}
           items={menuItems}
           onClick={({ key }) => navigate(key)}
           className={styles.menu}
         />
-      </Sider>
-      <Layout>
-        <Header className={styles.header}>
-          <Button
-            type="text"
-            icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
-            onClick={() => setCollapsed(!collapsed)}
-            className={styles.triggerBtn}
-          />
-          <div className={styles.headerRight}>
-            <Dropdown menu={{ items: userMenuItems }} placement="bottomRight">
-              <div className={styles.userInfo}>
-                <Avatar icon={<UserOutlined />} className={styles.avatar} />
-                <span className={styles.username}>
-                  {user?.username}
-                  <span className={styles.role}>
-                    {user?.role === 'admin' ? '管理员' : '商户'}
+
+        {/* 用户信息（底部） */}
+        <div className={styles.siderFooter}>
+          <Dropdown menu={{ items: userMenuItems }} placement="topRight">
+            <div className={styles.userCard}>
+              <Avatar className={styles.userAvatar}>
+                {user?.username?.charAt(0).toUpperCase()}
+              </Avatar>
+              {!collapsed && (
+                <div className={styles.userInfo}>
+                  <span className={styles.userName}>{user?.username}</span>
+                  <span className={styles.userRole}>
+                    {user?.role === 'admin' ? 'Administrator' : 'Merchant'}
                   </span>
-                </span>
-              </div>
-            </Dropdown>
+                </div>
+              )}
+            </div>
+          </Dropdown>
+        </div>
+      </Sider>
+
+      {/* 主内容区 */}
+      <Layout className={styles.mainArea}>
+        {/* 顶部导航栏 */}
+        <Header className={styles.header}>
+          <div className={styles.headerLeft}>
+            <Button
+              type="text"
+              icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
+              onClick={() => setCollapsed(!collapsed)}
+              className={styles.triggerBtn}
+            />
+            <div className={styles.breadcrumb}>
+              <HomeOutlined className={styles.breadcrumbIcon} />
+              <span>首页</span>
+              <span className={styles.breadcrumbSep}>&gt;</span>
+              <span className={styles.breadcrumbCurrent}>{getPageTitle()}</span>
+            </div>
+          </div>
+          <div className={styles.headerRight}>
+            <div className={styles.notifyWrapper}>
+              <BellOutlined className={styles.notifyIcon} />
+              <span className={styles.notifyBadge}>3</span>
+            </div>
+            <div className={styles.headerUser}>
+              <span className={styles.headerUserName}>{user?.username}</span>
+            </div>
           </div>
         </Header>
+
+        {/* 内容区域 */}
         <Content className={styles.content}>
           <Outlet />
         </Content>

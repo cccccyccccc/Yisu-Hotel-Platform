@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import {
   Table, Button, Space, Tag, message, Modal, Input,
-  Tooltip, Tabs, Badge
+  Tooltip
 } from 'antd';
 import {
   CheckCircleOutlined, CloseCircleOutlined,
@@ -42,10 +42,19 @@ const statusMap: Record<number, { color: string; text: string }> = {
   3: { color: 'default', text: '已下线' },
 };
 
+// 筛选标签配置
+const filterTabs = [
+  { key: 'all', label: '全部', colorClass: 'badgeBlue' },
+  { key: '0', label: '待审核', status: 0, colorClass: 'badgeOrange' },
+  { key: '1', label: '已发布', status: 1, colorClass: 'badgeGreen' },
+  { key: '2', label: '已拒绝', status: 2, colorClass: 'badgeRed' },
+  { key: '3', label: '已下线', status: 3, colorClass: 'badgeGray' },
+];
+
 const AdminHotelList: React.FC = () => {
   const [hotels, setHotels] = useState<Hotel[]>([]);
   const [loading, setLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState('all');
+  const [activeFilter, setActiveFilter] = useState('all');
   const [rejectModal, setRejectModal] = useState<{ visible: boolean; hotelId: string }>({
     visible: false,
     hotelId: '',
@@ -71,6 +80,24 @@ const AdminHotelList: React.FC = () => {
   useEffect(() => {
     fetchHotels();
   }, []);
+
+  // 计算各状态数量
+  const statusCounts = useMemo(() => {
+    const counts: Record<string, number> = { all: hotels.length };
+    filterTabs.forEach(tab => {
+      if (tab.status !== undefined) {
+        counts[tab.key] = hotels.filter(h => h.status === tab.status).length;
+      }
+    });
+    return counts;
+  }, [hotels]);
+
+  // 筛选后的酒店列表
+  const filteredHotels = useMemo(() => {
+    if (activeFilter === 'all') return hotels;
+    const status = parseInt(activeFilter);
+    return hotels.filter(h => h.status === status);
+  }, [hotels, activeFilter]);
 
   const handleApprove = async (id: string) => {
     try {
@@ -108,21 +135,6 @@ const AdminHotelList: React.FC = () => {
     }
   };
 
-  const filteredHotels = hotels.filter(h => {
-    if (activeTab === 'all') return true;
-    return h.status === parseInt(activeTab);
-  });
-
-  const getCounts = () => ({
-    all: hotels.length,
-    pending: hotels.filter(h => h.status === 0).length,
-    published: hotels.filter(h => h.status === 1).length,
-    rejected: hotels.filter(h => h.status === 2).length,
-    offline: hotels.filter(h => h.status === 3).length,
-  });
-
-  const counts = getCounts();
-
   const columns: ColumnsType<Hotel> = [
     {
       title: '酒店名称',
@@ -131,7 +143,7 @@ const AdminHotelList: React.FC = () => {
       render: (text, record) => (
         <div className={styles.hotelName}>
           <div className={styles.mainName}>{text}</div>
-          {record.nameEn && <div className={styles.enName}>{record.nameEn}</div>}
+          {record.nameEn && <div className={styles.hotelId}>ID: {record._id.slice(-8)}</div>}
         </div>
       ),
     },
@@ -139,7 +151,7 @@ const AdminHotelList: React.FC = () => {
       title: '城市',
       dataIndex: 'city',
       key: 'city',
-      width: 100,
+      width: 80,
     },
     {
       title: '星级',
@@ -153,7 +165,7 @@ const AdminHotelList: React.FC = () => {
       dataIndex: 'price',
       key: 'price',
       width: 100,
-      render: (val) => <span className={styles.price}>¥{val}</span>,
+      render: (val) => <span className={styles.price}>¥ {val.toLocaleString()}</span>,
     },
     {
       title: '状态',
@@ -162,14 +174,16 @@ const AdminHotelList: React.FC = () => {
       width: 100,
       render: (status, record) => (
         <Tooltip title={status === 2 ? `拒绝原因: ${record.rejectReason}` : ''}>
-          <Tag color={statusMap[status]?.color}>{statusMap[status]?.text}</Tag>
+          <span className={`${styles.statusTag} ${styles[`status${status}`]}`}>
+            {statusMap[status]?.text}
+          </span>
         </Tooltip>
       ),
     },
     {
       title: '操作',
       key: 'action',
-      width: 200,
+      width: 160,
       render: (_, record) => (
         <Space>
           <Tooltip title="查看详情">
@@ -177,6 +191,7 @@ const AdminHotelList: React.FC = () => {
               type="text"
               icon={<EyeOutlined />}
               onClick={() => setDetailModal({ visible: true, hotel: record })}
+              className={styles.actionBtn}
             />
           </Tooltip>
           {record.status === 0 && (
@@ -184,15 +199,17 @@ const AdminHotelList: React.FC = () => {
               <Tooltip title="通过">
                 <Button
                   type="text"
-                  icon={<CheckCircleOutlined style={{ color: '#52c41a' }} />}
+                  icon={<CheckCircleOutlined style={{ color: '#22c55e' }} />}
                   onClick={() => handleApprove(record._id)}
+                  className={styles.actionBtn}
                 />
               </Tooltip>
               <Tooltip title="拒绝">
                 <Button
                   type="text"
-                  icon={<CloseCircleOutlined style={{ color: '#ff4d4f' }} />}
+                  icon={<CloseCircleOutlined style={{ color: '#ef4444' }} />}
                   onClick={() => setRejectModal({ visible: true, hotelId: record._id })}
+                  className={styles.actionBtn}
                 />
               </Tooltip>
             </>
@@ -201,8 +218,9 @@ const AdminHotelList: React.FC = () => {
             <Tooltip title="下线">
               <Button
                 type="text"
-                icon={<ArrowDownOutlined style={{ color: '#faad14' }} />}
+                icon={<ArrowDownOutlined style={{ color: '#f59e0b' }} />}
                 onClick={() => handleStatusChange(record._id, 3)}
+                className={styles.actionBtn}
               />
             </Tooltip>
           )}
@@ -210,8 +228,9 @@ const AdminHotelList: React.FC = () => {
             <Tooltip title="上线">
               <Button
                 type="text"
-                icon={<ArrowUpOutlined style={{ color: '#52c41a' }} />}
+                icon={<ArrowUpOutlined style={{ color: '#22c55e' }} />}
                 onClick={() => handleStatusChange(record._id, 1)}
+                className={styles.actionBtn}
               />
             </Tooltip>
           )}
@@ -222,31 +241,41 @@ const AdminHotelList: React.FC = () => {
 
   return (
     <div className={styles.container}>
+      {/* 头部标题和操作 */}
       <div className={styles.header}>
-        <h2 className={styles.title}>酒店审核管理</h2>
+        <div className={styles.headerLeft}>
+          <h2 className={styles.title}>酒店审核管理</h2>
+          <p className={styles.subtitle}>管理和审批所有酒店房源的发布申请</p>
+        </div>
         <Button icon={<ReloadOutlined />} onClick={fetchHotels}>刷新</Button>
       </div>
 
-      <Tabs
-        activeKey={activeTab}
-        onChange={setActiveTab}
-        items={[
-          { key: 'all', label: <Badge count={counts.all} showZero>全部</Badge> },
-          { key: '0', label: <Badge count={counts.pending} showZero color="blue">待审核</Badge> },
-          { key: '1', label: <Badge count={counts.published} showZero color="green">已发布</Badge> },
-          { key: '2', label: <Badge count={counts.rejected} showZero color="red">已拒绝</Badge> },
-          { key: '3', label: <Badge count={counts.offline} showZero color="default">已下线</Badge> },
-        ]}
-        className={styles.tabs}
-      />
+      {/* 筛选标签 */}
+      <div className={styles.filterTabs}>
+        {filterTabs.map(tab => (
+          <div
+            key={tab.key}
+            className={`${styles.filterTab} ${activeFilter === tab.key ? styles.filterTabActive : ''}`}
+            onClick={() => setActiveFilter(tab.key)}
+          >
+            <span className={styles.filterLabel}>{tab.label}</span>
+            <span className={`${styles.filterBadge} ${styles[tab.colorClass]}`}>
+              {statusCounts[tab.key] || 0}
+            </span>
+          </div>
+        ))}
+      </div>
 
-      <Table
-        columns={columns}
-        dataSource={filteredHotels}
-        rowKey="_id"
-        loading={loading}
-        pagination={{ pageSize: 10 }}
-      />
+      {/* 表格 */}
+      <div className={styles.tableWrapper}>
+        <Table
+          columns={columns}
+          dataSource={filteredHotels}
+          rowKey="_id"
+          loading={loading}
+          pagination={{ pageSize: 10 }}
+        />
+      </div>
 
       {/* 拒绝原因弹窗 */}
       <Modal

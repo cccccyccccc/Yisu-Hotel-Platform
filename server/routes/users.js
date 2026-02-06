@@ -43,4 +43,17 @@ router.put('/profile', authMiddleware, userValidators.updateProfile, asyncHandle
     res.json(userObj);
 }));
 
+// 获取所有用户列表 (管理员) GET /api/users/admin/list
+router.get('/admin/list', authMiddleware, asyncHandler(async (req, res) => {
+    if (req.user.role !== 'admin') {
+        throw new AppError('权限不足', 403, 'FORBIDDEN');
+    }
+
+    const users = await User.find()
+        .select('-password')
+        .sort({ createdAt: -1 });
+
+    res.json(users);
+}));
+
 module.exports = router;

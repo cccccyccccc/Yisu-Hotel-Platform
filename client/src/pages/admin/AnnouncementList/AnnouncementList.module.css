@@ -1,0 +1,33 @@
+.container {
+  padding: 0;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 24px;
+}
+
+.title {
+  font-size: 26px;
+  font-weight: 700;
+  color: #1e293b;
+  margin: 0 0 6px 0;
+}
+
+.subtitle {
+  font-size: 14px;
+  color: #64748b;
+  margin: 0;
+}
+
+.addBtn {
+  background: linear-gradient(90deg, #4f8ef7 0%, #3b7ddd 100%) !important;
+  border: none !important;
+  box-shadow: 0 4px 12px rgba(79, 142, 247, 0.25) !important;
+}
+
+.addBtn:hover {
+  background: linear-gradient(90deg, #3b7ddd 0%, #2563eb 100%) !important;
+}

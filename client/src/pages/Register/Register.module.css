@@ -1,110 +1,332 @@
-.registerForm {
+/* 容器 */
+.container {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  position: relative;
+  overflow: hidden;
+  background: #1a1a2e;
+}
+
+/* 背景 */
+.background {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+}
+
+.bgImage {
   width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: blur(8px);
+  transform: scale(1.1);
+  opacity: 0.9;
+}
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+/* 玻璃面板 */
+.glassPanel {
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+  width: 100%;
+  max-width: 480px;
+  border-radius: 24px;
+  padding: 32px 40px;
+  position: relative;
+  z-index: 10;
+  animation: fadeIn 0.5s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 头部 */
+.header {
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+.logoBox {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+  margin-bottom: 16px;
+}
+
+.logoIcon {
+  font-size: 32px;
+  color: #ffffff;
+}
+
+.title {
+  font-size: 24px;
+  font-weight: 700;
+  color: #ffffff;
+  margin: 0 0 8px 0;
+  letter-spacing: -0.5px;
+}
+
+.subtitle {
+  font-size: 14px;
+  color: #d1d5db;
+  font-weight: 500;
+  margin: 0;
 }
 
 .formTitle {
-  text-align: center;
-  font-size: 22px;
+  font-size: 18px;
   font-weight: 600;
-  color: #1a1a2e;
-  margin: 0 0 28px 0;
+  color: #ffffff;
+  margin: 24px 0 0 0;
 }
 
-.input {
-  height: 48px;
-  border-radius: 12px;
-  border: 2px solid #e5e7eb;
+/* 表单 */
+.form {
+  width: 100%;
+}
+
+.form :global(.ant-form-item) {
+  margin-bottom: 16px;
+}
+
+/* 输入框包装器 */
+.inputWrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
   transition: all 0.3s ease;
 }
 
-.input:hover,
-.input:focus {
-  border-color: #667eea;
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+.inputWrapper:focus-within {
+  background: rgba(0, 0, 0, 0.4);
+  border-color: rgba(139, 92, 246, 0.6);
+  box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.2);
 }
 
 .inputIcon {
+  position: absolute;
+  left: 12px;
   color: #9ca3af;
   font-size: 16px;
-}
-
-.roleLabel {
-  font-weight: 500;
-  color: #374151;
-}
-
-.roleGroup {
-  width: 100%;
-}
-
-.roleGroup :global(.ant-space) {
-  width: 100%;
-}
-
-.roleBtn {
-  width: 100%;
-  height: auto !important;
-  padding: 16px 20px !important;
-  border-radius: 12px !important;
-  border: 2px solid #e5e7eb !important;
-  display: flex !important;
-  align-items: center;
-  gap: 12px;
-  transition: all 0.3s ease !important;
-  text-align: left !important;
-}
-
-.roleBtn:hover {
-  border-color: #667eea !important;
-  background: rgba(102, 126, 234, 0.05) !important;
-}
-
-.roleBtn:global(.ant-radio-button-wrapper-checked) {
-  border-color: #667eea !important;
-  background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%) !important;
-  color: #667eea !important;
-}
-
-.roleDesc {
-  display: block;
-  font-size: 12px;
-  color: #9ca3af;
-  font-weight: 400;
-  margin-top: 4px;
-  margin-left: 24px;
-}
-
-.submitBtn {
-  height: 48px;
-  border-radius: 12px;
-  font-size: 16px;
-  font-weight: 600;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border: none;
-  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
-  transition: all 0.3s ease;
-  margin-top: 8px;
-}
-
-.submitBtn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
-}
-
-.footer {
-  text-align: center;
-  margin-top: 24px;
-  color: #6b7280;
-  font-size: 14px;
-}
-
-.link {
-  color: #667eea;
-  font-weight: 500;
-  margin-left: 8px;
+  z-index: 1;
   transition: color 0.3s;
 }
 
+.inputWrapper:focus-within .inputIcon {
+  color: #ffffff;
+}
+
+.glassInput {
+  width: 100%;
+  padding: 12px 40px;
+  background: transparent !important;
+  color: #ffffff !important;
+  font-size: 14px;
+}
+
+.glassInput::placeholder {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.glassInput:global(.ant-input) {
+  background: transparent !important;
+  color: #ffffff !important;
+}
+
+.eyeIcon {
+  position: absolute;
+  right: 12px;
+  color: #9ca3af;
+  cursor: pointer;
+  font-size: 16px;
+  transition: color 0.3s;
+}
+
+.eyeIcon:hover {
+  color: #ffffff;
+}
+
+/* 角色选择 */
+.roleSection {
+  margin-bottom: 16px;
+  padding-top: 8px;
+}
+
+.roleLabel {
+  display: block;
+  font-size: 12px;
+  font-weight: 500;
+  color: #d1d5db;
+  margin-bottom: 8px;
+}
+
+.required {
+  color: #f43f5e;
+  margin-right: 4px;
+}
+
+.roleGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+}
+
+.roleCard {
+  position: relative;
+  padding: 16px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.roleCard:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.roleCardActive {
+  background: rgba(139, 92, 246, 0.15);
+  border-color: #8b5cf6;
+}
+
+.radioHidden {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.roleContent {
+  display: flex;
+  flex-direction: column;
+}
+
+.roleHeader {
+  display: flex;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.roleIcon {
+  font-size: 18px;
+  color: #d1d5db;
+  margin-right: 8px;
+}
+
+.roleCardActive .roleIcon {
+  color: #a78bfa;
+}
+
+.roleName {
+  font-size: 14px;
+  font-weight: 500;
+  color: #ffffff;
+}
+
+.roleDesc {
+  font-size: 12px;
+  color: #9ca3af;
+  margin: 0;
+  padding-left: 26px;
+  transition: color 0.2s;
+}
+
+.roleCard:hover .roleDesc {
+  color: #d1d5db;
+}
+
+.checkIcon {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  font-size: 20px;
+  color: #a78bfa;
+}
+
+/* 提交按钮 */
+.submitItem {
+  padding-top: 8px;
+}
+
+.submitBtn {
+  width: 100%;
+  height: 48px !important;
+  font-size: 14px !important;
+  font-weight: 600 !important;
+  border: none !important;
+  border-radius: 8px !important;
+  background: linear-gradient(90deg, #8b5cf6 0%, #7c3aed 50%, #9333ea 100%) !important;
+  box-shadow: 0 8px 20px rgba(139, 92, 246, 0.3) !important;
+  transition: all 0.15s ease !important;
+}
+
+.submitBtn:hover {
+  background: linear-gradient(90deg, #7c3aed 0%, #6d28d9 50%, #7c3aed 100%) !important;
+}
+
+.submitBtn:active {
+  transform: scale(0.95);
+}
+
+/* 底部 */
+.footer {
+  text-align: center;
+  margin-top: 24px;
+  font-size: 14px;
+  color: #9ca3af;
+}
+
+.link {
+  color: #a78bfa;
+  font-weight: 500;
+  text-decoration: none;
+  margin-left: 4px;
+  transition: color 0.2s;
+}
+
 .link:hover {
-  color: #764ba2;
+  color: #ffffff;
+}
+
+/* 响应式 */
+@media (max-width: 480px) {
+  .glassPanel {
+    padding: 24px 20px;
+    border-radius: 16px;
+  }
+
+  .title {
+    font-size: 20px;
+  }
 }

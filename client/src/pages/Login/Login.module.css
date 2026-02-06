@@ -1,70 +1,254 @@
-.loginForm {
-  width: 100%;
+/* 容器 */
+.container {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  position: relative;
+  overflow: hidden;
+  background: #1a1a2e;
 }
 
-.tabs :global(.ant-tabs-nav) {
+/* 背景 */
+.background {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+}
+
+.bgImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: blur(8px);
+  transform: scale(1.1);
+  opacity: 0.9;
+}
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+}
+
+/* 玻璃面板 */
+.glassPanel {
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
+  width: 100%;
+  max-width: 420px;
+  border-radius: 16px;
+  padding: 32px 48px;
+  position: relative;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  animation: fadeIn 0.5s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 头部 */
+.header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 32px;
+}
+
+.logoBox {
+  width: 64px;
+  height: 64px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 20px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.logoIcon {
+  font-size: 32px;
+  color: #ffffff;
+}
+
+.title {
+  font-size: 28px;
+  font-weight: 700;
+  color: #ffffff;
+  margin: 0 0 8px 0;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  letter-spacing: -0.5px;
+}
+
+.subtitle {
+  font-size: 13px;
+  color: #d1d5db;
+  font-weight: 300;
+  letter-spacing: 0.5px;
+  margin: 0;
+}
+
+/* Tab 栏 */
+.tabBar {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   margin-bottom: 24px;
 }
 
-.tabs :global(.ant-tabs-tab) {
-  font-size: 16px;
+.tabActive {
+  padding: 12px 24px;
+  color: #ffffff;
   font-weight: 500;
+  font-size: 15px;
+  background: none;
+  border: none;
+  border-bottom: 2px solid #818cf8;
+  cursor: pointer;
 }
 
-.tabs :global(.ant-tabs-ink-bar) {
-  background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
-  height: 3px;
-  border-radius: 2px;
+/* 表单 */
+.form {
+  width: 100%;
 }
 
-.input {
-  height: 48px;
+.form :global(.ant-form-item) {
+  margin-bottom: 20px;
+}
+
+/* 输入框包装器 */
+.inputWrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.15);
   border-radius: 12px;
-  border: 2px solid #e5e7eb;
   transition: all 0.3s ease;
 }
 
-.input:hover,
-.input:focus {
-  border-color: #667eea;
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+.inputWrapper:focus-within {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.4);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.3);
 }
 
 .inputIcon {
+  position: absolute;
+  left: 14px;
   color: #9ca3af;
   font-size: 16px;
-}
-
-.submitBtn {
-  height: 48px;
-  border-radius: 12px;
-  font-size: 16px;
-  font-weight: 600;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border: none;
-  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
-  transition: all 0.3s ease;
-}
-
-.submitBtn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
-}
-
-.footer {
-  text-align: center;
-  margin-top: 24px;
-  color: #6b7280;
-  font-size: 14px;
-}
-
-.link {
-  color: #667eea;
-  font-weight: 500;
-  margin-left: 8px;
+  z-index: 1;
   transition: color 0.3s;
 }
 
+.inputWrapper:focus-within .inputIcon {
+  color: #ffffff;
+}
+
+.glassInput {
+  width: 100%;
+  padding: 14px 44px;
+  background: transparent !important;
+  color: #ffffff !important;
+  font-size: 14px;
+}
+
+.glassInput::placeholder {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.glassInput:global(.ant-input) {
+  background: transparent !important;
+  color: #ffffff !important;
+}
+
+.eyeIcon {
+  position: absolute;
+  right: 14px;
+  color: #9ca3af;
+  cursor: pointer;
+  font-size: 16px;
+  transition: color 0.3s;
+}
+
+.eyeIcon:hover {
+  color: #ffffff;
+}
+
+/* 提交按钮 */
+.submitBtn {
+  width: 100%;
+  height: 48px !important;
+  font-size: 15px !important;
+  font-weight: 600 !important;
+  border: none !important;
+  border-radius: 12px !important;
+  background: linear-gradient(90deg, #4f46e5 0%, #6366f1 50%, #3b82f6 100%) !important;
+  box-shadow: 0 8px 20px rgba(79, 70, 229, 0.4) !important;
+  transition: all 0.2s ease !important;
+}
+
+.submitBtn:hover {
+  transform: scale(1.02);
+  box-shadow: 0 10px 24px rgba(79, 70, 229, 0.5) !important;
+}
+
+.submitBtn:active {
+  transform: scale(0.98);
+}
+
+/* 底部 */
+.footer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 8px;
+  font-size: 14px;
+  color: #9ca3af;
+}
+
+.link {
+  margin-left: 8px;
+  color: #ffffff;
+  font-weight: 500;
+  text-decoration: none;
+  transition: all 0.2s;
+}
+
 .link:hover {
-  color: #764ba2;
+  color: #c7d2fe;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+/* 响应式 */
+@media (max-width: 480px) {
+  .glassPanel {
+    padding: 24px;
+  }
+
+  .title {
+    font-size: 24px;
+  }
 }

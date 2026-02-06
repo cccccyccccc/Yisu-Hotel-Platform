@@ -1,0 +1,236 @@
+.container {
+  padding: 0;
+}
+
+.loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 400px;
+}
+
+.header {
+  margin-bottom: 28px;
+}
+
+.title {
+  font-size: 26px;
+  font-weight: 700;
+  color: #1e293b;
+  margin: 0 0 6px 0;
+}
+
+.subtitle {
+  font-size: 14px;
+  color: #64748b;
+  margin: 0;
+}
+
+/* 个人资料卡片 */
+.profileCard {
+  border-radius: 20px !important;
+  border: none !important;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06) !important;
+}
+
+.avatarSection {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid #f1f5f9;
+  margin-bottom: 24px;
+}
+
+.avatarWrapper {
+  position: relative;
+  cursor: pointer;
+}
+
+.avatar {
+  border: 3px solid #e2e8f0;
+}
+
+.avatarOverlay {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 32px;
+  height: 32px;
+  background: linear-gradient(90deg, #4f8ef7 0%, #3b7ddd 100%);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 14px;
+  border: 2px solid white;
+  box-shadow: 0 2px 8px rgba(79, 142, 247, 0.3);
+}
+
+.userInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.username {
+  font-size: 22px;
+  font-weight: 600;
+  color: #1e293b;
+  margin: 0;
+}
+
+.role {
+  font-size: 13px;
+  color: #64748b;
+  padding: 4px 12px;
+  background: #f1f5f9;
+  border-radius: 20px;
+  display: inline-block;
+  width: fit-content;
+}
+
+.form {
+  margin-top: 16px;
+}
+
+.saveBtn {
+  background: linear-gradient(90deg, #4f8ef7 0%, #3b7ddd 100%) !important;
+  border: none !important;
+  height: 44px !important;
+  font-size: 15px !important;
+  box-shadow: 0 4px 12px rgba(79, 142, 247, 0.25) !important;
+}
+
+.saveBtn:hover {
+  background: linear-gradient(90deg, #3b7ddd 0%, #2563eb 100%) !important;
+}
+
+/* 右侧卡片通用样式 */
+.cardTitle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
+  font-weight: 600;
+  color: #334155;
+}
+
+/* 账户安全卡片 */
+.securityCard {
+  border-radius: 16px !important;
+  border: none !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05) !important;
+  margin-bottom: 20px;
+}
+
+.securityItem {
+  display: flex;
+  align-items: center;
+  padding: 14px 0;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.securityItem:last-child {
+  border-bottom: none;
+}
+
+.securityIcon {
+  width: 40px;
+  height: 40px;
+  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #3b82f6;
+  font-size: 18px;
+  margin-right: 14px;
+}
+
+.securityInfo {
+  flex: 1;
+}
+
+.securityLabel {
+  font-size: 14px;
+  font-weight: 500;
+  color: #334155;
+}
+
+.securityValue {
+  font-size: 13px;
+  color: #64748b;
+  margin-top: 2px;
+}
+
+.securityAction {
+  padding: 4px 8px !important;
+  font-size: 13px !important;
+}
+
+/* 系统通知卡片 */
+.notificationCard {
+  border-radius: 16px !important;
+  border: none !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05) !important;
+}
+
+.notificationItem {
+  padding: 12px 0 !important;
+  cursor: pointer;
+  transition: background 0.2s;
+  border-radius: 8px;
+  margin: 0 -8px;
+  padding-left: 8px !important;
+  padding-right: 8px !important;
+}
+
+.notificationItem:hover {
+  background: #f8fafc;
+}
+
+.notificationContent {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+}
+
+.notificationText {
+  font-size: 13px;
+  color: #334155;
+}
+
+.notificationTime {
+  font-size: 12px;
+  color: #94a3b8;
+}
+
+/* 公告详情弹窗 */
+.detailContent {
+  padding: 16px 0;
+}
+
+.detailMeta {
+  font-size: 13px;
+  color: #64748b;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #f1f5f9;
+  margin-bottom: 16px;
+}
+
+.detailBody {
+  font-size: 14px;
+  color: #334155;
+  line-height: 1.8;
+  white-space: pre-wrap;
+}
+
+/* 响应式 */
+@media (max-width: 991px) {
+  .securityCard {
+    margin-top: 20px;
+  }
+}

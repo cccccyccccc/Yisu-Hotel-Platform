@@ -12,18 +12,18 @@
 .title {
   font-size: 24px;
   font-weight: 600;
-  color: #1a1a2e;
+  color: #1e293b;
   margin: 0;
 }
 
 .addBtn {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border: none;
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+  background: linear-gradient(90deg, #4f8ef7 0%, #3b7ddd 100%) !important;
+  border: none !important;
+  box-shadow: 0 4px 12px rgba(79, 142, 247, 0.25) !important;
 }
 
 .addBtn:hover {
-  background: linear-gradient(135deg, #5a6fd6 0%, #6a4190 100%);
+  background: linear-gradient(90deg, #3b7ddd 0%, #2563eb 100%) !important;
 }
 
 .hotelName {
@@ -33,7 +33,7 @@
 
 .mainName {
   font-weight: 500;
-  color: #1a1a2e;
+  color: #1e293b;
 }
 
 .enName {
@@ -45,4 +45,22 @@
   font-size: 16px;
   font-weight: 600;
   color: #ef4444;
+}
+
+/* 星级样式 */
+.starRating {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #92400e;
+}
+
+.crownIcon {
+  color: #f59e0b;
+  font-size: 14px;
 }

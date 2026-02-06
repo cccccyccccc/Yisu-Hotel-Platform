@@ -1,18 +1,20 @@
 import { useEffect, useState } from 'react';
 import {
   Table, Button, Space, message, Modal, Form, Input, InputNumber, Upload,
-  Tooltip, Empty, Popconfirm
+  Tooltip, Empty, Popconfirm, Calendar, Badge
 } from 'antd';
 import {
   PlusOutlined, EditOutlined, DeleteOutlined,
-  ArrowLeftOutlined, ReloadOutlined
+  ArrowLeftOutlined, ReloadOutlined, CalendarOutlined
 } from '@ant-design/icons';
 import { useNavigate, useParams } from 'react-router-dom';
-import { getRoomsByHotel, createRoom, updateRoom, deleteRoom } from '@/api/rooms';
+import { getRoomsByHotel, createRoom, updateRoom, deleteRoom, getRoomCalendar, updateRoomCalendar } from '@/api/rooms';
 import { getHotelDetail } from '@/api/hotels';
 import { uploadImage } from '@/api/upload';
 import type { ColumnsType } from 'antd/es/table';
 import type { UploadFile, UploadProps } from 'antd/es/upload';
+import type { Dayjs } from 'dayjs';
+import dayjs from 'dayjs';
 import styles from './RoomList.module.css';
 
 // 房型类型定义
@@ -29,6 +31,12 @@ interface RoomType {
   images?: string[];
 }
 
+interface CalendarItem {
+  date: string;
+  price: number;
+  stock?: number;
+}
+
 const RoomList: React.FC = () => {
   const { hotelId } = useParams<{ hotelId: string }>();
   const navigate = useNavigate();
@@ -39,6 +47,14 @@ const RoomList: React.FC = () => {
   const [editingRoom, setEditingRoom] = useState<RoomType | null>(null);
   const [fileList, setFileList] = useState<UploadFile[]>([]);
   const [form] = Form.useForm();
+
+  // 价格日历相关状态
+  const [calendarModalVisible, setCalendarModalVisible] = useState(false);
+  const [calendarRoom, setCalendarRoom] = useState<RoomType | null>(null);
+  const [calendarData, setCalendarData] = useState<CalendarItem[]>([]);
+  const [basePrice, setBasePrice] = useState(0);
+  const [selectedDate, setSelectedDate] = useState<Dayjs | null>(null);
+  const [priceForm] = Form.useForm();
 
   const fetchRooms = async () => {
     if (!hotelId) return;
@@ -96,6 +112,87 @@ const RoomList: React.FC = () => {
       fetchRooms();
     } catch (error) {
       message.error('删除失败');
+    }
+  };
+
+  // 打开价格日历弹窗
+  const handleOpenCalendar = async (record: RoomType) => {
+    setCalendarRoom(record);
+    setSelectedDate(null);
+    priceForm.resetFields();
+    try {
+      const res = await getRoomCalendar(record._id);
+      setBasePrice(res.data.basePrice);
+      setCalendarData(res.data.calendar || []);
+    } catch (error) {
+      setBasePrice(record.price);
+      setCalendarData([]);
+    }
+    setCalendarModalVisible(true);
+  };
+
+  // 保存单日价格
+  const handleSaveDayPrice = async () => {
+    if (!selectedDate || !calendarRoom) return;
+    try {
+      const values = await priceForm.validateFields();
+      const dateStr = selectedDate.format('YYYY-MM-DD');
+      const newItem: CalendarItem = {
+        date: dateStr,
+        price: values.dayPrice,
+        stock: values.dayStock,
+      };
+
+      await updateRoomCalendar(calendarRoom._id, [newItem]);
+      message.success('保存成功');
+
+      // 更新本地状态
+      setCalendarData(prev => {
+        const existing = prev.findIndex(item => item.date === dateStr);
+        if (existing > -1) {
+          const updated = [...prev];
+          updated[existing] = newItem;
+          return updated;
+        }
+        return [...prev, newItem];
+      });
+      setSelectedDate(null);
+      priceForm.resetFields();
+    } catch (error) {
+      message.error('保存失败');
+    }
+  };
+
+  // 日历单元格渲染
+  const dateCellRender = (value: Dayjs) => {
+    const dateStr = value.format('YYYY-MM-DD');
+    const item = calendarData.find(c => c.date === dateStr);
+    if (item) {
+      return (
+        <div className={styles.calendarCell}>
+          <Badge status="processing" text={`¥${item.price}`} />
+          {item.stock !== undefined && <div className={styles.stockBadge}>库存: {item.stock}</div>}
+        </div>
+      );
+    }
+    return null;
+  };
+
+  // 选择日期
+  const handleDateSelect = (date: Dayjs) => {
+    setSelectedDate(date);
+    const dateStr = date.format('YYYY-MM-DD');
+    const item = calendarData.find(c => c.date === dateStr);
+    if (item) {
+      priceForm.setFieldsValue({
+        dayPrice: item.price,
+        dayStock: item.stock,
+      });
+    } else {
+      priceForm.setFieldsValue({
+        dayPrice: basePrice,
+        dayStock: undefined,
+      });
     }
   };
 
@@ -190,9 +287,17 @@ const RoomList: React.FC = () => {
     {
       title: '操作',
       key: 'action',
-      width: 120,
+      width: 160,
       render: (_, record) => (
         <Space>
+          <Tooltip title="价格日历">
+            <Button
+              type="text"
+              icon={<CalendarOutlined />}
+              onClick={() => handleOpenCalendar(record)}
+              className={styles.calendarBtn}
+            />
+          </Tooltip>
           <Tooltip title="编辑">
             <Button
               type="text"
@@ -261,6 +366,7 @@ const RoomList: React.FC = () => {
         }}
       />
 
+      {/* 添加/编辑房型弹窗 */}
       <Modal
         title={editingRoom ? '编辑房型' : '添加房型'}
         open={modalVisible}
@@ -333,6 +439,50 @@ const RoomList: React.FC = () => {
             </Upload>
           </Form.Item>
         </Form>
+      </Modal>
+
+      {/* 价格日历弹窗 */}
+      <Modal
+        title={`${calendarRoom?.title || ''} - 价格日历设置`}
+        open={calendarModalVisible}
+        onCancel={() => setCalendarModalVisible(false)}
+        footer={null}
+        width={800}
+      >
+        <div className={styles.calendarContainer}>
+          <div className={styles.calendarInfo}>
+            <span>基础价格: <strong>¥{basePrice}</strong></span>
+            <span className={styles.calendarTip}>点击日期设置特殊价格和库存</span>
+          </div>
+          <Calendar
+            fullscreen={false}
+            cellRender={(current) => dateCellRender(current as Dayjs)}
+            onSelect={(date) => handleDateSelect(date as Dayjs)}
+          />
+          {selectedDate && (
+            <div className={styles.dayPriceForm}>
+              <h4>{selectedDate.format('YYYY年MM月DD日')} 特殊价格设置</h4>
+              <Form form={priceForm} layout="inline">
+                <Form.Item
+                  name="dayPrice"
+                  label="价格"
+                  rules={[{ required: true, message: '请输入价格' }]}
+                >
+                  <InputNumber min={0} prefix="¥" style={{ width: 120 }} />
+                </Form.Item>
+                <Form.Item name="dayStock" label="库存">
+                  <InputNumber min={0} placeholder="不填则使用默认" style={{ width: 120 }} />
+                </Form.Item>
+                <Form.Item>
+                  <Button type="primary" onClick={handleSaveDayPrice}>保存</Button>
+                </Form.Item>
+                <Form.Item>
+                  <Button onClick={() => setSelectedDate(null)}>取消</Button>
+                </Form.Item>
+              </Form>
+            </div>
+          )}
+        </div>
       </Modal>
     </div>
   );

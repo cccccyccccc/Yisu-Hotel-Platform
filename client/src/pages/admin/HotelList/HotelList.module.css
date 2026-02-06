@@ -5,59 +5,206 @@
 .header {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
   margin-bottom: 24px;
 }
 
+.headerLeft {
+  display: flex;
+  flex-direction: column;
+}
+
 .title {
-  font-size: 24px;
-  font-weight: 600;
-  color: #1a1a2e;
+  font-size: 26px;
+  font-weight: 700;
+  color: #1e293b;
+  margin: 0 0 4px 0;
+  letter-spacing: -0.5px;
+}
+
+.subtitle {
+  font-size: 14px;
+  color: #64748b;
   margin: 0;
 }
 
-.tabs {
-  margin-bottom: 16px;
+/* =====================
+   筛选标签
+   ===================== */
+.filterTabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #e2e8f0;
 }
 
-.tabs :global(.ant-badge) {
-  margin-left: 8px;
+.filterTab {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: transparent;
 }
 
+.filterTab:hover {
+  background: #f1f5f9;
+}
+
+.filterTabActive {
+  background: #eff6ff;
+}
+
+.filterTabActive .filterLabel {
+  color: #2563eb;
+  font-weight: 600;
+}
+
+.filterLabel {
+  font-size: 14px;
+  color: #64748b;
+  font-weight: 500;
+}
+
+/* 角标基础样式 - 玻璃态 */
+.filterBadge {
+  min-width: 22px;
+  height: 22px;
+  padding: 0 6px;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 11px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+/* 蓝色角标 - 全部 */
+.badgeBlue {
+  background: rgba(59, 130, 246, 0.15);
+  color: #3b82f6;
+  border: 1px solid rgba(59, 130, 246, 0.2);
+}
+
+/* 橙色角标 - 待审核 */
+.badgeOrange {
+  background: rgba(245, 158, 11, 0.15);
+  color: #f59e0b;
+  border: 1px solid rgba(245, 158, 11, 0.2);
+}
+
+/* 绿色角标 - 已发布 */
+.badgeGreen {
+  background: rgba(34, 197, 94, 0.15);
+  color: #22c55e;
+  border: 1px solid rgba(34, 197, 94, 0.2);
+}
+
+/* 红色角标 - 已拒绝 */
+.badgeRed {
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+/* 灰色角标 - 已下线 */
+.badgeGray {
+  background: rgba(100, 116, 139, 0.15);
+  color: #64748b;
+  border: 1px solid rgba(100, 116, 139, 0.2);
+}
+
+/* =====================
+   表格
+   ===================== */
+.tableWrapper {
+  background: #ffffff;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+/* 酒店信息 */
 .hotelName {
   display: flex;
   flex-direction: column;
 }
 
 .mainName {
-  font-weight: 500;
-  color: #1a1a2e;
-}
-
-.enName {
-  font-size: 12px;
-  color: #9ca3af;
-}
-
-.price {
-  font-size: 16px;
   font-weight: 600;
-  color: #ef4444;
+  color: #1e293b;
+  font-size: 14px;
 }
 
+.hotelId {
+  font-size: 12px;
+  color: #94a3b8;
+}
+
+/* 价格 */
+.price {
+  font-size: 15px;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+/* 状态标签 */
+.statusTag {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.status0 {
+  background: #fffbeb;
+  color: #d97706;
+}
+
+.status1 {
+  background: #ecfdf5;
+  color: #059669;
+}
+
+.status2 {
+  background: #fef2f2;
+  color: #dc2626;
+}
+
+.status3 {
+  background: #f1f5f9;
+  color: #64748b;
+}
+
+/* 操作按钮 */
+.actionBtn {
+  color: #94a3b8 !important;
+}
+
+.actionBtn:hover {
+  background: #f1f5f9 !important;
+}
+
+/* 详情弹窗 */
 .detail {
-  padding: 16px 0;
+  padding: 8px 0;
 }
 
 .detailRow {
-  margin-bottom: 16px;
   display: flex;
+  margin-bottom: 16px;
 }
 
 .label {
-  font-weight: 500;
-  color: #6b7280;
   width: 100px;
+  color: #64748b;
   flex-shrink: 0;
 }
 
@@ -68,8 +215,9 @@
 }
 
 .image {
-  width: 100px;
-  height: 75px;
+  width: 120px;
+  height: 80px;
   object-fit: cover;
   border-radius: 8px;
+  border: 1px solid #e2e8f0;
 }

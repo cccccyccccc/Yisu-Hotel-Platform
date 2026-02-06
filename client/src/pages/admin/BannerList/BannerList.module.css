@@ -10,24 +10,58 @@
 }
 
 .title {
-  font-size: 24px;
-  font-weight: 600;
-  color: #1a1a2e;
+  font-size: 26px;
+  font-weight: 700;
+  color: #1e293b;
   margin: 0;
 }
 
 .addBtn {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border: none;
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+  background: linear-gradient(90deg, #4f8ef7 0%, #3b7ddd 100%) !important;
+  border: none !important;
+  box-shadow: 0 4px 12px rgba(79, 142, 247, 0.25) !important;
+  font-weight: 500;
 }
 
-.addBtn:hover {
-  background: linear-gradient(135deg, #5a6fd6 0%, #6a4190 100%);
+/* 表格包装器 */
+.tableWrapper {
+  background: #ffffff;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  overflow: hidden;
 }
 
-.uploadTip {
-  margin-top: 8px;
+/* 轮播图信息 */
+.bannerTitle {
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.bannerImage {
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+}
+
+.sortOrder {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: #eff6ff;
+  border-radius: 6px;
+  color: #4f8ef7;
+  font-weight: 600;
+}
+
+/* 链接 */
+.linkUrl {
+  color: #4f8ef7;
   font-size: 12px;
-  color: #9ca3af;
+  word-break: break-all;
+}
+
+/* 状态开关 */
+.statusSwitch :global(.ant-switch-checked) {
+  background: #4f8ef7 !important;
 }

@@ -34,9 +34,16 @@ const BannerList: React.FC = () => {
     setLoading(true);
     try {
       const res = await getBannerList();
-      setBanners(res.data);
-    } catch (error) {
-      message.error('获取轮播图列表失败');
+      setBanners(res.data || []);
+    } catch (error: unknown) {
+      // 如果是404或资源不存在，静默处理，设置为空数组
+      const err = error as { response?: { status?: number } };
+      if (err.response?.status === 404) {
+        setBanners([]);
+      } else {
+        // 只有真正的网络错误才显示提示
+        console.error('获取轮播图列表失败', error);
+      }
     } finally {
       setLoading(false);
     }

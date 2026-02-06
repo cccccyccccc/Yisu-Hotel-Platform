@@ -1,25 +1,27 @@
 import { useState } from 'react';
-import { Form, Input, Button, message, Radio, Space } from 'antd';
-import { UserOutlined, LockOutlined, IdcardOutlined } from '@ant-design/icons';
+import { Form, Input, Button, message, Radio } from 'antd';
+import {
+  UserOutlined, LockOutlined, EyeOutlined, EyeInvisibleOutlined,
+  BankOutlined, ShopOutlined, SafetyCertificateOutlined, CheckCircleFilled
+} from '@ant-design/icons';
 import { useNavigate, Link } from 'react-router-dom';
 import { register } from '@/api/auth';
 import styles from './Register.module.css';
 
-interface RegisterFormData {
-  username: string;
-  password: string;
-  confirmPassword: string;
-  role: 'merchant' | 'admin';
-}
-
 const Register: React.FC = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
-  const [form] = Form.useForm();
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [selectedRole, setSelectedRole] = useState<'merchant' | 'admin'>('merchant');
 
-  const onFinish = async (values: RegisterFormData) => {
+  const onFinish = async (values: {
+    username: string;
+    password: string;
+    confirmPassword: string;
+  }) => {
     if (values.password !== values.confirmPassword) {
-      message.error('两次密码输入不一致');
+      message.error('两次输入的密码不一致');
       return;
     }
 
@@ -28,7 +30,7 @@ const Register: React.FC = () => {
       await register({
         username: values.username,
         password: values.password,
-        role: values.role,
+        role: selectedRole,
       });
       message.success('注册成功！请登录');
       navigate('/login');
@@ -41,104 +43,167 @@ const Register: React.FC = () => {
   };
 
   return (
-    <div className={styles.registerForm}>
-      <h2 className={styles.formTitle}>创建账号</h2>
+    <div className={styles.container}>
+      {/* 背景图片 */}
+      <div className={styles.background}>
+        <img
+          src="https://images.unsplash.com/photo-1564501049412-61c2a3083791?w=1920&q=80"
+          alt="Hotel Background"
+          className={styles.bgImage}
+        />
+        <div className={styles.overlay} />
+      </div>
 
-      <Form
-        form={form}
-        name="register"
-        onFinish={onFinish}
-        autoComplete="off"
-        size="large"
-        layout="vertical"
-        initialValues={{ role: 'merchant' }}
-      >
-        <Form.Item
-          name="username"
-          rules={[
-            { required: true, message: '请输入用户名' },
-            { min: 3, message: '用户名至少3个字符' },
-          ]}
+      {/* 注册面板 */}
+      <div className={styles.glassPanel}>
+        {/* Logo 和标题 */}
+        <div className={styles.header}>
+          <div className={styles.logoBox}>
+            <BankOutlined className={styles.logoIcon} />
+          </div>
+          <h1 className={styles.title}>易宿酒店平台</h1>
+          <p className={styles.subtitle}>Yisu Hotel Platform</p>
+          <h2 className={styles.formTitle}>创建账号</h2>
+        </div>
+
+        {/* 注册表单 */}
+        <Form
+          name="register"
+          onFinish={onFinish}
+          autoComplete="off"
+          className={styles.form}
         >
-          <Input
-            prefix={<UserOutlined className={styles.inputIcon} />}
-            placeholder="用户名"
-            className={styles.input}
-          />
-        </Form.Item>
-
-        <Form.Item
-          name="password"
-          rules={[
-            { required: true, message: '请输入密码' },
-            { min: 6, message: '密码至少6个字符' },
-          ]}
-        >
-          <Input.Password
-            prefix={<LockOutlined className={styles.inputIcon} />}
-            placeholder="密码"
-            className={styles.input}
-          />
-        </Form.Item>
-
-        <Form.Item
-          name="confirmPassword"
-          rules={[
-            { required: true, message: '请确认密码' },
-            ({ getFieldValue }) => ({
-              validator(_, value) {
-                if (!value || getFieldValue('password') === value) {
-                  return Promise.resolve();
-                }
-                return Promise.reject(new Error('两次密码不一致'));
-              },
-            }),
-          ]}
-        >
-          <Input.Password
-            prefix={<LockOutlined className={styles.inputIcon} />}
-            placeholder="确认密码"
-            className={styles.input}
-          />
-        </Form.Item>
-
-        <Form.Item
-          name="role"
-          label={<span className={styles.roleLabel}>选择角色</span>}
-          rules={[{ required: true, message: '请选择角色' }]}
-        >
-          <Radio.Group className={styles.roleGroup}>
-            <Space direction="vertical" style={{ width: '100%' }}>
-              <Radio.Button value="merchant" className={styles.roleBtn}>
-                <IdcardOutlined /> 商户
-                <span className={styles.roleDesc}>可发布和管理酒店信息</span>
-              </Radio.Button>
-              <Radio.Button value="admin" className={styles.roleBtn}>
-                <IdcardOutlined /> 管理员
-                <span className={styles.roleDesc}>可审核和管理所有酒店</span>
-              </Radio.Button>
-            </Space>
-          </Radio.Group>
-        </Form.Item>
-
-        <Form.Item>
-          <Button
-            type="primary"
-            htmlType="submit"
-            loading={loading}
-            block
-            className={styles.submitBtn}
+          {/* 用户名 */}
+          <Form.Item
+            name="username"
+            rules={[{ required: true, message: '请输入用户名' }]}
           >
-            注 册
-          </Button>
-        </Form.Item>
-      </Form>
+            <div className={styles.inputWrapper}>
+              <UserOutlined className={styles.inputIcon} />
+              <Input
+                placeholder="用户名"
+                className={styles.glassInput}
+                bordered={false}
+              />
+            </div>
+          </Form.Item>
 
-      <div className={styles.footer}>
-        <span>已有账号？</span>
-        <Link to="/login" className={styles.link}>
-          立即登录
-        </Link>
+          {/* 密码 */}
+          <Form.Item
+            name="password"
+            rules={[
+              { required: true, message: '请输入密码' },
+              { min: 6, message: '密码至少6位' }
+            ]}
+          >
+            <div className={styles.inputWrapper}>
+              <LockOutlined className={styles.inputIcon} />
+              <Input
+                type={showPassword ? 'text' : 'password'}
+                placeholder="密码"
+                className={styles.glassInput}
+                bordered={false}
+              />
+              <span
+                className={styles.eyeIcon}
+                onClick={() => setShowPassword(!showPassword)}
+              >
+                {showPassword ? <EyeOutlined /> : <EyeInvisibleOutlined />}
+              </span>
+            </div>
+          </Form.Item>
+
+          {/* 确认密码 */}
+          <Form.Item
+            name="confirmPassword"
+            rules={[{ required: true, message: '请确认密码' }]}
+          >
+            <div className={styles.inputWrapper}>
+              <LockOutlined className={styles.inputIcon} />
+              <Input
+                type={showConfirmPassword ? 'text' : 'password'}
+                placeholder="确认密码"
+                className={styles.glassInput}
+                bordered={false}
+              />
+              <span
+                className={styles.eyeIcon}
+                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+              >
+                {showConfirmPassword ? <EyeOutlined /> : <EyeInvisibleOutlined />}
+              </span>
+            </div>
+          </Form.Item>
+
+          {/* 角色选择 */}
+          <div className={styles.roleSection}>
+            <label className={styles.roleLabel}>
+              <span className={styles.required}>*</span>选择角色
+            </label>
+            <Radio.Group
+              value={selectedRole}
+              onChange={(e) => setSelectedRole(e.target.value)}
+              className={styles.roleGroup}
+            >
+              {/* 商户选项 */}
+              <div
+                className={`${styles.roleCard} ${selectedRole === 'merchant' ? styles.roleCardActive : ''}`}
+                onClick={() => setSelectedRole('merchant')}
+              >
+                <Radio value="merchant" className={styles.radioHidden} />
+                <div className={styles.roleContent}>
+                  <div className={styles.roleHeader}>
+                    <ShopOutlined className={styles.roleIcon} />
+                    <span className={styles.roleName}>商户</span>
+                  </div>
+                  <p className={styles.roleDesc}>可发布和管理酒店信息</p>
+                </div>
+                {selectedRole === 'merchant' && (
+                  <CheckCircleFilled className={styles.checkIcon} />
+                )}
+              </div>
+
+              {/* 管理员选项 */}
+              <div
+                className={`${styles.roleCard} ${selectedRole === 'admin' ? styles.roleCardActive : ''}`}
+                onClick={() => setSelectedRole('admin')}
+              >
+                <Radio value="admin" className={styles.radioHidden} />
+                <div className={styles.roleContent}>
+                  <div className={styles.roleHeader}>
+                    <SafetyCertificateOutlined className={styles.roleIcon} />
+                    <span className={styles.roleName}>管理员</span>
+                  </div>
+                  <p className={styles.roleDesc}>可审核和管理所有酒店</p>
+                </div>
+                {selectedRole === 'admin' && (
+                  <CheckCircleFilled className={styles.checkIcon} />
+                )}
+              </div>
+            </Radio.Group>
+          </div>
+
+          {/* 注册按钮 */}
+          <Form.Item className={styles.submitItem}>
+            <Button
+              type="primary"
+              htmlType="submit"
+              loading={loading}
+              block
+              className={styles.submitBtn}
+            >
+              注 册
+            </Button>
+          </Form.Item>
+        </Form>
+
+        {/* 登录链接 */}
+        <div className={styles.footer}>
+          <span>已有账号？</span>
+          <Link to="/login" className={styles.link}>
+            立即登录
+          </Link>
+        </div>
       </div>
     </div>
   );

@@ -1,0 +1,94 @@
+.container {
+  padding: 0;
+}
+
+.header {
+  margin-bottom: 28px;
+}
+
+.title {
+  font-size: 26px;
+  font-weight: 700;
+  color: #1e293b;
+  margin: 0 0 6px 0;
+}
+
+.subtitle {
+  font-size: 14px;
+  color: #64748b;
+  margin: 0;
+}
+
+/* 统计卡片 */
+.statsRow {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.statCard {
+  background: white;
+  border-radius: 16px;
+  padding: 20px;
+  text-align: center;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+  border: 1px solid #e2e8f0;
+}
+
+.statValue {
+  font-size: 28px;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.statLabel {
+  font-size: 13px;
+  color: #64748b;
+  margin-top: 4px;
+}
+
+.userStat {
+  border-left: 4px solid #10b981;
+}
+
+.merchantStat {
+  border-left: 4px solid #3b82f6;
+}
+
+.adminStat {
+  border-left: 4px solid #ef4444;
+}
+
+/* 筛选卡片 */
+.filterCard {
+  margin-bottom: 20px;
+  border-radius: 12px !important;
+  border: 1px solid #e2e8f0 !important;
+}
+
+.refreshBtn {
+  color: #4f8ef7;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: all 0.2s;
+}
+
+.refreshBtn:hover {
+  background: #eff6ff;
+}
+
+.username {
+  font-weight: 500;
+  color: #334155;
+}
+
+@media (max-width: 768px) {
+  .statsRow {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
