@@ -15,6 +15,7 @@ import {
   DashboardOutlined,
   SettingOutlined,
   TeamOutlined,
+  CommentOutlined,
 } from '@ant-design/icons';
 import { useUserStore } from '@/stores';
 import styles from './MainLayout.module.css';
@@ -54,6 +55,11 @@ const MainLayout: React.FC = () => {
       key: '/merchant/orders',
       icon: <ShoppingOutlined />,
       label: '订单管理',
+    },
+    {
+      key: '/merchant/reviews',
+      icon: <CommentOutlined />,
+      label: '评价管理',
     },
     {
       key: '/profile',

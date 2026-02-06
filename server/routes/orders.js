@@ -219,4 +219,33 @@ router.get('/merchant', authMiddleware, asyncHandler(async (req, res) => {
     res.json(orders);
 }));
 
+// 获取订单详情 (GET /api/orders/:id)
+router.get('/:id', authMiddleware, asyncHandler(async (req, res) => {
+    const orderId = String(req.params.id);
+    const order = await Order.findById(orderId)
+        .populate('hotelId', 'name nameEn city address')
+        .populate('roomTypeId', 'title price bedInfo size stock')
+        .populate('userId', 'username avatar');
+
+    if (!order) {
+        throw new AppError('订单不存在', 404, 'ORDER_NOT_FOUND');
+    }
+
+    // 商户只能查看自己酒店的订单
+    if (req.user.role === 'merchant') {
+        const hotel = await Hotel.findById(order.hotelId._id || order.hotelId);
+        if (!hotel || hotel.merchantId.toString() !== req.user.userId) {
+            throw new AppError('无权查看此订单', 403, 'FORBIDDEN');
+        }
+    }
+    // 用户只能查看自己的订单
+    else if (req.user.role === 'user') {
+        if (order.userId._id.toString() !== req.user.userId) {
+            throw new AppError('无权查看此订单', 403, 'FORBIDDEN');
+        }
+    }
+
+    res.json(order);
+}));
+
 module.exports = router;

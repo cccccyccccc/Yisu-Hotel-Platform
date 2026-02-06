@@ -1,0 +1,165 @@
+.container {
+  padding: 0;
+}
+
+.loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 400px;
+}
+
+.notFound {
+  text-align: center;
+  padding: 100px 0;
+  color: #64748b;
+  font-size: 16px;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.orderInfo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.orderId {
+  font-size: 18px;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.statusTag {
+  font-size: 14px !important;
+  padding: 4px 12px !important;
+}
+
+.card {
+  margin-bottom: 16px;
+  border-radius: 12px !important;
+  border: 1px solid #e2e8f0 !important;
+}
+
+.card :global(.ant-card-head) {
+  border-bottom: 1px solid #f1f5f9 !important;
+}
+
+.card :global(.ant-card-head-title) {
+  color: #334155 !important;
+  font-weight: 600 !important;
+}
+
+/* 日期范围 */
+.dateRange {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  padding: 16px 0;
+}
+
+.dateItem {
+  text-align: center;
+}
+
+.dateLabel {
+  font-size: 13px;
+  color: #64748b;
+  margin-bottom: 8px;
+}
+
+.dateValue {
+  font-size: 18px;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.dateWeekday {
+  font-size: 13px;
+  color: #94a3b8;
+  margin-top: 4px;
+}
+
+.dateArrow {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.nights {
+  background: linear-gradient(90deg, #4f8ef7 0%, #3b7ddd 100%);
+  color: white;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.arrowLine {
+  width: 60px;
+  height: 2px;
+  background: linear-gradient(90deg, #4f8ef7 0%, #3b7ddd 100%);
+  position: relative;
+}
+
+.arrowLine::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  top: -4px;
+  border: 5px solid transparent;
+  border-left-color: #3b7ddd;
+}
+
+/* 用户信息 */
+.userInfo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 16px 0;
+}
+
+.userName {
+  margin-top: 12px;
+  font-size: 16px;
+  font-weight: 500;
+  color: #1e293b;
+}
+
+/* 价格明细 */
+.priceBreakdown {
+  padding: 8px 0;
+}
+
+.priceRow {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 0;
+  color: #64748b;
+  font-size: 14px;
+}
+
+.priceRow.total {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.totalPrice {
+  color: #ef4444;
+  font-size: 20px;
+}
+
+/* 时间线 */
+.timelineTime {
+  font-size: 12px;
+  color: #94a3b8;
+  margin-top: 4px;
+}

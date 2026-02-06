@@ -6,17 +6,22 @@ export interface Order {
   userId: {
     _id: string;
     username: string;
+    avatar?: string;
   };
   hotelId: {
     _id: string;
     name: string;
+    nameEn?: string;
     city: string;
+    address?: string;
   };
   roomTypeId: {
     _id: string;
     title: string;
     price: number;
     stock: number;
+    bedInfo?: string;
+    size?: string;
   };
   checkInDate: string;
   checkOutDate: string;
@@ -24,9 +29,15 @@ export interface Order {
   totalPrice: number;
   status: 'pending' | 'paid' | 'completed' | 'cancelled';
   createdAt: string;
+  updatedAt?: string;
 }
 
 // 商户：获取我的酒店的订单
 export const getMerchantOrders = () => {
   return request.get<Order[]>('/api/orders/merchant');
+};
+
+// 获取订单详情
+export const getOrderDetail = (id: string) => {
+  return request.get<Order>(`/api/orders/${id}`);
 };

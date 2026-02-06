@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
 import {
   Table, Card, Row, Col, Tag, message, Statistic,
-  Space, Button, Select
+  Space, Button, Select, Tooltip
 } from 'antd';
 import {
-  ReloadOutlined, ShoppingOutlined
+  ReloadOutlined, ShoppingOutlined, EyeOutlined
 } from '@ant-design/icons';
+import { useNavigate } from 'react-router-dom';
 import { getMerchantOrders } from '@/api/orders';
 import type { ColumnsType } from 'antd/es/table';
 import styles from './OrderList.module.css';
@@ -44,6 +45,7 @@ const statusMap: Record<string, { color: string; text: string }> = {
 };
 
 const OrderList: React.FC = () => {
+  const navigate = useNavigate();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(false);
   const [hotelFilter, setHotelFilter] = useState<string>('all');
@@ -155,6 +157,20 @@ const OrderList: React.FC = () => {
       key: 'createdAt',
       width: 120,
       render: (date) => dayjs(date).format('YYYY-MM-DD HH:mm'),
+    },
+    {
+      title: '操作',
+      key: 'action',
+      width: 80,
+      render: (_, record) => (
+        <Tooltip title="查看详情">
+          <Button
+            type="text"
+            icon={<EyeOutlined />}
+            onClick={() => navigate(`/merchant/orders/${record._id}`)}
+          />
+        </Tooltip>
+      ),
     },
   ];
 

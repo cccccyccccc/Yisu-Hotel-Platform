@@ -41,4 +41,23 @@ router.get('/:hotelId', asyncHandler(async (req, res) => {
     res.json(reviews);
 }));
 
+// 商户：获取我的酒店的所有评价 (GET /api/reviews/merchant/all)
+router.get('/merchant/all', authMiddleware, asyncHandler(async (req, res) => {
+    if (req.user.role !== 'merchant') {
+        return res.status(403).json({ msg: '权限不足' });
+    }
+
+    // 先获取商户的所有酒店
+    const hotels = await Hotel.find({ merchantId: req.user.userId }).select('_id name');
+    const hotelIds = hotels.map(h => h._id);
+
+    // 获取这些酒店的所有评价
+    const reviews = await Review.find({ hotelId: { $in: hotelIds } })
+        .populate('userId', 'username avatar')
+        .populate('hotelId', 'name city')
+        .sort({ createdAt: -1 });
+
+    res.json(reviews);
+}));
+
 module.exports = router;

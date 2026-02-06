@@ -56,4 +56,36 @@ router.get('/admin/list', authMiddleware, asyncHandler(async (req, res) => {
     res.json(users);
 }));
 
+// 修改密码 PUT /api/users/password
+router.put('/password', authMiddleware, asyncHandler(async (req, res) => {
+    const { oldPassword, newPassword } = req.body;
+
+    if (!oldPassword || !newPassword) {
+        throw new AppError('请提供旧密码和新密码', 400, 'VALIDATION_ERROR');
+    }
+
+    if (newPassword.length < 6) {
+        throw new AppError('新密码长度不能少于6位', 400, 'VALIDATION_ERROR');
+    }
+
+    const user = await User.findById(req.user.userId);
+    if (!user) {
+        throw new AppError('用户不存在', 404, 'USER_NOT_FOUND');
+    }
+
+    // 验证旧密码
+    const bcrypt = require('bcryptjs');
+    const isMatch = await bcrypt.compare(oldPassword, user.password);
+    if (!isMatch) {
+        throw new AppError('旧密码不正确', 400, 'INVALID_PASSWORD');
+    }
+
+    // 更新密码
+    const salt = await bcrypt.genSalt(10);
+    user.password = await bcrypt.hash(newPassword, salt);
+    await user.save();
+
+    res.json({ msg: '密码修改成功' });
+}));
+
 module.exports = router;

@@ -1,0 +1,29 @@
+.container {
+  padding: 0;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.title {
+  font-size: 22px;
+  font-weight: 600;
+  color: #1e293b;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.stats {
+  margin-bottom: 24px;
+}
+
+.subText {
+  font-size: 12px;
+  color: #94a3b8;
+}

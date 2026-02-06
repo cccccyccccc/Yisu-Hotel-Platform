@@ -2304,6 +2304,171 @@
           }
         }
       }
+    },
+    "/api/orders/{id}": {
+      "get": {
+        "summary": "获取订单详情",
+        "tags": [
+          "Orders"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "订单ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "获取成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Order"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "无权查看此订单"
+          },
+          "404": {
+            "description": "订单不存在"
+          }
+        }
+      }
+    },
+    "/api/reviews/merchant/all": {
+      "get": {
+        "summary": "商户获取所有评价",
+        "description": "获取该商户所有酒店的评价列表",
+        "tags": [
+          "Reviews"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "获取成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "_id": {
+                        "type": "string"
+                      },
+                      "userId": {
+                        "type": "object",
+                        "properties": {
+                          "_id": {
+                            "type": "string"
+                          },
+                          "username": {
+                            "type": "string"
+                          },
+                          "avatar": {
+                            "type": "string"
+                          }
+                        }
+                      },
+                      "hotelId": {
+                        "type": "object",
+                        "properties": {
+                          "_id": {
+                            "type": "string"
+                          },
+                          "name": {
+                            "type": "string"
+                          },
+                          "city": {
+                            "type": "string"
+                          }
+                        }
+                      },
+                      "rating": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 5
+                      },
+                      "content": {
+                        "type": "string"
+                      },
+                      "createdAt": {
+                        "type": "string",
+                        "format": "date-time"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "权限不足"
+          }
+        }
+      }
+    },
+    "/api/users/password": {
+      "put": {
+        "summary": "修改密码",
+        "tags": [
+          "Users"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "oldPassword",
+                  "newPassword"
+                ],
+                "properties": {
+                  "oldPassword": {
+                    "type": "string",
+                    "description": "当前密码"
+                  },
+                  "newPassword": {
+                    "type": "string",
+                    "description": "新密码",
+                    "minLength": 6
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "密码修改成功"
+          },
+          "400": {
+            "description": "原密码错误或新密码不符合要求"
+          }
+        }
+      }
     }
   }
 }

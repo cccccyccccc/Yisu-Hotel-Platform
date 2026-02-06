@@ -33,3 +33,8 @@ export const updateUserProfile = (data: { gender?: string; avatar?: string; bio?
 export const getAdminUserList = () => {
   return request.get<UserListItem[]>('/api/users/admin/list');
 };
+
+// 修改密码
+export const changePassword = (data: { oldPassword: string; newPassword: string }) => {
+  return request.put<{ msg: string }>('/api/users/password', data);
+};

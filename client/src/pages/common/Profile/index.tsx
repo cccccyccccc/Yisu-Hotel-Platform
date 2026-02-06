@@ -5,7 +5,7 @@ import {
   LockOutlined, SafetyCertificateOutlined, ClockCircleOutlined,
   BellOutlined, InfoCircleOutlined, CheckCircleOutlined, ExclamationCircleOutlined
 } from '@ant-design/icons';
-import { getUserProfile, updateUserProfile } from '@/api/users';
+import { getUserProfile, updateUserProfile, changePassword } from '@/api/users';
 import { getAnnouncements, getAnnouncementDetail } from '@/api/announcements';
 import type { AnnouncementListItem, Announcement } from '@/api/announcements';
 import { uploadImage } from '@/api/upload';
@@ -34,6 +34,11 @@ const Profile: React.FC = () => {
   const [detailModalVisible, setDetailModalVisible] = useState(false);
   const [announcementDetail, setAnnouncementDetail] = useState<Announcement | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
+
+  // 密码修改相关状态
+  const [passwordModalVisible, setPasswordModalVisible] = useState(false);
+  const [passwordLoading, setPasswordLoading] = useState(false);
+  const [passwordForm] = Form.useForm();
 
   useEffect(() => {
     fetchProfile();
@@ -106,6 +111,29 @@ const Profile: React.FC = () => {
       message.error('保存失败');
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handlePasswordChange = async () => {
+    try {
+      const values = await passwordForm.validateFields();
+      if (values.newPassword !== values.confirmPassword) {
+        message.error('两次输入的新密码不一致');
+        return;
+      }
+      setPasswordLoading(true);
+      await changePassword({
+        oldPassword: values.oldPassword,
+        newPassword: values.newPassword,
+      });
+      message.success('密码修改成功');
+      setPasswordModalVisible(false);
+      passwordForm.resetFields();
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { msg?: string } } };
+      message.error(err.response?.data?.msg || '密码修改失败');
+    } finally {
+      setPasswordLoading(false);
     }
   };
 
@@ -259,7 +287,7 @@ const Profile: React.FC = () => {
                 <div className={styles.securityLabel}>登录密码</div>
                 <div className={styles.securityValue}>已设置</div>
               </div>
-              <Button type="link" className={styles.securityAction}>
+              <Button type="link" className={styles.securityAction} onClick={() => setPasswordModalVisible(true)}>
                 修改
               </Button>
             </div>
@@ -346,6 +374,57 @@ const Profile: React.FC = () => {
             </div>
           </div>
         ) : null}
+      </Modal>
+
+      {/* 修改密码弹窗 */}
+      <Modal
+        title="修改密码"
+        open={passwordModalVisible}
+        onCancel={() => {
+          setPasswordModalVisible(false);
+          passwordForm.resetFields();
+        }}
+        onOk={handlePasswordChange}
+        confirmLoading={passwordLoading}
+        okText="确认修改"
+        cancelText="取消"
+      >
+        <Form form={passwordForm} layout="vertical">
+          <Form.Item
+            name="oldPassword"
+            label="当前密码"
+            rules={[{ required: true, message: '请输入当前密码' }]}
+          >
+            <Input.Password placeholder="请输入当前密码" />
+          </Form.Item>
+          <Form.Item
+            name="newPassword"
+            label="新密码"
+            rules={[
+              { required: true, message: '请输入新密码' },
+              { min: 6, message: '密码长度不能少于6位' }
+            ]}
+          >
+            <Input.Password placeholder="请输入新密码" />
+          </Form.Item>
+          <Form.Item
+            name="confirmPassword"
+            label="确认新密码"
+            rules={[
+              { required: true, message: '请再次输入新密码' },
+              ({ getFieldValue }) => ({
+                validator(_, value) {
+                  if (!value || getFieldValue('newPassword') === value) {
+                    return Promise.resolve();
+                  }
+                  return Promise.reject(new Error('两次输入的密码不一致'));
+                },
+              }),
+            ]}
+          >
+            <Input.Password placeholder="请再次输入新密码" />
+          </Form.Item>
+        </Form>
       </Modal>
     </div>
   );
