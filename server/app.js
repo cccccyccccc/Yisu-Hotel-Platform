@@ -74,6 +74,7 @@ const bannerRoutes = require('./routes/banners');
 const healthRoutes = require('./routes/health');
 const merchantRoutes = require('./routes/merchant');
 const announcementRoutes = require('./routes/announcements');
+const messageRoutes = require('./routes/messages');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/hotels', hotelRoutes);
@@ -87,6 +88,7 @@ app.use('/api/banners', bannerRoutes);
 app.use('/api/health', healthRoutes);
 app.use('/api/merchant', merchantRoutes);
 app.use('/api/announcements', announcementRoutes);
+app.use('/api/messages', messageRoutes);
 
 setupSwagger(app); // 开启swagger
 
@@ -99,11 +101,18 @@ app.use(notFoundHandler);
 // 全局错误处理 - 必须在最后
 app.use(errorHandler);
 
+// Socket.IO 集成
+const http = require('http');
+const { initSocket } = require('./config/socket');
+
+const server = http.createServer(app);
+
 // 后端服务开启
 if (process.env.NODE_ENV !== 'test') {
-    app.listen(PORT, () => {
+    initSocket(server);
+    server.listen(PORT, () => {
         console.log(`🚀 服务正在运行: http://localhost:${PORT}`);
     });
 }
 
-module.exports = app;
+module.exports = { app, server };

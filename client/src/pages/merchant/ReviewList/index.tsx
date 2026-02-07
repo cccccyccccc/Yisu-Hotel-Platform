@@ -1,22 +1,30 @@
 import { useEffect, useState } from 'react';
 import {
   Table, Card, Tag, message, Space, Button, Select, Rate, Avatar,
-  Statistic, Row, Col
+  Statistic, Row, Col, Modal, Input, Tooltip
 } from 'antd';
 import {
-  ReloadOutlined, CommentOutlined, StarOutlined
+  ReloadOutlined, CommentOutlined, StarOutlined, MessageOutlined, CheckCircleOutlined
 } from '@ant-design/icons';
-import { getMerchantReviews } from '@/api/reviews';
+import { getMerchantReviews, replyToReview } from '@/api/reviews';
 import type { MerchantReview } from '@/api/reviews';
 import type { ColumnsType } from 'antd/es/table';
 import styles from './ReviewList.module.css';
 import dayjs from 'dayjs';
 
+const { TextArea } = Input;
+
 const ReviewList: React.FC = () => {
   const [reviews, setReviews] = useState<MerchantReview[]>([]);
   const [loading, setLoading] = useState(false);
   const [hotelFilter, setHotelFilter] = useState<string>('all');
-  const [ratingFilter, setRatingFilter] = useState<number | null>(null);
+  const [ratingFilter, setRatingFilter] = useState<string>('all');
+
+  // 回复相关状态
+  const [replyModalVisible, setReplyModalVisible] = useState(false);
+  const [replyLoading, setReplyLoading] = useState(false);
+  const [currentReview, setCurrentReview] = useState<MerchantReview | null>(null);
+  const [replyContent, setReplyContent] = useState('');
 
   const fetchReviews = async () => {
     setLoading(true);
@@ -34,6 +42,35 @@ const ReviewList: React.FC = () => {
     fetchReviews();
   }, []);
 
+  // 打开回复弹窗
+  const handleOpenReply = (record: MerchantReview) => {
+    setCurrentReview(record);
+    setReplyContent(record.reply || '');
+    setReplyModalVisible(true);
+  };
+
+  // 提交回复
+  const handleSubmitReply = async () => {
+    if (!currentReview) return;
+    if (!replyContent.trim()) {
+      message.warning('请输入回复内容');
+      return;
+    }
+
+    setReplyLoading(true);
+    try {
+      await replyToReview(currentReview._id, replyContent.trim());
+      message.success('回复成功');
+      setReplyModalVisible(false);
+      setReplyContent('');
+      fetchReviews();
+    } catch (error) {
+      message.error('回复失败');
+    } finally {
+      setReplyLoading(false);
+    }
+  };
+
   // 获取酒店列表用于筛选
   const hotels = Array.from(new Set(reviews.map(r => r.hotelId?._id)))
     .map(id => reviews.find(r => r.hotelId?._id === id)?.hotelId)
@@ -44,24 +81,25 @@ const ReviewList: React.FC = () => {
   if (hotelFilter !== 'all') {
     filteredReviews = filteredReviews.filter(r => r.hotelId?._id === hotelFilter);
   }
-  if (ratingFilter !== null) {
-    filteredReviews = filteredReviews.filter(r => r.rating === ratingFilter);
+  if (ratingFilter !== 'all') {
+    filteredReviews = filteredReviews.filter(r => r.rating === Number(ratingFilter));
   }
 
-  // 统计数据
+  // 统计数据 (基于筛选后的评价)
   const stats = {
-    total: reviews.length,
-    avgRating: reviews.length > 0
-      ? (reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length).toFixed(1)
+    total: filteredReviews.length,
+    avgRating: filteredReviews.length > 0
+      ? (filteredReviews.reduce((sum, r) => sum + r.rating, 0) / filteredReviews.length).toFixed(1)
       : '0',
-    goodReviews: reviews.filter(r => r.rating >= 4).length,
+    goodReviews: filteredReviews.filter(r => r.rating >= 4).length,
+    replied: filteredReviews.filter(r => r.reply).length,
   };
 
   const columns: ColumnsType<MerchantReview> = [
     {
       title: '用户',
       key: 'user',
-      width: 140,
+      width: 120,
       render: (_, record) => (
         <Space>
           <Avatar src={record.userId?.avatar} size="small">
@@ -74,7 +112,7 @@ const ReviewList: React.FC = () => {
     {
       title: '酒店',
       key: 'hotel',
-      width: 160,
+      width: 140,
       render: (_, record) => (
         <div>
           <div>{record.hotelId?.name}</div>
@@ -86,7 +124,7 @@ const ReviewList: React.FC = () => {
       title: '评分',
       dataIndex: 'rating',
       key: 'rating',
-      width: 140,
+      width: 130,
       render: (rating) => (
         <Space>
           <Rate disabled value={rating} style={{ fontSize: 14 }} />
@@ -101,13 +139,46 @@ const ReviewList: React.FC = () => {
       dataIndex: 'content',
       key: 'content',
       ellipsis: true,
+      render: (content, record) => (
+        <div>
+          <div>{content}</div>
+          {record.reply && (
+            <div className={styles.replyBox}>
+              <Tag color="blue" icon={<MessageOutlined />}>商户回复</Tag>
+              <span className={styles.replyText}>{record.reply}</span>
+            </div>
+          )}
+        </div>
+      ),
     },
     {
-      title: '评价时间',
+      title: '时间',
       dataIndex: 'createdAt',
       key: 'createdAt',
-      width: 120,
-      render: (date) => dayjs(date).format('YYYY-MM-DD'),
+      width: 100,
+      render: (date) => dayjs(date).format('MM-DD HH:mm'),
+    },
+    {
+      title: '操作',
+      key: 'action',
+      width: 100,
+      render: (_, record) => (
+        record.reply ? (
+          <Tooltip title={`已于 ${dayjs(record.replyAt).format('YYYY-MM-DD HH:mm')} 回复`}>
+            <Button type="text" icon={<CheckCircleOutlined />} style={{ color: '#10b981' }}>
+              已回复
+            </Button>
+          </Tooltip>
+        ) : (
+          <Button
+            type="link"
+            icon={<MessageOutlined />}
+            onClick={() => handleOpenReply(record)}
+          >
+            回复
+          </Button>
+        )
+      ),
     },
   ];
 
@@ -131,14 +202,13 @@ const ReviewList: React.FC = () => {
             value={ratingFilter}
             onChange={setRatingFilter}
             style={{ width: 120 }}
-            allowClear
-            placeholder="评分筛选"
             options={[
-              { value: 5, label: '5星' },
-              { value: 4, label: '4星' },
-              { value: 3, label: '3星' },
-              { value: 2, label: '2星' },
-              { value: 1, label: '1星' },
+              { value: 'all', label: '全部评分' },
+              { value: '5', label: '5星' },
+              { value: '4', label: '4星' },
+              { value: '3', label: '3星' },
+              { value: '2', label: '2星' },
+              { value: '1', label: '1星' },
             ]}
           />
           <Button icon={<ReloadOutlined />} onClick={fetchReviews}>
@@ -148,12 +218,12 @@ const ReviewList: React.FC = () => {
       </div>
 
       <Row gutter={24} className={styles.stats}>
-        <Col span={8}>
+        <Col span={6}>
           <Card>
             <Statistic title="总评价数" value={stats.total} suffix="条" />
           </Card>
         </Col>
-        <Col span={8}>
+        <Col span={6}>
           <Card>
             <Statistic
               title="平均评分"
@@ -164,13 +234,24 @@ const ReviewList: React.FC = () => {
             />
           </Card>
         </Col>
-        <Col span={8}>
+        <Col span={6}>
           <Card>
             <Statistic
-              title="好评数（4星及以上）"
+              title="好评数"
               value={stats.goodReviews}
               suffix="条"
               valueStyle={{ color: '#10b981' }}
+            />
+          </Card>
+        </Col>
+        <Col span={6}>
+          <Card>
+            <Statistic
+              title="已回复"
+              value={stats.replied}
+              suffix={`/ ${stats.total}`}
+              prefix={<MessageOutlined />}
+              valueStyle={{ color: '#3b82f6' }}
             />
           </Card>
         </Col>
@@ -185,6 +266,43 @@ const ReviewList: React.FC = () => {
           pagination={{ pageSize: 10 }}
         />
       </Card>
+
+      {/* 回复弹窗 */}
+      <Modal
+        title="回复评价"
+        open={replyModalVisible}
+        onCancel={() => {
+          setReplyModalVisible(false);
+          setReplyContent('');
+        }}
+        onOk={handleSubmitReply}
+        confirmLoading={replyLoading}
+        okText="提交回复"
+        cancelText="取消"
+      >
+        {currentReview && (
+          <div className={styles.replyModal}>
+            <div className={styles.originalReview}>
+              <div className={styles.reviewHeader}>
+                <Avatar src={currentReview.userId?.avatar} size="small">
+                  {currentReview.userId?.username?.charAt(0).toUpperCase()}
+                </Avatar>
+                <span className={styles.reviewUser}>{currentReview.userId?.username}</span>
+                <Rate disabled value={currentReview.rating} style={{ fontSize: 12 }} />
+              </div>
+              <div className={styles.reviewContent}>{currentReview.content}</div>
+            </div>
+            <TextArea
+              rows={4}
+              value={replyContent}
+              onChange={(e) => setReplyContent(e.target.value)}
+              placeholder="请输入回复内容..."
+              maxLength={500}
+              showCount
+            />
+          </div>
+        )}
+      </Modal>
     </div>
   );
 };

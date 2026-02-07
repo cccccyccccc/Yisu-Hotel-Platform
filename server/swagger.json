@@ -497,6 +497,59 @@
             "format": "date-time"
           }
         }
+      },
+      "Message": {
+        "type": "object",
+        "required": [
+          "conversationId",
+          "senderId",
+          "receiverId",
+          "content"
+        ],
+        "properties": {
+          "_id": {
+            "type": "string",
+            "example": "60a1b..."
+          },
+          "conversationId": {
+            "type": "string",
+            "description": "会话ID，由双方用户ID生成",
+            "example": "user123_user456"
+          },
+          "senderId": {
+            "type": "string",
+            "description": "发送者用户ID",
+            "example": "609c1..."
+          },
+          "receiverId": {
+            "type": "string",
+            "description": "接收者用户ID",
+            "example": "609c2..."
+          },
+          "content": {
+            "type": "string",
+            "description": "消息内容",
+            "example": "您好，请问有什么可以帮您？"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "text",
+              "image"
+            ],
+            "default": "text",
+            "example": "text"
+          },
+          "read": {
+            "type": "boolean",
+            "default": false,
+            "example": false
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
       }
     }
   },
@@ -2466,6 +2519,234 @@
           },
           "400": {
             "description": "原密码错误或新密码不符合要求"
+          }
+        }
+      }
+    },
+    "/api/messages/conversations": {
+      "get": {
+        "summary": "获取会话列表",
+        "description": "获取当前用户的所有聊天会话，包含最后一条消息和未读数",
+        "tags": [
+          "Messages"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "会话列表",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "conversationId": {
+                        "type": "string"
+                      },
+                      "otherUser": {
+                        "$ref": "#/components/schemas/User"
+                      },
+                      "lastMessage": {
+                        "$ref": "#/components/schemas/Message"
+                      },
+                      "unreadCount": {
+                        "type": "integer"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/messages/contacts": {
+      "get": {
+        "summary": "获取可联系用户列表",
+        "description": "商户获取有订单关系的用户，用户获取有订单关系的商户",
+        "tags": [
+          "Messages"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "联系人列表",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "user": {
+                        "$ref": "#/components/schemas/User"
+                      },
+                      "hotel": {
+                        "type": "object",
+                        "properties": {
+                          "_id": {
+                            "type": "string"
+                          },
+                          "name": {
+                            "type": "string"
+                          }
+                        }
+                      },
+                      "lastOrderDate": {
+                        "type": "string",
+                        "format": "date-time"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/messages/unread/count": {
+      "get": {
+        "summary": "获取未读消息数",
+        "description": "获取当前用户的未读消息总数",
+        "tags": [
+          "Messages"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "未读数",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "count": {
+                      "type": "integer",
+                      "example": 5
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/messages/{userId}": {
+      "get": {
+        "summary": "获取聊天记录",
+        "description": "获取与指定用户的聊天消息历史",
+        "tags": [
+          "Messages"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "对方用户ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "消息列表",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Message"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/messages": {
+      "post": {
+        "summary": "发送消息",
+        "description": "向指定用户发送消息，商户只能联系有订单的用户",
+        "tags": [
+          "Messages"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "receiverId",
+                  "content"
+                ],
+                "properties": {
+                  "receiverId": {
+                    "type": "string",
+                    "description": "接收者用户ID"
+                  },
+                  "content": {
+                    "type": "string",
+                    "description": "消息内容"
+                  },
+                  "type": {
+                    "type": "string",
+                    "enum": [
+                      "text",
+                      "image"
+                    ],
+                    "default": "text"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "消息发送成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Message"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "接收者和消息内容不能为空"
+          },
+          "403": {
+            "description": "商户只能联系有订单的用户"
           }
         }
       }

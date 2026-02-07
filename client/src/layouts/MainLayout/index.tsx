@@ -16,6 +16,7 @@ import {
   SettingOutlined,
   TeamOutlined,
   CommentOutlined,
+  MessageOutlined,
 } from '@ant-design/icons';
 import { useUserStore } from '@/stores';
 import styles from './MainLayout.module.css';
@@ -60,6 +61,11 @@ const MainLayout: React.FC = () => {
       key: '/merchant/reviews',
       icon: <CommentOutlined />,
       label: '评价管理',
+    },
+    {
+      key: '/chat',
+      icon: <MessageOutlined />,
+      label: '消息中心',
     },
     {
       key: '/profile',
@@ -159,7 +165,7 @@ const MainLayout: React.FC = () => {
         <div className={styles.siderFooter}>
           <Dropdown menu={{ items: userMenuItems }} placement="topRight">
             <div className={styles.userCard}>
-              <Avatar className={styles.userAvatar}>
+              <Avatar src={user?.avatar} className={styles.userAvatar}>
                 {user?.username?.charAt(0).toUpperCase()}
               </Avatar>
               {!collapsed && (

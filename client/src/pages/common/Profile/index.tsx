@@ -10,6 +10,7 @@ import { getAnnouncements, getAnnouncementDetail } from '@/api/announcements';
 import type { AnnouncementListItem, Announcement } from '@/api/announcements';
 import { uploadImage } from '@/api/upload';
 import type { UploadProps } from 'antd/es/upload';
+import { useUserStore } from '@/stores';
 import styles from './Profile.module.css';
 
 interface UserProfile {
@@ -105,6 +106,12 @@ const Profile: React.FC = () => {
       await updateUserProfile({
         ...values,
         avatar: avatarUrl,
+      });
+      // 更新全局 Store 以同步侧边栏头像
+      useUserStore.getState().updateUser({
+        avatar: avatarUrl,
+        gender: values.gender,
+        bio: values.bio,
       });
       message.success('保存成功');
     } catch (error) {

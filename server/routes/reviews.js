@@ -60,4 +60,33 @@ router.get('/merchant/all', authMiddleware, asyncHandler(async (req, res) => {
     res.json(reviews);
 }));
 
+// 商户：回复评价 (PUT /api/reviews/:id/reply)
+router.put('/:id/reply', authMiddleware, asyncHandler(async (req, res) => {
+    if (req.user.role !== 'merchant') {
+        return res.status(403).json({ msg: '权限不足' });
+    }
+
+    const { reply } = req.body;
+    if (!reply || !reply.trim()) {
+        return res.status(400).json({ msg: '回复内容不能为空' });
+    }
+
+    const review = await Review.findById(req.params.id).populate('hotelId');
+    if (!review) {
+        return res.status(404).json({ msg: '评价不存在' });
+    }
+
+    // 验证该评价属于商户的酒店
+    const hotel = await Hotel.findById(review.hotelId._id || review.hotelId);
+    if (!hotel || hotel.merchantId.toString() !== req.user.userId) {
+        return res.status(403).json({ msg: '无权回复此评价' });
+    }
+
+    review.reply = reply.trim();
+    review.replyAt = new Date();
+    await review.save();
+
+    res.json({ msg: '回复成功', review });
+}));
+
 module.exports = router;

@@ -24,6 +24,16 @@ const reviewSchema = new mongoose.Schema({
         required: true,
         trim: true
     },
+    // 商户回复
+    reply: {
+        type: String,
+        trim: true,
+        default: null
+    },
+    replyAt: {
+        type: Date,
+        default: null
+    },
     createdAt: { type: Date, default: Date.now }
 });
 

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import {
   Form, Input, InputNumber, Button, Select, Upload,
-  message, Space, Card, Row, Col
+  message, Space, Card, Row, Col, Cascader
 } from 'antd';
 import {
   PlusOutlined, SaveOutlined, ArrowLeftOutlined
@@ -10,6 +10,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { createHotel, updateHotel, getHotelDetail } from '@/api/hotels';
 import { uploadImage } from '@/api/upload';
 import type { UploadFile, UploadProps } from 'antd/es/upload';
+import { provinceCityData, findProvinceByCity } from '@/data/cities';
 import styles from './HotelEdit.module.css';
 
 const { TextArea } = Input;
@@ -49,7 +50,8 @@ const cityCoordinates: Record<string, [number, number]> = {
   '南京': [118.7969, 32.0603],
 };
 
-const cities = Object.keys(cityCoordinates);
+// 默认坐标表 (常用城市)
+const defaultCoordinates: [number, number] = [116.4074, 39.9042]; // 北京
 
 const HotelEdit: React.FC = () => {
   const { id } = useParams();
@@ -69,8 +71,13 @@ const HotelEdit: React.FC = () => {
     try {
       const res = await getHotelDetail(id!);
       const hotel = res.data;
+
+      // 将城市字符串转换为级联选择器格式 [省份, 城市]
+      const cityPath = hotel.city ? findProvinceByCity(hotel.city) : null;
+
       form.setFieldsValue({
         ...hotel,
+        city: cityPath || [hotel.city], // 如果找不到省份映射，直接用城市名
         tags: hotel.tags?.join(','),
         nearbyAttractions: hotel.nearbyAttractions?.join(','),
         nearbyTransport: hotel.nearbyTransport?.join(','),
@@ -113,8 +120,10 @@ const HotelEdit: React.FC = () => {
   const onFinish = async (values: Record<string, unknown>) => {
     setLoading(true);
     try {
-      const city = values.city as string;
-      const coordinates = cityCoordinates[city] || [116.4074, 39.9042]; // 默认北京坐标
+      // 从级联选择器获取城市（第二级）
+      const cityValue = values.city as string[];
+      const city = cityValue?.[1] || cityValue?.[0] || '';
+      const coordinates = cityCoordinates[city] || defaultCoordinates;
 
       const data: HotelCreateData = {
         name: values.name as string,
@@ -206,11 +215,17 @@ const HotelEdit: React.FC = () => {
                 label="所在城市"
                 rules={[{ required: true, message: '请选择城市' }]}
               >
-                <Select placeholder="请选择城市">
-                  {cities.map(city => (
-                    <Select.Option key={city} value={city}>{city}</Select.Option>
-                  ))}
-                </Select>
+                <Cascader
+                  options={provinceCityData}
+                  placeholder="请选择省份/城市"
+                  showSearch={{
+                    filter: (inputValue, path) =>
+                      path.some(option =>
+                        (option.label as string).toLowerCase().includes(inputValue.toLowerCase())
+                      ),
+                  }}
+                  expandTrigger="hover"
+                />
               </Form.Item>
             </Col>
             <Col span={16}>

@@ -64,7 +64,7 @@ router.post('/login', authValidators.login, asyncHandler(async (req, res) => {
         msg: '登录成功',
         token: token,
         user: {
-            id: user._id,
+            _id: user._id,
             username: user.username,
             role: user.role,
             avatar: user.avatar

@@ -16,6 +16,7 @@ import AdminBanners from '@/pages/admin/BannerList/index';
 import AdminUserList from '@/pages/admin/UserList/index';
 import AdminAnnouncementList from '@/pages/admin/AnnouncementList/index';
 import Profile from '@/pages/common/Profile/index';
+import Chat from '@/pages/common/Chat/index';
 
 const router = createBrowserRouter([
   {
@@ -40,10 +41,13 @@ const router = createBrowserRouter([
     path: '/',
     element: <MainLayout />,
     children: [
-      // 通用页面
       {
         path: 'profile',
         element: <Profile />,
+      },
+      {
+        path: 'chat',
+        element: <Chat />,
       },
       // 商户页面
       {

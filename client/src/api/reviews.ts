@@ -29,6 +29,8 @@ export interface MerchantReview {
   };
   rating: number;
   content: string;
+  reply?: string;
+  replyAt?: string;
   createdAt: string;
 }
 
@@ -40,4 +42,9 @@ export const getHotelReviews = (hotelId: string) => {
 // 商户：获取我的酒店的所有评价
 export const getMerchantReviews = () => {
   return request.get<MerchantReview[]>('/api/reviews/merchant/all');
+};
+
+// 商户：回复评价
+export const replyToReview = (reviewId: string, reply: string) => {
+  return request.put<{ msg: string; review: MerchantReview }>(`/api/reviews/${reviewId}/reply`, { reply });
 };
