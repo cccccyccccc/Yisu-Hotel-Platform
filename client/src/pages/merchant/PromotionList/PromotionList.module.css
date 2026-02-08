@@ -1,0 +1,23 @@
+.container {
+  padding: 24px;
+}
+
+.container :global(.ant-card) {
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.container :global(.ant-card-head-title) {
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.container :global(.ant-table-thead > tr > th) {
+  background: #fafafa;
+  font-weight: 600;
+}
+
+.container :global(.ant-tag) {
+  font-size: 13px;
+  padding: 2px 8px;
+}

@@ -50,3 +50,13 @@ export const updateAnnouncement = (id: string, data: Partial<Announcement>) => {
 export const deleteAnnouncement = (id: string) => {
   return request.delete(`/api/announcements/${id}`);
 };
+
+// 获取未读公告数量
+export const getUnreadAnnouncementCount = () => {
+  return request.get<{ count: number }>('/api/announcements/unread/count');
+};
+
+// 标记公告为已读
+export const markAnnouncementRead = (id: string) => {
+  return request.post(`/api/announcements/${id}/read`);
+};

@@ -36,3 +36,8 @@ export interface MerchantStats {
 export const getMerchantStats = () => {
   return request.get<MerchantStats>('/api/merchant/stats');
 };
+
+// 获取商户的酒店列表
+export const getMerchantHotels = () => {
+  return request.get<{ _id: string; name: string; city: string; status: number }[]>('/api/hotels/my');
+};

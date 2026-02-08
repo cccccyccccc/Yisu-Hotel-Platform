@@ -11,6 +11,7 @@ import MerchantRooms from '@/pages/merchant/RoomList/index';
 import MerchantOrders from '@/pages/merchant/OrderList/index';
 import MerchantOrderDetail from '@/pages/merchant/OrderDetail/index';
 import MerchantReviewList from '@/pages/merchant/ReviewList/index';
+import MerchantPromotionList from '@/pages/merchant/PromotionList/index';
 import AdminHotels from '@/pages/admin/HotelList/index';
 import AdminBanners from '@/pages/admin/BannerList/index';
 import AdminUserList from '@/pages/admin/UserList/index';
@@ -85,6 +86,10 @@ const router = createBrowserRouter([
       {
         path: 'merchant/reviews',
         element: <MerchantReviewList />,
+      },
+      {
+        path: 'merchant/promotions',
+        element: <MerchantPromotionList />,
       },
       // 管理员页面
       {

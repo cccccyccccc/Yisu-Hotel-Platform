@@ -40,6 +40,9 @@ export const getRoomsByHotel = (hotelId: string) => {
   return request.get<RoomType[]>(`/api/rooms/${hotelId}`);
 };
 
+// 别名导出
+export const getHotelRoomTypes = getRoomsByHotel;
+
 // 修改房型
 export const updateRoom = (id: string, data: Partial<RoomTypeCreateData>) => {
   return request.put(`/api/rooms/${id}`, data);

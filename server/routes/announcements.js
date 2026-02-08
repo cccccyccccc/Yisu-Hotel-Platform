@@ -1,8 +1,52 @@
 const express = require('express');
 const router = express.Router();
 const Announcement = require('../models/Announcement');
+const AnnouncementRead = require('../models/AnnouncementRead');
 const authMiddleware = require('../middleware/authMiddleware');
 const { asyncHandler, AppError } = require('../middleware/errorHandler');
+
+// 获取未读公告数量 GET /api/announcements/unread/count
+router.get('/unread/count', authMiddleware, asyncHandler(async (req, res) => {
+  const userId = req.user.userId;
+
+  // 获取所有上线公告ID
+  const announcements = await Announcement.find({ status: 1 }).select('_id');
+  const announcementIds = announcements.map(a => a._id);
+
+  // 获取用户已读的公告ID
+  const readRecords = await AnnouncementRead.find({
+    userId,
+    announcementId: { $in: announcementIds }
+  }).select('announcementId');
+  const readIds = readRecords.map(r => r.announcementId.toString());
+
+  // 计算未读数
+  const unreadCount = announcementIds.filter(id => !readIds.includes(id.toString())).length;
+
+  res.json({ count: unreadCount });
+}));
+
+// 标记公告为已读 POST /api/announcements/:id/read
+router.post('/:id/read', authMiddleware, asyncHandler(async (req, res) => {
+  const userId = req.user.userId;
+  const announcementId = req.params.id;
+
+  // 检查公告是否存在
+  const announcement = await Announcement.findById(announcementId);
+  if (!announcement) {
+    throw new AppError('公告不存在', 404, 'NOT_FOUND');
+  }
+
+  // 创建已读记录（如果已存在则忽略）
+  try {
+    await AnnouncementRead.create({ userId, announcementId });
+  } catch (err) {
+    // 唯一索引冲突则忽略（已读过）
+    if (err.code !== 11000) throw err;
+  }
+
+  res.json({ msg: '已标记为已读' });
+}));
 
 // 获取上线公告列表 (公开接口) GET /api/announcements
 router.get('/', asyncHandler(async (req, res) => {
@@ -108,3 +152,4 @@ router.delete('/:id', authMiddleware, asyncHandler(async (req, res) => {
 }));
 
 module.exports = router;
+

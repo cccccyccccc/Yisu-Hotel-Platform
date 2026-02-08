@@ -17,8 +17,10 @@ import {
   TeamOutlined,
   CommentOutlined,
   MessageOutlined,
+  PercentageOutlined,
 } from '@ant-design/icons';
 import { useUserStore } from '@/stores';
+import NotificationBell from '@/components/NotificationBell';
 import styles from './MainLayout.module.css';
 
 const { Header, Sider, Content } = Layout;
@@ -61,6 +63,11 @@ const MainLayout: React.FC = () => {
       key: '/merchant/reviews',
       icon: <CommentOutlined />,
       label: '评价管理',
+    },
+    {
+      key: '/merchant/promotions',
+      icon: <PercentageOutlined />,
+      label: '促销管理',
     },
     {
       key: '/chat',
@@ -200,10 +207,7 @@ const MainLayout: React.FC = () => {
             </div>
           </div>
           <div className={styles.headerRight}>
-            <div className={styles.notifyWrapper}>
-              <BellOutlined className={styles.notifyIcon} />
-              <span className={styles.notifyBadge}>3</span>
-            </div>
+            <NotificationBell />
             <div className={styles.headerUser}>
               <span className={styles.headerUserName}>{user?.username}</span>
             </div>

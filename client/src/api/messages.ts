@@ -53,6 +53,9 @@ export const getUnreadCount = () => {
   return request.get<{ count: number }>('/api/messages/unread/count');
 };
 
+// 别名导出
+export const getUnreadMessageCount = getUnreadCount;
+
 // 可联系用户/商户类型
 export interface Contact {
   user: {
