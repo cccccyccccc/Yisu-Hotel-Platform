@@ -1,7 +1,7 @@
 // tests/test_different_routes/favorites.test.js
 const request = require('supertest');
 const mongoose = require('mongoose');
-const app = require('../../app');
+const { app } = require("../../app");
 const User = require('../../models/User');
 const Hotel = require('../../models/Hotel');
 const Favorite = require('../../models/Favorite');
@@ -35,7 +35,7 @@ describe('收藏夹模块路由测试 (Favorite Routes)', () => {
             username: 'fav_user', password: '123'
         });
         token = resLogin.body.token;
-        userId = resLogin.body.user.id;
+        userId = resLogin.body.user._id;
 
         // 3. 创建一个测试酒店
         const hotel = await Hotel.create({

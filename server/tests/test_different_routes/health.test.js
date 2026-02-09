@@ -1,7 +1,7 @@
 // tests/test_different_routes/health.test.js
 const request = require('supertest');
 const mongoose = require('mongoose');
-const app = require('../../app');
+const { app } = require("../../app");
 
 jest.setTimeout(30000);
 

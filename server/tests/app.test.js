@@ -1,6 +1,6 @@
 const request = require('supertest');
 const mongoose = require('mongoose');
-const app = require('../app'); // 回到 server 根目录找 app.js
+const { app } = require('../app'); // 回到 server 根目录找 app.js
 
 describe('App 核心入口测试 (App.js)', () => {
 

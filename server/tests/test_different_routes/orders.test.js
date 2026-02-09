@@ -1,7 +1,7 @@
 // tests/test_different_routes/orders.test.js
 const request = require('supertest');
 const mongoose = require('mongoose');
-const app = require('../../app');
+const { app } = require("../../app");
 const User = require('../../models/User');
 const Hotel = require('../../models/Hotel');
 const RoomType = require('../../models/RoomType');
@@ -32,13 +32,13 @@ describe('订单模块路由测试 (Order Routes)', () => {
     await request(app).post('/api/auth/register').send({ username: 'order_mer', password: '123', role: 'merchant' });
     const loginMer = await request(app).post('/api/auth/login').send({ username: 'order_mer', password: '123' });
     merchantToken = loginMer.body.token;
-    merchantId = loginMer.body.user.id;
+    merchantId = loginMer.body.user._id;
 
     // 注册用户
     await request(app).post('/api/auth/register').send({ username: 'order_user', password: '123', role: 'user' });
     const loginUser = await request(app).post('/api/auth/login').send({ username: 'order_user', password: '123' });
     userToken = loginUser.body.token;
-    userId = loginUser.body.user.id;
+    userId = loginUser.body.user._id;
 
     // 创建酒店 (直接设为上线)
     const hotel = await Hotel.create({

@@ -1,7 +1,7 @@
 const request = require('supertest');
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
-const app = require('../../app');
+const { app } = require("../../app");
 const User = require('../../models/User');
 
 // 设置较长的超时时间，防止数据库连接慢导致测试失败
@@ -150,7 +150,7 @@ describe('认证模块路由测试 (Auth Routes)', () => {
                 username: mockUser.username,
                 role: mockUser.role
             });
-            expect(res.body.user).toHaveProperty('id');
+            expect(res.body.user).toHaveProperty('_id');
         });
 
         it('2.2 账号不存在：输入错误的用户名返回 400', async () => {

@@ -1,7 +1,7 @@
 // tests/test_different_routes/rooms.test.js
 const request = require('supertest');
 const mongoose = require('mongoose');
-const app = require('../../app');
+const { app } = require("../../app");
 const User = require('../../models/User');
 const Hotel = require('../../models/Hotel');
 const RoomType = require('../../models/RoomType');
@@ -33,7 +33,7 @@ describe('房型模块路由测试 (Room Routes)', () => {
         await request(app).post('/api/auth/register').send({ username: 'room_mer', password: '123', role: 'merchant' });
         const loginMer = await request(app).post('/api/auth/login').send({ username: 'room_mer', password: '123' });
         merchantToken = loginMer.body.token;
-        merchantId = loginMer.body.user.id;
+        merchantId = loginMer.body.user._id;
 
         // Merchant B (Other)
         await request(app).post('/api/auth/register').send({ username: 'other_mer', password: '123', role: 'merchant' });

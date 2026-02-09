@@ -1,7 +1,7 @@
 // tests/test_different_routes/users.test.js
 const request = require('supertest');
 const mongoose = require('mongoose');
-const app = require('../../app');
+const { app } = require("../../app");
 const User = require('../../models/User');
 
 jest.setTimeout(30000);
@@ -32,7 +32,7 @@ describe('用户模块路由测试 (User Routes)', () => {
       password: '123'
     });
     userToken = login.body.token;
-    userId = login.body.user.id;
+    userId = login.body.user._id;
   });
 
   afterAll(async () => {

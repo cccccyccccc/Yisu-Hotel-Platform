@@ -2,7 +2,7 @@
 
 const request = require('supertest');
 const mongoose = require('mongoose');
-const app = require('../../app');
+const { app } = require("../../app");
 const Order = require('../../models/Order');
 const User = require('../../models/User');
 
@@ -20,7 +20,7 @@ describe('订单状态流转与限制测试 (Order State Machine)', () => {
         await request(app).post('/api/auth/register').send({ username: 'state_user', password: '123', role: 'user' });
         const loginRes = await request(app).post('/api/auth/login').send({ username: 'state_user', password: '123' });
         userToken = loginRes.body.token;
-        userId = loginRes.body.user.id;
+        userId = loginRes.body.user._id;
     });
 
     afterAll(async () => {

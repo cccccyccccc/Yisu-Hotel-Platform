@@ -1,7 +1,7 @@
 // tests/test_different_routes/banners.test.js
 const request = require('supertest');
 const mongoose = require('mongoose');
-const app = require('../../app');
+const { app } = require("../../app");
 const Banner = require('../../models/Banner');
 const User = require('../../models/User');
 const Hotel = require('../../models/Hotel'); // 需要创建酒店来获取合法的 targetHotelId

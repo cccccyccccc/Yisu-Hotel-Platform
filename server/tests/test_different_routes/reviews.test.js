@@ -1,7 +1,7 @@
 // tests/test_different_routes/reviews.test.js
 const request = require('supertest');
 const mongoose = require('mongoose');
-const app = require('../../app');
+const { app } = require("../../app");
 const User = require('../../models/User');
 const Hotel = require('../../models/Hotel');
 const Review = require('../../models/Review');
@@ -30,19 +30,19 @@ describe('评价模块路由测试 (Review Routes)', () => {
     await request(app).post('/api/auth/register').send({ username: 'review_mer', password: '123', role: 'merchant' });
     const loginMer = await request(app).post('/api/auth/login').send({ username: 'review_mer', password: '123' });
 
-    merchantId = loginMer.body.user.id;
+    merchantId = loginMer.body.user._id;
 
     // 注册用户1
     await request(app).post('/api/auth/register').send({ username: 'review_user1', password: '123', role: 'user' });
     const loginUser = await request(app).post('/api/auth/login').send({ username: 'review_user1', password: '123' });
     userToken = loginUser.body.token;
-    userId = loginUser.body.user.id;
+    userId = loginUser.body.user._id;
 
     // 注册用户2
     await request(app).post('/api/auth/register').send({ username: 'review_user2', password: '123', role: 'user' });
     const loginUser2 = await request(app).post('/api/auth/login').send({ username: 'review_user2', password: '123' });
     user2Token = loginUser2.body.token;
-    user2Id = loginUser2.body.user.id;
+    user2Id = loginUser2.body.user._id;
 
     // 创建酒店
     const hotel = await Hotel.create({

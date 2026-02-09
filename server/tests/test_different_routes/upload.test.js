@@ -3,7 +3,7 @@ const request = require('supertest');
 const mongoose = require('mongoose');
 const path = require('path');
 const fs = require('fs');
-const app = require('../../app');
+const { app } = require("../../app");
 
 jest.setTimeout(30000);
 
@@ -36,7 +36,7 @@ describe('文件上传模块路由测试 (Upload Routes)', () => {
     const testImagePath = path.join(__dirname, 'test-image.jpg');
     const testTextPath = path.join(__dirname, 'test-file.txt');
 
-    beforeAll(() => {
+    beforeEach(() => {
       // 创建一个简单的测试图片 (1x1 红色像素的 JPEG)
       // 这是一个最小的有效 JPEG 文件
       const minimalJpeg = Buffer.from([
@@ -76,7 +76,7 @@ describe('文件上传模块路由测试 (Upload Routes)', () => {
       fs.writeFileSync(testTextPath, 'This is not an image');
     });
 
-    afterAll(() => {
+    afterEach(() => {
       // 清理测试文件
       if (fs.existsSync(testImagePath)) {
         fs.unlinkSync(testImagePath);
@@ -109,8 +109,9 @@ describe('文件上传模块路由测试 (Upload Routes)', () => {
         .post('/api/upload')
         .attach('file', testTextPath);
 
-      // multer 的 fileFilter 会拒绝非图片
-      expect(res.statusCode).toBe(500);
+      // 非图片文件应被拒绝，返回 400
+      expect(res.statusCode).toBe(400);
+      expect(res.body.msg).toBe('只允许上传图片文件');
     });
   });
 });

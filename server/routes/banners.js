@@ -65,7 +65,7 @@ router.post('/', authMiddleware, bannerValidators.create, asyncHandler(async (re
         _id: newBanner._id,
         title: newBanner.title,
         imageUrl: newBanner.imageUrl,
-        sort: newBanner.priority,
+        priority: newBanner.priority,
         isActive: newBanner.status === 1
     });
 }));

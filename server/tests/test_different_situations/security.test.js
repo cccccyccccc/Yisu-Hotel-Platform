@@ -2,7 +2,7 @@
 
 const request = require('supertest');
 const mongoose = require('mongoose');
-const app = require('../../app');
+const { app } = require("../../app");
 const User = require('../../models/User');
 const Order = require('../../models/Order');
 
@@ -20,7 +20,7 @@ describe('安全专项测试 (Security: IDOR & Injection)', () => {
         await request(app).post('/api/auth/register').send({ username: 'victim', password: 'secure_password', role: 'user' });
         const vLogin = await request(app).post('/api/auth/login').send({ username: 'victim', password: 'secure_password' });
 
-        const victimId = vLogin.body.user.id;
+        const victimId = vLogin.body.user._id;
 
         // 受害者创建了一个订单
         const order = await Order.create({

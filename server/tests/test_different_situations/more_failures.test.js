@@ -1,6 +1,6 @@
 const request = require('supertest');
 const mongoose = require('mongoose');
-const app = require('../../app');
+const { app } = require("../../app");
 const User = require('../../models/User');
 const Hotel = require('../../models/Hotel');
 const RoomType = require('../../models/RoomType');
@@ -38,7 +38,7 @@ describe('补充测试', () => {
         await request(app).post('/api/auth/register').send({ username: 'cov_merchant', password: '123', role: 'merchant' });
         const resMer = await request(app).post('/api/auth/login').send({ username: 'cov_merchant', password: '123' });
         merchantToken = resMer.body.token;
-        merchantId = resMer.body.user.id;
+        merchantId = resMer.body.user._id;
 
         // 3. 注册 User 1
         await request(app).post('/api/auth/register').send({ username: 'cov_user1', password: '123', role: 'user' });

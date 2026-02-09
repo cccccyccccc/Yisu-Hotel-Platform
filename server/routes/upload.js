@@ -3,6 +3,7 @@ const router = express.Router();
 const logger = require('../utils/logger');
 const multer = require('multer');
 const path = require('node:path');
+const fs = require('fs');
 const { compressImage } = require('../utils/imageCompressor');
 
 // 配置存储策略
@@ -20,21 +21,10 @@ const storage = multer.diskStorage({
     }
 });
 
-// 过滤文件类型 (只允许图片)
-const fileFilter = (req, file, cb) => {
-    if (file.mimetype.startsWith('image/')) {
-        cb(null, true);
-    } else {
-        cb(new Error('只允许上传图片文件！'), false);
-    }
-};
-
 const upload = multer({
     storage: storage,
-    fileFilter: fileFilter,
-    limits: { fileSize: 10 * 1024 * 1024 } // 10MB (压缩前可以大一些)
+    limits: { fileSize: 10 * 1024 * 1024 } // 10MB
 });
-
 
 // 上传单张图片接口 (POST /api/upload)
 // 'file' 是前端上传时的字段名 (formData key)
@@ -42,6 +32,16 @@ router.post('/', upload.single('file'), async (req, res) => {
     try {
         if (!req.file) {
             return res.status(400).json({ msg: '请选择要上传的文件' });
+        }
+
+        // 在路由处理器中检查文件类型
+        if (!req.file.mimetype.startsWith('image/')) {
+            // 删除已上传的非图片文件
+            const uploadedPath = path.join('public/uploads/', req.file.filename);
+            if (fs.existsSync(uploadedPath)) {
+                fs.unlinkSync(uploadedPath);
+            }
+            return res.status(400).json({ msg: '只允许上传图片文件' });
         }
 
         const filePath = path.join('public/uploads/', req.file.filename);

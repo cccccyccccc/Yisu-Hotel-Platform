@@ -1,7 +1,7 @@
 // tests/test_different_routes/hotels.test.js
 const request = require('supertest');
 const mongoose = require('mongoose');
-const app = require('../../app');
+const { app } = require("../../app");
 const User = require('../../models/User');
 const Hotel = require('../../models/Hotel');
 const RoomType = require('../../models/RoomType');
@@ -38,13 +38,13 @@ describe('酒店模块路由测试 (Hotel Routes)', () => {
         await request(app).post('/api/auth/register').send({ username: 'hotel_mer', password: '123', role: 'merchant' });
         const loginMer = await request(app).post('/api/auth/login').send({ username: 'hotel_mer', password: '123' });
         merchantToken = loginMer.body.token;
-        merchantId = loginMer.body.user.id;
+        merchantId = loginMer.body.user._id;
 
         // User
         await request(app).post('/api/auth/register').send({ username: 'hotel_user', password: '123', role: 'user' });
         const loginUser = await request(app).post('/api/auth/login').send({ username: 'hotel_user', password: '123' });
         userToken = loginUser.body.token;
-        userId = loginUser.body.user.id;
+        userId = loginUser.body.user._id;
 
         // 3. 确保地理位置索引存在 (用于 LBS 测试)
         await Hotel.collection.createIndex({ location: '2dsphere' });
