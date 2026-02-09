@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import {
   Table, Card, Tag, message, Space, Button, Select, Rate, Avatar,
-  Statistic, Row, Col, Modal, Input, Tooltip
+  Statistic, Row, Col, Modal, Input, Tooltip, DatePicker
 } from 'antd';
 import {
   ReloadOutlined, CommentOutlined, StarOutlined, MessageOutlined, CheckCircleOutlined
@@ -11,14 +11,29 @@ import type { MerchantReview } from '@/api/reviews';
 import type { ColumnsType } from 'antd/es/table';
 import styles from './ReviewList.module.css';
 import dayjs from 'dayjs';
+import type { Dayjs } from 'dayjs';
+import { useSearchParams } from 'react-router-dom';
 
 const { TextArea } = Input;
+const { RangePicker } = DatePicker;
 
 const ReviewList: React.FC = () => {
+  const [searchParams] = useSearchParams();
   const [reviews, setReviews] = useState<MerchantReview[]>([]);
   const [loading, setLoading] = useState(false);
   const [hotelFilter, setHotelFilter] = useState<string>('all');
   const [ratingFilter, setRatingFilter] = useState<string>('all');
+  const [dateRange, setDateRange] = useState<[Dayjs, Dayjs] | null>(null);
+
+  // 初始化时检查URL参数
+  useEffect(() => {
+    const monthParam = searchParams.get('month');
+    if (monthParam === 'current') {
+      const startOfMonth = dayjs().startOf('month');
+      const today = dayjs();
+      setDateRange([startOfMonth, today]);
+    }
+  }, [searchParams]);
 
   // 回复相关状态
   const [replyModalVisible, setReplyModalVisible] = useState(false);
@@ -83,6 +98,12 @@ const ReviewList: React.FC = () => {
   }
   if (ratingFilter !== 'all') {
     filteredReviews = filteredReviews.filter(r => r.rating === Number(ratingFilter));
+  }
+  if (dateRange) {
+    filteredReviews = filteredReviews.filter(r => {
+      const reviewDate = dayjs(r.createdAt);
+      return !reviewDate.isBefore(dateRange[0], 'day') && !reviewDate.isAfter(dateRange[1], 'day');
+    });
   }
 
   // 统计数据 (基于筛选后的评价)
@@ -189,6 +210,12 @@ const ReviewList: React.FC = () => {
           <CommentOutlined /> 评价管理
         </h2>
         <Space>
+          <RangePicker
+            value={dateRange}
+            onChange={(dates) => setDateRange(dates as [Dayjs, Dayjs] | null)}
+            placeholder={['开始日期', '结束日期']}
+            allowClear
+          />
           <Select
             value={hotelFilter}
             onChange={setHotelFilter}

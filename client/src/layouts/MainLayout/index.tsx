@@ -171,7 +171,7 @@ const MainLayout: React.FC = () => {
         {/* 用户信息（底部） */}
         <div className={styles.siderFooter}>
           <Dropdown menu={{ items: userMenuItems }} placement="topRight">
-            <div className={styles.userCard}>
+            <div className={styles.userCard} onClick={() => navigate('/profile')} style={{ cursor: 'pointer' }}>
               <Avatar src={user?.avatar} className={styles.userAvatar}>
                 {user?.username?.charAt(0).toUpperCase()}
               </Avatar>
@@ -200,15 +200,28 @@ const MainLayout: React.FC = () => {
               className={styles.triggerBtn}
             />
             <div className={styles.breadcrumb}>
-              <HomeOutlined className={styles.breadcrumbIcon} />
-              <span>首页</span>
+              <HomeOutlined
+                className={styles.breadcrumbIcon}
+                onClick={() => navigate(user?.role === 'admin' ? '/admin/hotels' : '/merchant/dashboard')}
+                style={{ cursor: 'pointer' }}
+              />
+              <span
+                onClick={() => navigate(user?.role === 'admin' ? '/admin/hotels' : '/merchant/dashboard')}
+                style={{ cursor: 'pointer' }}
+              >首页</span>
               <span className={styles.breadcrumbSep}>&gt;</span>
               <span className={styles.breadcrumbCurrent}>{getPageTitle()}</span>
             </div>
           </div>
           <div className={styles.headerRight}>
-            <NotificationBell />
-            <div className={styles.headerUser}>
+            <div onClick={() => navigate('/chat')} style={{ cursor: 'pointer' }}>
+              <NotificationBell />
+            </div>
+            <div
+              className={styles.headerUser}
+              onClick={() => navigate('/profile')}
+              style={{ cursor: 'pointer' }}
+            >
               <span className={styles.headerUserName}>{user?.username}</span>
             </div>
           </div>

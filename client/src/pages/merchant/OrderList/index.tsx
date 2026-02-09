@@ -1,16 +1,19 @@
 import { useEffect, useState } from 'react';
 import {
   Table, Card, Row, Col, Tag, message, Statistic,
-  Space, Button, Select, Tooltip
+  Space, Button, Select, Tooltip, DatePicker
 } from 'antd';
 import {
   ReloadOutlined, ShoppingOutlined, EyeOutlined
 } from '@ant-design/icons';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { getMerchantOrders } from '@/api/orders';
 import type { ColumnsType } from 'antd/es/table';
 import styles from './OrderList.module.css';
 import dayjs from 'dayjs';
+import type { Dayjs } from 'dayjs';
+
+const { RangePicker } = DatePicker;
 
 interface Order {
   _id: string;
@@ -46,9 +49,21 @@ const statusMap: Record<string, { color: string; text: string }> = {
 
 const OrderList: React.FC = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(false);
   const [hotelFilter, setHotelFilter] = useState<string>('all');
+  const [dateRange, setDateRange] = useState<[Dayjs, Dayjs] | null>(null);
+
+  // 初始化时检查URL参数
+  useEffect(() => {
+    const monthParam = searchParams.get('month');
+    if (monthParam === 'current') {
+      const startOfMonth = dayjs().startOf('month');
+      const today = dayjs();
+      setDateRange([startOfMonth, today]);
+    }
+  }, [searchParams]);
 
   const fetchOrders = async () => {
     setLoading(true);
@@ -72,9 +87,20 @@ const OrderList: React.FC = () => {
     .filter(Boolean);
 
   // 筛选后的订单
-  const filteredOrders = hotelFilter === 'all'
-    ? orders
-    : orders.filter(o => o.hotelId?._id === hotelFilter);
+  const filteredOrders = orders.filter(o => {
+    // 酒店筛选
+    if (hotelFilter !== 'all' && o.hotelId?._id !== hotelFilter) return false;
+
+    // 日期筛选
+    if (dateRange) {
+      const orderDate = dayjs(o.createdAt);
+      if (orderDate.isBefore(dateRange[0], 'day') || orderDate.isAfter(dateRange[1], 'day')) {
+        return false;
+      }
+    }
+
+    return true;
+  });
 
   // 统计数据
   const stats = {
@@ -181,10 +207,16 @@ const OrderList: React.FC = () => {
           <ShoppingOutlined /> 订单管理
         </h2>
         <Space>
+          <RangePicker
+            value={dateRange}
+            onChange={(dates) => setDateRange(dates as [Dayjs, Dayjs] | null)}
+            placeholder={['开始日期', '结束日期']}
+            allowClear
+          />
           <Select
             value={hotelFilter}
             onChange={setHotelFilter}
-            style={{ width: 200 }}
+            style={{ width: 180 }}
             options={[
               { value: 'all', label: '全部酒店' },
               ...hotels.map(h => ({ value: h!._id, label: h!.name }))

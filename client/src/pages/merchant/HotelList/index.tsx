@@ -1,14 +1,14 @@
 import { useEffect, useState } from 'react';
 import {
   Table, Button, Space, Tag, message,
-  Tooltip, Empty, Dropdown
+  Tooltip, Empty, Dropdown, Select
 } from 'antd';
 import {
   PlusOutlined, EditOutlined, EyeOutlined,
   MoreOutlined, ReloadOutlined, AppstoreOutlined,
   ExclamationCircleOutlined, CrownOutlined
 } from '@ant-design/icons';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { getMyHotels, updateHotelStatus } from '@/api/hotels';
 import type { ColumnsType } from 'antd/es/table';
 import styles from './HotelList.module.css';
@@ -34,8 +34,18 @@ const statusMap: Record<number, { color: string; text: string }> = {
 
 const MerchantHotelList: React.FC = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [hotels, setHotels] = useState<Hotel[]>([]);
   const [loading, setLoading] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+
+  // 初始化时检查URL参数
+  useEffect(() => {
+    const statusParam = searchParams.get('status');
+    if (statusParam !== null) {
+      setStatusFilter(statusParam);
+    }
+  }, [searchParams]);
 
   const fetchHotels = async () => {
     setLoading(true);
@@ -52,6 +62,11 @@ const MerchantHotelList: React.FC = () => {
   useEffect(() => {
     fetchHotels();
   }, []);
+
+  // 筛选后的酒店列表
+  const filteredHotels = statusFilter === 'all'
+    ? hotels
+    : hotels.filter(h => h.status === Number(statusFilter));
 
   const handleStatusChange = async (id: string, status: 1 | 3) => {
     try {
@@ -170,6 +185,18 @@ const MerchantHotelList: React.FC = () => {
       <div className={styles.header}>
         <h2 className={styles.title}>我的酒店</h2>
         <Space>
+          <Select
+            value={statusFilter}
+            onChange={setStatusFilter}
+            style={{ width: 140 }}
+            options={[
+              { value: 'all', label: '全部状态' },
+              { value: '0', label: '待审核' },
+              { value: '1', label: '已发布' },
+              { value: '2', label: '审核不通过' },
+              { value: '3', label: '已下线' },
+            ]}
+          />
           <Button icon={<ReloadOutlined />} onClick={fetchHotels}>刷新</Button>
           <Button
             type="primary"
@@ -184,7 +211,7 @@ const MerchantHotelList: React.FC = () => {
 
       <Table
         columns={columns}
-        dataSource={hotels}
+        dataSource={filteredHotels}
         rowKey="_id"
         loading={loading}
         pagination={{ pageSize: 10 }}

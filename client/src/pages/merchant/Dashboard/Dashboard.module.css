@@ -167,3 +167,178 @@
   font-size: 14px;
   line-height: 1.6;
 }
+
+/* Chart Card */
+.chartCard {
+  border-radius: 16px !important;
+  border: 1px solid #e2e8f0 !important;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.03) !important;
+  min-height: 320px;
+}
+
+.chartCard :global(.ant-card-body) {
+  padding: 16px 24px !important;
+}
+
+.cardTitle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+/* Rating Distribution */
+.ratingDist {
+  margin-top: 16px;
+}
+
+.ratingRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+  font-size: 12px;
+  color: #64748b;
+}
+
+.ratingRow span:first-child {
+  width: 32px;
+}
+
+.ratingRow span:last-child {
+  width: 36px;
+  text-align: right;
+}
+
+.ratingRow :global(.ant-progress) {
+  flex: 1;
+}
+
+/* Heatmap */
+.heatmapCard {
+  border-radius: 16px !important;
+  border: 1px solid #e2e8f0 !important;
+}
+
+.heatmapContainer {
+  padding: 8px 0;
+}
+
+.heatmapGrid {
+  display: grid;
+  grid-template-columns: repeat(15, 1fr);
+  gap: 3px;
+}
+
+.heatmapCell {
+  aspect-ratio: 1;
+  border-radius: 3px;
+  background-color: #ebedf0;
+  transition: transform 0.2s;
+  cursor: pointer;
+}
+
+.heatmapCell:hover {
+  transform: scale(1.3);
+}
+
+.heatmapLegend {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+  margin-top: 12px;
+  font-size: 12px;
+  color: #94a3b8;
+}
+
+.legendBar {
+  width: 80px;
+  height: 10px;
+  border-radius: 2px;
+  background: linear-gradient(to right, #ebedf0, #3b82f6);
+}
+
+/* Expanded Rating Card */
+.ratingContent {
+  padding: 8px 0;
+}
+
+.ratingScore {
+  display: flex;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.ratingIcon {
+  font-size: 28px;
+  color: #f59e0b;
+  margin-right: 10px;
+}
+
+.ratingNumber {
+  font-size: 32px;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.ratingDistLarge {
+  margin-top: 0;
+}
+
+.ratingRowLarge {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+  font-size: 14px;
+}
+
+.ratingLabel {
+  width: 40px;
+  color: #64748b;
+}
+
+.ratingPercent {
+  width: 45px;
+  text-align: right;
+  color: #334155;
+  font-weight: 500;
+}
+
+.ratingCount {
+  width: 60px;
+  text-align: right;
+  color: #94a3b8;
+  font-size: 12px;
+}
+
+/* Compact Review Items */
+.reviewItemCompact {
+  padding: 12px 0 !important;
+  border-bottom: 1px solid #f1f5f9 !important;
+}
+
+.reviewItemCompact:last-child {
+  border-bottom: none !important;
+}
+
+.reviewContentCompact {
+  color: #64748b;
+  font-size: 13px;
+  line-height: 1.5;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+/* View All Button */
+.viewAllBtn {
+  text-align: center;
+  padding-top: 12px;
+  border-top: 1px solid #f1f5f9;
+  margin-top: 8px;
+}
