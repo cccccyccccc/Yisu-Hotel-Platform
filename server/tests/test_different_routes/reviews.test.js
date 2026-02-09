@@ -210,11 +210,93 @@ describe('评价模块路由测试 (Review Routes)', () => {
   });
 
   // ==========================================
-  // 3. 附加测试 (Additional Tests)
+  // 3. 商户评价管理 (Merchant Review Management)
+  // ==========================================
+  describe('商户评价管理', () => {
+
+    let merchantToken;
+    let reviewId;
+
+    beforeAll(async () => {
+      // 获取商户Token
+      const loginMer = await request(app).post('/api/auth/login').send({ username: 'review_mer', password: '123' });
+      merchantToken = loginMer.body.token;
+    });
+
+    beforeEach(async () => {
+      // 创建一个评价用于测试回复
+      const review = await Review.create({
+        userId: userId,
+        hotelId: hotelId,
+        rating: 5,
+        content: '需要商户回复的评价'
+      });
+      reviewId = review._id;
+    });
+
+    it('3.1 商户获取自己酒店的所有评价', async () => {
+      const res = await request(app)
+        .get('/api/reviews/merchant/all')
+        .set('Authorization', `Bearer ${merchantToken}`);
+
+      expect(res.statusCode).toBe(200);
+      expect(Array.isArray(res.body)).toBe(true);
+    });
+
+    it('3.2 普通用户无法获取商户评价列表', async () => {
+      const res = await request(app)
+        .get('/api/reviews/merchant/all')
+        .set('Authorization', `Bearer ${userToken}`);
+
+      expect(res.statusCode).toBe(403);
+    });
+
+    it('3.3 商户回复评价成功', async () => {
+      const res = await request(app)
+        .put(`/api/reviews/${reviewId}/reply`)
+        .set('Authorization', `Bearer ${merchantToken}`)
+        .send({ reply: '感谢您的好评！' });
+
+      expect(res.statusCode).toBe(200);
+      expect(res.body.msg).toBe('回复成功');
+      expect(res.body.review.reply).toBe('感谢您的好评！');
+    });
+
+    it('3.4 普通用户无法回复评价', async () => {
+      const res = await request(app)
+        .put(`/api/reviews/${reviewId}/reply`)
+        .set('Authorization', `Bearer ${userToken}`)
+        .send({ reply: '用户尝试回复' });
+
+      expect(res.statusCode).toBe(403);
+    });
+
+    it('3.5 回复内容不能为空', async () => {
+      const res = await request(app)
+        .put(`/api/reviews/${reviewId}/reply`)
+        .set('Authorization', `Bearer ${merchantToken}`)
+        .send({ reply: '' });
+
+      expect(res.statusCode).toBe(400);
+    });
+
+    it('3.6 回复不存在的评价返回404', async () => {
+      const fakeId = new mongoose.Types.ObjectId();
+      const res = await request(app)
+        .put(`/api/reviews/${fakeId}/reply`)
+        .set('Authorization', `Bearer ${merchantToken}`)
+        .send({ reply: '回复不存在的评价' });
+
+      expect(res.statusCode).toBe(404);
+    });
+  });
+
+  // ==========================================
+  // 4. 附加测试 (Additional Tests)
   // ==========================================
   describe('附加测试', () => {
 
-    it('3.1 评价包含用户信息 (populate 测试)', async () => {
+    it('4.1 评价包含用户信息 (populate 测试)', async () => {
       // 先创建评价
       await Review.create({
         userId: userId,
@@ -231,7 +313,7 @@ describe('评价模块路由测试 (Review Routes)', () => {
       expect(res.body[0].userId).toBeDefined();
     });
 
-    it('3.2 无认证发评价返回 401', async () => {
+    it('4.2 无认证发评价返回 401', async () => {
       const res = await request(app)
         .post('/api/reviews')
         .send({ hotelId: hotelId, rating: 5, content: '无认证测试' });

@@ -45,7 +45,7 @@ messageSchema.index({ conversationId: 1, createdAt: -1 });
 
 // 生成会话ID的静态方法
 messageSchema.statics.generateConversationId = function (userId1, userId2) {
-  return [userId1, userId2].sort().join('_');
+  return [userId1, userId2].sort((a, b) => String(a).localeCompare(String(b))).join('_');
 };
 
 module.exports = mongoose.model('Message', messageSchema);
