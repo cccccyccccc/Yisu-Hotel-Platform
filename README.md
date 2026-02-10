@@ -218,8 +218,8 @@ cd yisu-hotel-platform
 
 ```bash
 cd server
-cp .env.example .env       # 复制并编辑环境变量
 npm install
+# 创建 .env 文件（格式见下方「环境变量」章节）
 npm run dev                # 启动开发服务器 (默认 http://localhost:5000)
 ```
 
@@ -244,13 +244,9 @@ npm run dev:weapp          # 微信小程序模式
 ### 方式二：Docker 一键部署
 
 ```bash
-# 1. 配置环境变量
-cd server
-cp .env.example .env
-# 编辑 .env，至少设置 JWT_SECRET
+# 1. 在 server/ 目录下创建 .env 文件（格式见下方「环境变量」章节）
 
 # 2. 启动所有服务
-cd ..
 docker-compose up -d
 
 # 服务启动后：
@@ -263,15 +259,39 @@ docker-compose up -d
 
 ## ⚙️ 环境变量
 
-服务端核心环境变量说明 (参见 `server/.env.example`)：
+在 `server/` 目录下创建 `.env` 文件，内容格式如下：
+
+```env
+# --- 基础配置 ---
+PORT=5000
+NODE_ENV=development
+
+# --- 数据库 ---
+# 本地开发：连接本机 MongoDB
+# Docker 部署：docker-compose.yml 会自动覆盖为容器内地址
+MONGODB_URI=mongodb://127.0.0.1:27017/yisu-hotel
+
+# --- Redis ---
+# 本地开发：连接本机 Redis
+# Docker 部署：docker-compose.yml 会自动覆盖为容器内地址
+REDIS_URL=redis://127.0.0.1:6379
+
+# --- JWT 密钥 (必填！) ---
+# 请替换为你自己的强密钥，生成方式: openssl rand -base64 32
+JWT_SECRET=<替换为你的密钥>
+
+# --- Docker 镜像源 (可选) ---
+DOCKER_REGISTRY=<替换为你的镜像源>
+```
 
 | 变量名 | 默认值 | 说明 |
 |--------|--------|------|
 | `PORT` | 5000 | 服务端口 |
-| `NODE_ENV` | production | 运行环境 |
-| `MONGODB_URI` | - | MongoDB 连接字符串 |
-| `REDIS_URL` | - | Redis 连接地址 |
+| `NODE_ENV` | development | 运行环境 (development / production / test) |
+| `MONGODB_URI` | 127.0.0.1:27017 | MongoDB 连接字符串 |
+| `REDIS_URL` | 127.0.0.1:6379 | Redis 连接地址 |
 | `JWT_SECRET` | ⚠️ **必填** | JWT 签名密钥 |
+| `DOCKER_REGISTRY` | - | Docker 镜像加速源（可选） |
 
 ---
 
