@@ -1,0 +1,353 @@
+.index-page {
+  min-height: 100vh;
+  background: linear-gradient(180deg, #e8f4fc 0%, #f5f7fa 30%);
+}
+
+// Banner 区域
+.banner-section {
+  width: 100%;
+}
+
+.banner-swiper {
+  width: 100%;
+  height: 380px;
+}
+
+.banner-image {
+  width: 100%;
+  height: 100%;
+}
+
+.banner-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #fff;
+  font-size: 48px;
+  font-weight: bold;
+
+  .sub {
+    font-size: 28px;
+    font-weight: normal;
+    margin-top: 16px;
+    opacity: 0.8;
+  }
+}
+
+.banner-title {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 24px 32px;
+  background: linear-gradient(transparent, rgba(0, 0, 0, 0.6));
+  color: #fff;
+  font-size: 28px;
+}
+
+// 搜索区域
+.search-section {
+  padding: 24px;
+  margin-top: -48px;
+  position: relative;
+  z-index: 10;
+}
+
+.search-card {
+  background: #fff;
+  border-radius: 24px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+}
+
+.search-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 28px 32px;
+  border-bottom: 1px solid #f0f0f0;
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.row-label {
+  display: flex;
+  align-items: center;
+  color: #666;
+  font-size: 28px;
+
+  .icon {
+    margin-right: 12px;
+    font-size: 32px;
+  }
+}
+
+.row-value {
+  display: flex;
+  align-items: center;
+}
+
+.city-name {
+  font-size: 32px;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin-right: 8px;
+}
+
+.arrow {
+  font-size: 32px;
+  color: #999;
+}
+
+.keyword-row {
+  .keyword-input {
+    flex: 1;
+    text-align: right;
+    font-size: 28px;
+    color: #1a1a1a;
+  }
+}
+
+// 日期选择
+.date-row {
+  padding: 32px;
+  background: linear-gradient(135deg, #f8fbff 0%, #fff5f5 100%);
+}
+
+.date-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.date-label {
+  font-size: 24px;
+  color: #999;
+  margin-bottom: 8px;
+}
+
+.date-value {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.date-day {
+  font-size: 36px;
+  font-weight: 700;
+  color: #1a1a1a;
+}
+
+.date-weekday {
+  font-size: 24px;
+  color: #666;
+  margin-top: 4px;
+}
+
+.date-nights {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 16px 32px;
+  background: linear-gradient(135deg, #2196f3 0%, #1976d2 100%);
+  border-radius: 12px;
+}
+
+.nights-num {
+  font-size: 40px;
+  font-weight: 700;
+  color: #fff;
+}
+
+.nights-text {
+  font-size: 22px;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+// 筛选条件
+.filter-row {
+  display: flex;
+  padding: 24px 32px;
+}
+
+.filter-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px;
+  margin: 0 8px;
+  background: #f5f7fa;
+  border-radius: 12px;
+  font-size: 26px;
+  color: #666;
+  transition: all 0.2s;
+
+  &:first-child {
+    margin-left: 0;
+  }
+
+  &:last-child {
+    margin-right: 0;
+  }
+
+  &.active {
+    background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+    color: #1976d2;
+  }
+
+  .filter-value {
+    margin-top: 8px;
+    font-size: 24px;
+    color: #999;
+  }
+
+  &.active .filter-value {
+    color: #2196f3;
+  }
+}
+
+// 快捷标签
+.quick-tags {
+  margin-top: 24px;
+}
+
+.tags-title {
+  font-size: 28px;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin-bottom: 20px;
+  padding-left: 8px;
+}
+
+.tags-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.tag-item {
+  display: flex;
+  align-items: center;
+  padding: 16px 24px;
+  background: #fff;
+  border-radius: 24px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  transition: all 0.2s;
+
+  &.active {
+    background: linear-gradient(135deg, #2196f3 0%, #1976d2 100%);
+    box-shadow: 0 4px 12px rgba(33, 150, 243, 0.3);
+
+    .tag-name {
+      color: #fff;
+    }
+  }
+}
+
+.tag-icon {
+  font-size: 28px;
+  margin-right: 8px;
+}
+
+.tag-name {
+  font-size: 26px;
+  color: #333;
+}
+
+// 搜索按钮
+.search-button {
+  margin-top: 32px;
+  height: 96px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #2196f3 0%, #1565c0 100%);
+  border-radius: 48px;
+  font-size: 36px;
+  font-weight: 600;
+  color: #fff;
+  box-shadow: 0 8px 24px rgba(33, 150, 243, 0.35);
+  transition: all 0.2s;
+
+  &:active {
+    transform: scale(0.98);
+    box-shadow: 0 4px 12px rgba(33, 150, 243, 0.3);
+  }
+}
+
+// 选择器弹窗
+.picker-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 1000;
+  display: flex;
+  align-items: flex-end;
+}
+
+.picker-content {
+  width: 100%;
+  background: #fff;
+  border-radius: 24px 24px 0 0;
+  padding-bottom: env(safe-area-inset-bottom);
+  animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+.picker-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.picker-title {
+  font-size: 32px;
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
+.picker-options {
+  padding: 16px 32px 32px;
+}
+
+.picker-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 28px 24px;
+  border-radius: 12px;
+  font-size: 30px;
+  color: #333;
+  transition: all 0.2s;
+
+  &.active {
+    background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+    color: #1976d2;
+  }
+
+  .check {
+    color: #2196f3;
+    font-weight: bold;
+  }
+}
+

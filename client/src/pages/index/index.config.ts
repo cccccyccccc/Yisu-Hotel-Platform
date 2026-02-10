@@ -1,3 +1,5 @@
 export default definePageConfig({
-  navigationBarTitleText: '首页'
+  navigationBarTitleText: '易宿酒店',
+  navigationStyle: 'custom',
+  enablePullDownRefresh: false
 })
