@@ -3,10 +3,10 @@ name: Frontend CI
 on:
   push:
     branches: [ "main", "master" ]
-    paths: [ "client/**" ]
+    paths: [ "../../admin/**" ]
   pull_request:
     branches: [ "main", "master" ]
-    paths: [ "client/**" ]
+    paths: [ "../../admin/**" ]
   workflow_dispatch:
 
 jobs:
@@ -15,7 +15,7 @@ jobs:
 
     defaults:
       run:
-        working-directory: ./client
+        working-directory: ./admin
 
     steps:
       - name: Checkout code
@@ -26,7 +26,7 @@ jobs:
         with:
           node-version: 20
           cache: 'npm'
-          cache-dependency-path: client/package-lock.json
+          cache-dependency-path: admin/package-lock.json
 
       - name: Install dependencies
         run: npm ci

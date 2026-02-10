@@ -3,10 +3,10 @@ name: Frontend SonarCloud Analysis
 on:
   push:
     branches: [ "main", "master" ]
-    paths: [ "client/**" ]
+    paths: [ "../../admin/**" ]
   pull_request:
     branches: [ "main", "master" ]
-    paths: [ "client/**" ]
+    paths: [ "../../admin/**" ]
   workflow_dispatch:
 
 permissions:
@@ -17,7 +17,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: ./client
+        working-directory: ./admin
 
     steps:
       - name: Checkout code
@@ -30,7 +30,7 @@ jobs:
         with:
           node-version: '20'
           cache: 'npm'
-          cache-dependency-path: client/package-lock.json
+          cache-dependency-path: admin/package-lock.json
 
       - name: Install dependencies
         run: npm ci
@@ -42,7 +42,7 @@ jobs:
       - name: SonarCloud Scan
         uses: SonarSource/sonarcloud-github-action@master
         with:
-          projectBaseDir: client
+          projectBaseDir: admin
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
