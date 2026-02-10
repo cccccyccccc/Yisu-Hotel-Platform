@@ -1,6 +1,6 @@
 // Socket.IO 客户端 Hook
 import { useEffect, useRef } from 'react';
-import { io, Socket } from 'socket.io-admin';
+import { io, Socket } from 'socket.io-client';
 import { useUserStore } from '@/stores';
 
 // Socket.IO 服务器地址
