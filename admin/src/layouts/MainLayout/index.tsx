@@ -214,7 +214,7 @@ const MainLayout: React.FC = () => {
             </div>
           </div>
           <div className={styles.headerRight}>
-            <div onClick={() => navigate('/chat')} style={{ cursor: 'pointer' }}>
+            <div>
               <NotificationBell />
             </div>
             <div

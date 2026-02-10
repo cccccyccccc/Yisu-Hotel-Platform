@@ -24,7 +24,7 @@ const Login: React.FC = () => {
       if (user.role === 'admin') {
         navigate('/admin/hotels');
       } else if (user.role === 'merchant') {
-        navigate('/merchant/hotels');
+        navigate('/merchant/dashboard');
       } else {
         message.info('普通用户请使用移动端应用');
       }
