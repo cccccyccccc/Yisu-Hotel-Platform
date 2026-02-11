@@ -1,15 +1,16 @@
 import { useEffect, useState, useRef } from 'react';
 import {
   Form, Input, InputNumber, Button, Select, Upload,
-  message, Space, Card, Row, Col, Cascader, DatePicker, Tooltip
+  Space, Card, Row, Col, Cascader, DatePicker, Tooltip, App, Divider
 } from 'antd';
 import {
-  PlusOutlined, SaveOutlined, ArrowLeftOutlined, EnvironmentOutlined, InfoCircleOutlined
+  PlusOutlined, ArrowLeftOutlined, EnvironmentOutlined, InfoCircleOutlined, ShopOutlined, CarOutlined, RocketOutlined
 } from '@ant-design/icons';
 import { useNavigate, useParams } from 'react-router-dom';
 import AMapLoader from '@amap/amap-jsapi-loader';
 import dayjs from 'dayjs';
 import { createHotel, updateHotel, getHotelDetail } from '@/api/hotels';
+import { getHotelRoomTypes } from '@/api/rooms'; //
 import { uploadImage } from '@/api/upload';
 import type { UploadFile, UploadProps } from 'antd/es/upload';
 import { provinceCityData, findProvinceByCity } from '@/data/cities';
@@ -17,89 +18,130 @@ import styles from './HotelEdit.module.css';
 
 const { TextArea } = Input;
 
-// 高德地图全局实例引用
-let AMap: any = null;
-let mapInstance: any = null;
-let markerInstance: any = null;
-let geocoder: any = null;
+// 配置高德安全密钥
+if (typeof window !== 'undefined') {
+  (window as any)._AMapSecurityConfig = {
+    securityJsCode: '77c23574261c938c6d74008344c60ff1', 
+  };
+}
 
-const HotelEdit: React.FC = () => {
+const HotelEditContent: React.FC = () => {
+  const { message } = App.useApp(); // 解决 Context 警告
   const { id } = useParams();
   const navigate = useNavigate();
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
   const [fileList, setFileList] = useState<UploadFile[]>([]);
+  
   const mapRef = useRef<HTMLDivElement>(null);
+  const amapObj = useRef<any>(null);
+  const mapInstance = useRef<any>(null);
+  const markerInstance = useRef<any>(null);
+  const geocoder = useRef<any>(null);
+  const geolocation = useRef<any>(null);
+
   const isEdit = !!id;
 
-  // 1. 初始化高德地图
   useEffect(() => {
     AMapLoader.load({
-      key: '14cf2ac7198b687730a69d24057f58de', // 需替换为实际Key
+      key: '14cf2ac7198b687730a69d24057f58de', 
       version: '2.0',
-      plugins: ['AMap.Geocoder', 'AMap.PlaceSearch'],
-    }).then((AMapInstance) => {
-      AMap = AMapInstance;
-      initMap();
+      plugins: ['AMap.Geocoder', 'AMap.PlaceSearch', 'AMap.Geolocation'],
+    }).then((AMap) => {
+      amapObj.current = AMap;
+      initMap(AMap);
     }).catch(e => console.error("地图加载失败:", e));
 
-    return () => mapInstance?.destroy();
+    return () => mapInstance.current?.destroy();
   }, []);
 
-  const initMap = () => {
+  const initMap = (AMap: any) => {
     if (!mapRef.current) return;
-    mapInstance = new AMap.Map(mapRef.current, { zoom: 13, center: [116.4074, 39.9042] });
-    geocoder = new AMap.Geocoder();
-    markerInstance = new AMap.Marker({ draggable: true, cursor: 'move' });
-    mapInstance.add(markerInstance);
+    
+    mapInstance.current = new AMap.Map(mapRef.current, { 
+      zoom: 13, 
+      center: [116.4074, 39.9042] // 默认定位
+    });
+    
+    geocoder.current = new AMap.Geocoder();
+    geolocation.current = new AMap.Geolocation({
+      enableHighAccuracy: true,
+      timeout: 10000,
+      zoomToAccuracy: true,
+    });
 
-    // 拖动点位同步坐标和地址
-    markerInstance.on('dragend', (e: any) => updateLocationInfo([e.lnglat.lng, e.lnglat.lat]));
-    mapInstance.on('click', (e: any) => {
-      markerInstance.setPosition(e.lnglat);
-      updateLocationInfo([e.lnglat.lng, e.lnglat.lat]);
+    markerInstance.current = new AMap.Marker({ 
+      draggable: true, 
+      cursor: 'move',
+      position: [116.4074, 39.9042]
+    });
+    mapInstance.current.add(markerInstance.current);
+
+    // 修复 TS(2345) 类型错误
+    markerInstance.current.on('dragend', (e: any) => {
+      const lnglat = [e.lnglat.lng, e.lnglat.lat] as [number, number];
+      updateLocationInfo(lnglat);
+    });
+
+    mapInstance.current.on('click', (e: any) => {
+      const lnglat = [e.lnglat.lng, e.lnglat.lat] as [number, number];
+      markerInstance.current.setPosition(e.lnglat);
+      updateLocationInfo(lnglat);
+    });
+
+    if (id) fetchHotelDetail();
+  };
+
+  const handleLocateCurrent = () => {
+    if (!geolocation.current) return;
+    message.loading({ content: '正在精确定位...', key: 'locate' });
+    geolocation.current.getCurrentPosition((status: string, result: any) => {
+      if (status === 'complete') {
+        const lnglat: [number, number] = [result.position.lng, result.position.lat];
+        markerInstance.current.setPosition(lnglat);
+        mapInstance.current.setCenter(lnglat);
+        updateLocationInfo(lnglat); // 点击定位后立即同步地址
+        message.success({ content: '定位成功', key: 'locate' });
+      } else {
+        message.error({ content: '定位失败，请确保环境为 HTTPS 并授权', key: 'locate' });
+      }
     });
   };
 
-  // 2. 更新位置信息并自动检索周边 POI
   const updateLocationInfo = (lnglat: [number, number]) => {
     form.setFieldValue('location', lnglat);
-    geocoder.getAddress(lnglat, (status: string, result: any) => {
-      if (status === 'complete') form.setFieldValue('address', result.regeocode.formattedAddress);
+    
+    // 逆地理编码同步地址和城市
+    geocoder.current?.getAddress(lnglat, (status: string, result: any) => {
+      if (status === 'complete' && result.regeocode) {
+        const { addressComponent, formattedAddress } = result.regeocode;
+        form.setFieldValue('address', formattedAddress);
+        const province = addressComponent.province;
+        const city = (addressComponent.city && addressComponent.city.length > 0) 
+                     ? addressComponent.city : addressComponent.district; 
+        form.setFieldValue('city', [province, city]);
+      }
     });
 
-    const poiTypes = {
-      nearbyAttractions: '050000', // 风景名胜
-      nearbyTransport: '150000',    // 交通设施
-      nearbyMalls: '060000',       // 购物服务
-    };
+    // 修复语法错误 并优化周边类别
+    const searchConfig = [
+      { field: 'nearbyAttractions', type: '风景名胜', icon: <RocketOutlined /> },
+      { field: 'nearbyTransport', type: '地铁站|公交车站', icon: <CarOutlined /> },
+      { field: 'nearbyMalls', type: '购物中心', icon: <ShopOutlined /> }
+    ];
 
-    Object.entries(poiTypes).forEach(([field, code]) => {
-      const ps = new AMap.PlaceSearch({ type: code, pageSize: 5 });
+    searchConfig.forEach(({ field, type }) => {
+      const ps = new amapObj.current.PlaceSearch({ type, pageSize: 15 });
       ps.searchNearBy('', lnglat, 2000, (status: string, res: any) => {
-        if (status === 'complete') {
-          form.setFieldValue(field, res.poiList.pois.map((p: any) => p.name));
+        if (status === 'complete' && res.poiList) {
+          // 使用 Set 去重解决重复 key 警告
+          const names = Array.from(new Set(res.poiList.pois.map((p: any) => p.name)));
+          form.setFieldValue(field, names);
         }
       });
     });
   };
 
-  // 3. 地址输入框失去焦点时同步地图
-  const handleAddressBlur = (e: any) => {
-    const address = e.target.value;
-    if (!address || !geocoder) return;
-    geocoder.getLocation(address, (status: string, result: any) => {
-      if (status === 'complete' && result.geocodes.length) {
-        const { location } = result.geocodes[0];
-        const lnglat: [number, number] = [location.lng, location.lat];
-        mapInstance.setCenter(lnglat);
-        markerInstance.setPosition(lnglat);
-        updateLocationInfo(lnglat);
-      }
-    });
-  };
-
-  // 4. 获取详情逻辑（处理图片预览和日期格式）
   const fetchHotelDetail = async () => {
     try {
       const res = await getHotelDetail(id!);
@@ -110,12 +152,9 @@ const HotelEdit: React.FC = () => {
         ...hotel,
         city: cityPath || [hotel.city],
         openingTime: hotel.openingTime ? dayjs(hotel.openingTime, 'YYYY') : null,
-        tags: hotel.tags || [],
-        nearbyAttractions: hotel.nearbyAttractions || [],
-        nearbyTransport: hotel.nearbyTransport || [],
-        nearbyMalls: hotel.nearbyMalls || [],
       });
 
+      // 回显图片上传组件
       if (hotel.images) {
         setFileList(hotel.images.map((url: string, idx: number) => ({
           uid: `${idx}`,
@@ -126,17 +165,21 @@ const HotelEdit: React.FC = () => {
         })));
       }
       
-      if (hotel.location?.coordinates) {
-        const coords = hotel.location.coordinates;
-        mapInstance?.setCenter(coords);
-        markerInstance?.setPosition(coords);
+      if (hotel.location?.coordinates && mapInstance.current) {
+        const coords = hotel.location.coordinates as [number, number];
+        mapInstance.current.setCenter(coords);
+        markerInstance.current.setPosition(coords);
       }
-    } catch (error) { message.error('获取信息失败'); }
+
+      // 同步最低房价
+      const { data: rooms } = await getHotelRoomTypes(id!);
+      if (rooms?.length) {
+        const minPrice = Math.min(...rooms.map((r: any) => r.price).filter((p: number) => p > 0));
+        form.setFieldValue('price', minPrice);
+      }
+    } catch (e) { message.error('详情回显失败'); }
   };
 
-  useEffect(() => { if (id && AMap) fetchHotelDetail(); }, [id, AMap]);
-
-  // 5. 图片上传与删除
   const handleUpload: UploadProps['customRequest'] = async (options) => {
     try {
       const res = await uploadImage(options.file as File);
@@ -148,7 +191,7 @@ const HotelEdit: React.FC = () => {
         thumbUrl: res.data.url,
       }]);
       options.onSuccess?.(res.data);
-    } catch (e) { message.error('上传失败'); }
+    } catch (e) { message.error('图片上传失败'); }
   };
 
   const onFinish = async (values: any) => {
@@ -156,17 +199,15 @@ const HotelEdit: React.FC = () => {
     try {
       const data = {
         ...values,
-        city: values.city?.[1] || values.city?.[0],
+        city: Array.isArray(values.city) ? values.city[values.city.length - 1] : values.city,
         openingTime: values.openingTime?.format('YYYY'),
-        location: { type: 'Point', coordinates: markerInstance.getPosition().toArray() },
+        location: { type: 'Point', coordinates: markerInstance.current.getPosition().toArray() },
         images: fileList.map(f => f.url),
       };
       isEdit ? await updateHotel(id!, data) : await createHotel(data);
       message.success('保存成功');
       navigate('/merchant/hotels');
-    } catch (error: any) {
-      message.error(error.response?.data?.msg || '操作失败');
-    } finally { setLoading(false); }
+    } catch (e) { message.error('提交失败'); } finally { setLoading(false); }
   };
 
   return (
@@ -188,15 +229,17 @@ const HotelEdit: React.FC = () => {
                 <Col span={8}><Form.Item name="city" label="所在城市" rules={[{ required: true }]}><Cascader options={provinceCityData} /></Form.Item></Col>
                 <Col span={16}>
                   <Form.Item name="address" label="详细地址" rules={[{ required: true }]}>
-                    <Input placeholder="输入地址自动定位" onBlur={handleAddressBlur} suffix={<EnvironmentOutlined style={{ color: '#4f8ef7' }} />} />
+                    <Input 
+                      suffix={<EnvironmentOutlined onClick={handleLocateCurrent} style={{ color: '#4f8ef7', cursor: 'pointer' }} />} 
+                    />
                   </Form.Item>
                 </Col>
               </Row>
               <Row gutter={16}>
-                <Col span={8}><Form.Item name="starRating" label="星级" rules={[{ required: true }]}><Select>{[1,2,3,4,5].map(s => <Select.Option key={s} value={s}>{'⭐'.repeat(s)}</Select.Option>)}</Select></Form.Item></Col>
+                <Col span={8}><Form.Item name="starRating" label="星级"><Select>{[1,2,3,4,5].map(s => <Select.Option key={s} value={s}>{'⭐'.repeat(s)}</Select.Option>)}</Select></Form.Item></Col>
                 <Col span={8}>
                   <Form.Item name="price" label={<span>起始价格 <Tooltip title="基于房型最低价自动同步"><InfoCircleOutlined /></Tooltip></span>}>
-                    <InputNumber style={{ width: '100%' }} prefix="¥" placeholder="由系统计算" />
+                    <InputNumber prefix="¥" style={{ width: '100%' }} disabled placeholder="由房型同步" />
                   </Form.Item>
                 </Col>
                 <Col span={8}><Form.Item name="openingTime" label="开业年份"><DatePicker picker="year" style={{ width: '100%' }} /></Form.Item></Col>
@@ -218,18 +261,20 @@ const HotelEdit: React.FC = () => {
 
           <Col span={9}>
             <Card title="地理位置" className={styles.formCard}>
-              <div ref={mapRef} className={styles.mapContainer} style={{ height: 350 }}>
-                {!AMap && "地图加载中..."}
-              </div>
-              <p style={{ color: '#64748b', fontSize: 12, marginTop: 12 }}>可直接点击地图或拖动标记点微调位置</p>
+              <div ref={mapRef} className={styles.mapContainer} style={{ height: 350 }} />
               <Form.Item name="location" hidden><Input /></Form.Item>
             </Card>
 
-            <Card title="周边信息" className={styles.formCard}>
-              <Form.Item name="tags" label="特色标签"><Select mode="tags" placeholder="选择或手动输入" /></Form.Item>
-              <Form.Item name="nearbyAttractions" label="附近景点"><Select mode="tags" /></Form.Item>
-              <Form.Item name="nearbyTransport" label="交通信息"><Select mode="tags" /></Form.Item>
-              <Form.Item name="nearbyMalls" label="附近商场"><Select mode="tags" /></Form.Item>
+            <Card title="周边信息" className={`${styles.formCard} ${styles.nearbySection}`}>
+              <Form.Item name="nearbyAttractions" label={<span><RocketOutlined /> 附近景点</span>}>
+                <Select mode="tags" placeholder="自动检索景点" />
+              </Form.Item>
+              <Form.Item name="nearbyTransport" label={<span><CarOutlined /> 交通信息</span>}>
+                <Select mode="tags" placeholder="自动检索地铁/公交" />
+              </Form.Item>
+              <Form.Item name="nearbyMalls" label={<span><ShopOutlined /> 附近商场</span>}>
+                <Select mode="tags" placeholder="自动检索购物中心" />
+              </Form.Item>
             </Card>
           </Col>
         </Row>
@@ -237,14 +282,16 @@ const HotelEdit: React.FC = () => {
         <div className={styles.footerBar}>
           <Space>
             <Button size="large" onClick={() => navigate('/merchant/hotels')}>取消退出</Button>
-            <Button type="primary" size="large" htmlType="submit" loading={loading} className={styles.submitBtn}>
-              {isEdit ? '确认保存修改' : '提交酒店审核'}
-            </Button>
+            <Button type="primary" size="large" htmlType="submit" loading={loading} className={styles.submitBtn}>保存修改</Button>
           </Space>
         </div>
       </Form>
     </div>
   );
 };
+
+const HotelEdit = () => (
+  <App><HotelEditContent /></App>
+);
 
 export default HotelEdit;

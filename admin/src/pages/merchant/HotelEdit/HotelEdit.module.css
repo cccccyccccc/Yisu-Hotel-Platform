@@ -1,6 +1,6 @@
 .container {
   padding: 24px;
-  background-color: #f8fafc; /* 背景更淡雅 */
+  background-color: #f8fafc;
   min-height: 100vh;
 }
 
@@ -22,34 +22,32 @@
   background: #ffffff !important;
   border: none !important;
   border-radius: 12px !important;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1) !important; /* 增加阴影感 */
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1) !important;
   margin-bottom: 24px;
 }
 
-/* 地图容器样式 */
 .mapContainer {
   width: 100%;
   background: #f1f5f9;
   border-radius: 8px;
   border: 1px solid #e2e8f0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  color: #94a3b8;
-  position: relative;
   overflow: hidden;
 }
 
-/* 吸底操作栏 */
+/* 标签容器滚动优化 */
+.nearbySection :global(.ant-select-selection-overflow) {
+  max-height: 100px;
+  overflow-y: auto !important;
+}
+
 .footerBar {
   position: sticky;
   bottom: 0;
   z-index: 100;
   margin: 0 -24px -24px -24px;
   padding: 16px 24px;
-  background: rgba(255, 255, 255, 0.8);
-  backdrop-filter: blur(8px); /* 玻璃拟态效果 */
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(8px);
   border-top: 1px solid #e2e8f0;
   display: flex;
   justify-content: flex-end;
