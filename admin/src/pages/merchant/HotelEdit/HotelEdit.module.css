@@ -1,74 +1,63 @@
 .container {
-  padding: 0;
+  padding: 24px;
+  background-color: #f8fafc; /* 背景更淡雅 */
+  min-height: 100vh;
 }
 
 .header {
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  gap: 16px;
   margin-bottom: 24px;
 }
 
-.headerLeft {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-}
-
-.backBtn {
-  color: #64748b !important;
-}
-
-.backBtn:hover {
-  color: #1e293b !important;
-  background: #f1f5f9 !important;
-}
-
 .title {
-  font-size: 26px;
+  font-size: 22px;
   font-weight: 700;
   color: #1e293b;
   margin: 0;
 }
 
-/* 表单卡片 */
 .formCard {
   background: #ffffff !important;
-  border: 1px solid #e2e8f0 !important;
-  border-radius: 12px;
+  border: none !important;
+  border-radius: 12px !important;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1) !important; /* 增加阴影感 */
   margin-bottom: 24px;
 }
 
-.formCard :global(.ant-card-head) {
-  border-bottom: 1px solid #f1f5f9 !important;
+/* 地图容器样式 */
+.mapContainer {
+  width: 100%;
+  background: #f1f5f9;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #94a3b8;
+  position: relative;
+  overflow: hidden;
 }
 
-.formCard :global(.ant-card-head-title) {
-  color: #1e293b !important;
-  font-weight: 600;
+/* 吸底操作栏 */
+.footerBar {
+  position: sticky;
+  bottom: 0;
+  z-index: 100;
+  margin: 0 -24px -24px -24px;
+  padding: 16px 24px;
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(8px); /* 玻璃拟态效果 */
+  border-top: 1px solid #e2e8f0;
+  display: flex;
+  justify-content: flex-end;
 }
 
-/* 按钮 */
 .submitBtn {
   background: linear-gradient(90deg, #4f8ef7 0%, #3b7ddd 100%) !important;
   border: none !important;
-  box-shadow: 0 4px 12px rgba(79, 142, 247, 0.25) !important;
-  font-weight: 500;
-  height: 44px !important;
-}
-
-/* 上传区域 */
-.uploadArea :global(.ant-upload.ant-upload-select) {
-  background: #f8fafc !important;
-  border: 1px dashed #e2e8f0 !important;
-  border-radius: 8px;
-}
-
-.uploadArea :global(.ant-upload.ant-upload-select:hover) {
-  border-color: #4f8ef7 !important;
-}
-
-.uploadHint {
-  color: #64748b;
-  font-size: 12px;
+  height: 40px !important;
+  padding: 0 32px !important;
 }

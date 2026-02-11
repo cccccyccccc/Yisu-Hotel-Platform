@@ -12,6 +12,8 @@ export default defineConfig({
     },
   },
   server: {
+    host: true,                 // 允许外部访问
+    allowedHosts: true,        // 允许 ngrok 域名
     port: 5173,
     proxy: {
       '/api': {
@@ -24,6 +26,7 @@ export default defineConfig({
       },
     },
   },
+  
   test: {
     globals: true,
     environment: 'jsdom',
