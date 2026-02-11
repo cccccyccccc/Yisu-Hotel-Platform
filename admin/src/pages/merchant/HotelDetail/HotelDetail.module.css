@@ -1,181 +1,240 @@
 .container {
-  padding: 0;
+  padding: 24px;
+  background-color: #f0f2f5;
+  min-height: 100vh;
 }
 
-.header {
+/* 顶部 Header */
+.topBar {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
   margin-bottom: 24px;
 }
 
 .headerLeft {
   display: flex;
-  align-items: center;
-  gap: 16px;
+  flex-direction: column;
+  gap: 8px;
 }
 
 .backBtn {
-  color: #64748b !important;
-}
-
-.backBtn:hover {
-  color: #1e293b !important;
-  background: #f1f5f9 !important;
-}
-
-.title {
-  font-size: 26px;
-  font-weight: 700;
-  color: #1e293b;
-  margin: 0;
-}
-
-/* 信息卡片 */
-.infoCard {
-  background: #ffffff !important;
-  border: 1px solid #e2e8f0 !important;
-  border-radius: 12px;
-  margin-bottom: 24px;
-}
-
-.infoCard :global(.ant-card-head) {
-  border-bottom: 1px solid #f1f5f9 !important;
-}
-
-.infoCard :global(.ant-card-head-title) {
-  color: #1e293b !important;
-  font-weight: 600;
-}
-
-/* 评分统计 */
-.ratingSection {
-  margin-bottom: 24px;
-}
-
-.ratingOverview {
-  display: flex;
-  align-items: center;
-  gap: 24px;
-  padding: 20px;
-  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
-  border-radius: 12px;
-  border: 1px solid #bfdbfe;
-}
-
-.averageRating {
-  text-align: center;
-}
-
-.ratingNumber {
-  font-size: 48px;
-  font-weight: 700;
-  color: #1e293b;
-  line-height: 1;
-}
-
-.ratingLabel {
+  color: #64748b;
+  padding-left: 0;
   font-size: 14px;
-  color: #64748b;
-  margin-top: 4px;
+  margin-bottom: 8px;
 }
 
-.ratingDistribution {
-  flex: 1;
-}
-
-.ratingBar {
+.hotelTitle {
+  font-size: 24px;
+  font-weight: 700;
+  color: #1e293b;
   display: flex;
   align-items: center;
+  gap: 12px;
+}
+
+.hotelId {
+  font-size: 14px;
+  color: #94a3b8;
+  font-weight: 400;
+}
+
+.headerActions {
+  display: flex;
+  gap: 12px;
+}
+
+/* 概览区域 */
+.overviewCard {
+  background: #fff;
+  border-radius: 8px;
+  padding: 24px;
+  margin-bottom: 24px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+}
+
+.overviewContent {
+  display: flex;
+  gap: 32px;
+}
+
+.coverImageWrapper {
+  width: 240px;
+  height: 180px;
+  flex-shrink: 0;
+  border-radius: 8px;
+  overflow: hidden;
+  position: relative;
+}
+
+.coverImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.imageOverlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: rgba(0, 0, 0, 0.5);
+  color: #fff;
+  padding: 8px;
+  text-align: center;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.infoSection {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.infoRow {
+  display: flex;
   gap: 8px;
-  margin-bottom: 6px;
+  color: #475569;
+  font-size: 14px;
+  align-items: flex-start;
 }
 
-.ratingBar span {
+.infoIcon {
+  margin-top: 3px;
+  color: #94a3b8;
+}
+
+.tagGroup {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.statsSection {
+  width: 220px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 16px;
+}
+
+.statItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.statLabel {
   color: #64748b;
-  font-size: 13px;
-  min-width: 35px;
+  font-size: 14px;
 }
 
-/* 评论卡片 */
-.reviewsCard {
-  background: #ffffff !important;
-  border: 1px solid #e2e8f0 !important;
-  border-radius: 12px;
-}
-
-.reviewsCard :global(.ant-card-head) {
-  border-bottom: 1px solid #f1f5f9 !important;
-}
-
-.reviewsCard :global(.ant-card-head-title) {
-  color: #1e293b !important;
+.statValue {
+  color: #0f172a;
   font-weight: 600;
+  font-size: 16px;
+}
+
+/* Tab 内容区域 */
+.tabsCard {
+  background: #fff;
+  border-radius: 8px;
+  padding: 24px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+}
+
+/* 房型管理 Tab */
+.tableToolbar {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.toolbarLeft, .toolbarRight {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.roomImage {
+  width: 60px;
+  height: 40px;
+  border-radius: 4px;
+  object-fit: cover;
+}
+
+.priceCol {
+  display: flex;
+  flex-direction: column;
+}
+
+.listPrice {
+  text-decoration: line-through;
+  color: #94a3b8;
+  font-size: 12px;
+}
+
+.dailyPrice {
+  color: #ef4444;
+  font-weight: 600;
+}
+
+/* 评论管理 Tab */
+.reviewStats {
+  background: #f8fafc;
+  padding: 16px;
+  border-radius: 8px;
+  margin-bottom: 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
 .reviewItem {
-  padding: 16px 0;
   border-bottom: 1px solid #f1f5f9;
-}
-
-.reviewItem:last-child {
-  border-bottom: none;
+  padding: 20px 0;
 }
 
 .reviewHeader {
   display: flex;
   justify-content: space-between;
-  align-items: center;
   margin-bottom: 8px;
 }
 
-.reviewUser {
+.userInfo {
   display: flex;
   align-items: center;
-  gap: 8px;
-  color: #1e293b;
-  font-weight: 500;
-}
-
-.reviewDate {
-  color: #94a3b8;
-  font-size: 12px;
+  gap: 12px;
+  font-weight: 600;
+  color: #334155;
 }
 
 .reviewContent {
+  margin: 12px 0 12px 44px; /* Align with text, offset avatar */
   color: #475569;
   line-height: 1.6;
 }
 
-/* 图表区域 */
-.chartsSection {
-  margin-bottom: 24px;
-  padding-bottom: 24px;
-  border-bottom: 1px solid #f1f5f9;
+.merchantReply {
+  margin-left: 44px;
+  background: #f1f5f9;
+  padding: 12px;
+  border-radius: 8px;
+  color: #475569;
+  font-size: 14px;
 }
 
-.chartCard {
-  border-radius: 12px !important;
-  border: 1px solid #e2e8f0 !important;
-  height: 100%;
-}
-
-.chartCard :global(.ant-card-head) {
-  padding: 12px 16px !important;
-  min-height: auto !important;
-  border-bottom: 1px solid #f1f5f9 !important;
-}
-
-.chartCard :global(.ant-card-head-title) {
-  font-size: 14px !important;
-  font-weight: 600 !important;
-  color: #334155 !important;
-}
-
-.chartCard :global(.ant-card-body) {
-  padding: 12px !important;
-}
-
-.chartContainer {
-  height: 200px;
+.replyLabel {
+  color: #2563eb;
+  font-weight: 600;
+  margin-right: 8px;
 }
