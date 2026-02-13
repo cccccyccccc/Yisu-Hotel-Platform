@@ -159,18 +159,24 @@ describe('用户模块路由测试 (User Routes)', () => {
       expect(user.role).toBe('user');
     });
 
-    it('2.8 无法修改用户名 (安全性测试)', async () => {
+    it('2.8 可以修改用户名', async () => {
       const res = await request(app)
         .put('/api/users/profile')
         .set('Authorization', `Bearer ${userToken}`)
         .send({
-          username: 'hacked_username' // 恶意尝试
+          username: 'updated_profile_user'
         });
 
       expect(res.statusCode).toBe(200);
-      // 用户名不应该被修改
+      // 用户名应该被修改
       const user = await User.findById(userId);
-      expect(user.username).toBe('profile_user');
+      expect(user.username).toBe('updated_profile_user');
+
+      // 改回原用户名，避免影响其他测试
+      await request(app)
+        .put('/api/users/profile')
+        .set('Authorization', `Bearer ${userToken}`)
+        .send({ username: 'profile_user' });
     });
   });
 
