@@ -4,13 +4,14 @@ import {
   Space, Card, Row, Col, Cascader, DatePicker, Tooltip, App, Divider
 } from 'antd';
 import {
-  PlusOutlined, ArrowLeftOutlined, EnvironmentOutlined, InfoCircleOutlined, ShopOutlined, CarOutlined, RocketOutlined
+  PlusOutlined, ArrowLeftOutlined, EnvironmentOutlined, InfoCircleOutlined, 
+  ShopOutlined, CarOutlined, RocketOutlined, TagsOutlined
 } from '@ant-design/icons';
 import { useNavigate, useParams } from 'react-router-dom';
 import AMapLoader from '@amap/amap-jsapi-loader';
 import dayjs from 'dayjs';
 import { createHotel, updateHotel, getHotelDetail } from '@/api/hotels';
-import { getHotelRoomTypes } from '@/api/rooms'; //
+import { getHotelRoomTypes } from '@/api/rooms';
 import { uploadImage } from '@/api/upload';
 import type { UploadFile, UploadProps } from 'antd/es/upload';
 import { provinceCityData, findProvinceByCity } from '@/data/cities';
@@ -26,7 +27,7 @@ if (typeof window !== 'undefined') {
 }
 
 const HotelEditContent: React.FC = () => {
-  const { message } = App.useApp(); // 解决 Context 警告
+  const { message } = App.useApp(); 
   const { id } = useParams();
   const navigate = useNavigate();
   const [form] = Form.useForm();
@@ -60,7 +61,7 @@ const HotelEditContent: React.FC = () => {
     
     mapInstance.current = new AMap.Map(mapRef.current, { 
       zoom: 13, 
-      center: [116.4074, 39.9042] // 默认定位
+      center: [116.4074, 39.9042] 
     });
     
     geocoder.current = new AMap.Geocoder();
@@ -77,7 +78,6 @@ const HotelEditContent: React.FC = () => {
     });
     mapInstance.current.add(markerInstance.current);
 
-    // 修复 TS(2345) 类型错误
     markerInstance.current.on('dragend', (e: any) => {
       const lnglat = [e.lnglat.lng, e.lnglat.lat] as [number, number];
       updateLocationInfo(lnglat);
@@ -100,7 +100,7 @@ const HotelEditContent: React.FC = () => {
         const lnglat: [number, number] = [result.position.lng, result.position.lat];
         markerInstance.current.setPosition(lnglat);
         mapInstance.current.setCenter(lnglat);
-        updateLocationInfo(lnglat); // 点击定位后立即同步地址
+        updateLocationInfo(lnglat);
         message.success({ content: '定位成功', key: 'locate' });
       } else {
         message.error({ content: '定位失败，请确保环境为 HTTPS 并授权', key: 'locate' });
@@ -111,7 +111,6 @@ const HotelEditContent: React.FC = () => {
   const updateLocationInfo = (lnglat: [number, number]) => {
     form.setFieldValue('location', lnglat);
     
-    // 逆地理编码同步地址和城市
     geocoder.current?.getAddress(lnglat, (status: string, result: any) => {
       if (status === 'complete' && result.regeocode) {
         const { addressComponent, formattedAddress } = result.regeocode;
@@ -123,18 +122,16 @@ const HotelEditContent: React.FC = () => {
       }
     });
 
-    // 修复语法错误 并优化周边类别
     const searchConfig = [
-      { field: 'nearbyAttractions', type: '风景名胜', icon: <RocketOutlined /> },
-      { field: 'nearbyTransport', type: '地铁站|公交车站', icon: <CarOutlined /> },
-      { field: 'nearbyMalls', type: '购物中心', icon: <ShopOutlined /> }
+      { field: 'nearbyAttractions', type: '风景名胜' },
+      { field: 'nearbyTransport', type: '地铁站|公交车站' },
+      { field: 'nearbyMalls', type: '购物中心' }
     ];
 
     searchConfig.forEach(({ field, type }) => {
       const ps = new amapObj.current.PlaceSearch({ type, pageSize: 15 });
       ps.searchNearBy('', lnglat, 2000, (status: string, res: any) => {
         if (status === 'complete' && res.poiList) {
-          // 使用 Set 去重解决重复 key 警告
           const names = Array.from(new Set(res.poiList.pois.map((p: any) => p.name)));
           form.setFieldValue(field, names);
         }
@@ -154,7 +151,6 @@ const HotelEditContent: React.FC = () => {
         openingTime: hotel.openingTime ? dayjs(hotel.openingTime, 'YYYY') : null,
       });
 
-      // 回显图片上传组件
       if (hotel.images) {
         setFileList(hotel.images.map((url: string, idx: number) => ({
           uid: `${idx}`,
@@ -171,7 +167,6 @@ const HotelEditContent: React.FC = () => {
         markerInstance.current.setPosition(coords);
       }
 
-      // 同步最低房价
       const { data: rooms } = await getHotelRoomTypes(id!);
       if (rooms?.length) {
         const minPrice = Math.min(...rooms.map((r: any) => r.price).filter((p: number) => p > 0));
@@ -225,6 +220,24 @@ const HotelEditContent: React.FC = () => {
                 <Col span={12}><Form.Item name="name" label="酒店名称" rules={[{ required: true }]}><Input /></Form.Item></Col>
                 <Col span={12}><Form.Item name="nameEn" label="英文名称"><Input /></Form.Item></Col>
               </Row>
+
+              {/* 新增：酒店标签一栏 */}
+              <Row gutter={16}>
+                <Col span={24}>
+                  <Form.Item 
+                    name="tags" 
+                    label={<span><TagsOutlined /> 酒店标签 <Tooltip title="输入自定义标签后回车即可添加"><InfoCircleOutlined /></Tooltip></span>}
+                  >
+                    <Select 
+                      mode="tags" 
+                      style={{ width: '100%' }} 
+                      placeholder="输入标签（如：免费停车、智能客控）并回车"
+                      tokenSeparators={[',', ' ', '，']}
+                    />
+                  </Form.Item>
+                </Col>
+              </Row>
+
               <Row gutter={16}>
                 <Col span={8}><Form.Item name="city" label="所在城市" rules={[{ required: true }]}><Cascader options={provinceCityData} /></Form.Item></Col>
                 <Col span={16}>
@@ -267,13 +280,13 @@ const HotelEditContent: React.FC = () => {
 
             <Card title="周边信息" className={`${styles.formCard} ${styles.nearbySection}`}>
               <Form.Item name="nearbyAttractions" label={<span><RocketOutlined /> 附近景点</span>}>
-                <Select mode="tags" placeholder="自动检索景点" />
+                <Select mode="tags" placeholder="自动检索或手动输入" />
               </Form.Item>
               <Form.Item name="nearbyTransport" label={<span><CarOutlined /> 交通信息</span>}>
-                <Select mode="tags" placeholder="自动检索地铁/公交" />
+                <Select mode="tags" placeholder="自动检索或手动输入" />
               </Form.Item>
               <Form.Item name="nearbyMalls" label={<span><ShopOutlined /> 附近商场</span>}>
-                <Select mode="tags" placeholder="自动检索购物中心" />
+                <Select mode="tags" placeholder="自动检索或手动输入" />
               </Form.Item>
             </Card>
           </Col>
