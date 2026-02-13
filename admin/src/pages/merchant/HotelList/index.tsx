@@ -1,18 +1,18 @@
 import { useEffect, useState, useMemo } from 'react';
 import {
-  Table, Button, Space, Tag, Modal, Input,
+  Table, Button, Space, Tag, Input,
   Tooltip, Avatar, Dropdown, type MenuProps, App, Empty, Select
 } from 'antd';
 import {
-  PlusOutlined, EditOutlined, EyeOutlined, 
+  PlusOutlined, EditOutlined, EyeOutlined,
   ReloadOutlined, ArrowDownOutlined, ArrowUpOutlined,
-  SearchOutlined, MoreOutlined, ShopOutlined, 
+  MoreOutlined, ShopOutlined,
   EnvironmentOutlined, AppstoreOutlined
 } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import type { ColumnsType } from 'antd/es/table';
 // 确保 API 和 Hotel 接口已正确导入
-import { getMyHotels, updateHotelStatus, type Hotel } from '@/api/hotels'; 
+import { getMyHotels, updateHotelStatus, type Hotel } from '@/api/hotels';
 import styles from './HotelList.module.css';
 
 const { Search } = Input;
@@ -20,8 +20,8 @@ const { Search } = Input;
 const MerchantHotelList: React.FC = () => {
   const navigate = useNavigate();
   // 使用 useApp 钩子修复 message 静态方法警告
-  const { message } = App.useApp(); 
-  
+  const { message } = App.useApp();
+
   const [hotels, setHotels] = useState<Hotel[]>([]);
   const [loading, setLoading] = useState(false);
   const [activeFilter, setActiveFilter] = useState<string>('all'); // 状态过滤值
@@ -32,21 +32,22 @@ const MerchantHotelList: React.FC = () => {
     try {
       const res = await getMyHotels(); // 调用商户列表接口
       setHotels(res.data);
-    } catch (error) {
+    } catch {
       message.error('获取酒店列表失败');
     } finally {
       setLoading(false);
     }
   };
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { fetchHotels(); }, []);
 
   // 综合筛选逻辑：下拉框状态 + 搜索词
   const filteredHotels = useMemo(() => {
     return hotels.filter(h => {
       const matchStatus = activeFilter === 'all' || h.status === parseInt(activeFilter);
-      const matchSearch = h.name.toLowerCase().includes(searchText.toLowerCase()) || 
-                          h.city.toLowerCase().includes(searchText.toLowerCase());
+      const matchSearch = h.name.toLowerCase().includes(searchText.toLowerCase()) ||
+        h.city.toLowerCase().includes(searchText.toLowerCase());
       return matchStatus && matchSearch;
     });
   }, [hotels, activeFilter, searchText]);
@@ -56,7 +57,7 @@ const MerchantHotelList: React.FC = () => {
       await updateHotelStatus(id, status);
       message.success(status === 1 ? '上线成功' : '下线成功');
       fetchHotels();
-    } catch (error) {
+    } catch {
       message.error('操作失败');
     }
   };
@@ -68,11 +69,11 @@ const MerchantHotelList: React.FC = () => {
       key: 'hotelInfo',
       render: (_, record: Hotel) => (
         <Space size="middle" align="start">
-          <Avatar 
-            shape="square" 
-            size={64} 
-            src={record.images?.[0]} 
-            icon={<ShopOutlined />} 
+          <Avatar
+            shape="square"
+            size={64}
+            src={record.images?.[0]}
+            icon={<ShopOutlined />}
           />
           <div className={styles.infoWrapper}>
             <div className={styles.nameRow}>
@@ -129,13 +130,13 @@ const MerchantHotelList: React.FC = () => {
         const moreItems: MenuProps['items'] = [
           { key: 'edit', label: '编辑', icon: <EditOutlined />, onClick: () => navigate(`/merchant/hotels/${record._id}/edit`) },
           { key: 'rooms', label: '房型', icon: <AppstoreOutlined />, onClick: () => navigate(`/merchant/hotels/${record._id}/rooms`) },
-          record.status === 1 ? { 
-            key: 'off', label: '下线', danger: true, icon: <ArrowDownOutlined />, 
-            onClick: () => handleStatusChange(record._id, 3) 
+          record.status === 1 ? {
+            key: 'off', label: '下线', danger: true, icon: <ArrowDownOutlined />,
+            onClick: () => handleStatusChange(record._id, 3)
           } : null,
-          record.status === 3 ? { 
+          record.status === 3 ? {
             key: 'on', label: '上线', icon: <ArrowUpOutlined />,
-            onClick: () => handleStatusChange(record._id, 1) 
+            onClick: () => handleStatusChange(record._id, 1)
           } : null,
         ].filter(Boolean) as MenuProps['items'];
 
@@ -171,12 +172,12 @@ const MerchantHotelList: React.FC = () => {
               { value: '3', label: '已下线' },
             ]}
           />
-          <Search 
-            placeholder="搜索酒店名称" 
-            allowClear 
-            onSearch={setSearchText} 
+          <Search
+            placeholder="搜索酒店名称"
+            allowClear
+            onSearch={setSearchText}
             onChange={e => setSearchText(e.target.value)}
-            style={{ width: 220 }} 
+            style={{ width: 220 }}
           />
           <Button icon={<ReloadOutlined />} onClick={fetchHotels}>刷新</Button>
           <Button type="primary" icon={<PlusOutlined />} className={styles.addBtn} onClick={() => navigate('/merchant/hotels/new')}>添加酒店</Button>
@@ -189,8 +190,8 @@ const MerchantHotelList: React.FC = () => {
           dataSource={filteredHotels}
           rowKey="_id"
           loading={loading}
-          pagination={{ 
-            pageSize: 10, 
+          pagination={{
+            pageSize: 10,
             position: ['bottomCenter'],
             showTotal: (total) => `共 ${total} 个房源`
           }}

@@ -3,7 +3,7 @@ const router = express.Router();
 const logger = require('../utils/logger');
 const multer = require('multer');
 const path = require('node:path');
-const fs = require('fs');
+const fs = require('node:fs');
 const { compressImage } = require('../utils/imageCompressor');
 
 // 配置存储策略

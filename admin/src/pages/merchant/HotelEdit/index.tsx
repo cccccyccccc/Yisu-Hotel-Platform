@@ -1,10 +1,10 @@
 import { useEffect, useState, useRef } from 'react';
 import {
   Form, Input, InputNumber, Button, Select, Upload,
-  Space, Card, Row, Col, Cascader, DatePicker, Tooltip, App, Divider
+  Space, Card, Row, Col, Cascader, DatePicker, Tooltip, App
 } from 'antd';
 import {
-  PlusOutlined, ArrowLeftOutlined, EnvironmentOutlined, InfoCircleOutlined, 
+  PlusOutlined, ArrowLeftOutlined, EnvironmentOutlined, InfoCircleOutlined,
   ShopOutlined, CarOutlined, RocketOutlined, TagsOutlined
 } from '@ant-design/icons';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -21,49 +21,56 @@ const { TextArea } = Input;
 
 // 配置高德安全密钥
 if (typeof window !== 'undefined') {
-  (window as any)._AMapSecurityConfig = {
-    securityJsCode: '77c23574261c938c6d74008344c60ff1', 
+  (window as unknown as Record<string, unknown>)._AMapSecurityConfig = {
+    securityJsCode: '77c23574261c938c6d74008344c60ff1',
   };
 }
 
 const HotelEditContent: React.FC = () => {
-  const { message } = App.useApp(); 
+  const { message } = App.useApp();
   const { id } = useParams();
   const navigate = useNavigate();
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
   const [fileList, setFileList] = useState<UploadFile[]>([]);
-  
+
   const mapRef = useRef<HTMLDivElement>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const amapObj = useRef<any>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const mapInstance = useRef<any>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const markerInstance = useRef<any>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const geocoder = useRef<any>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const geolocation = useRef<any>(null);
 
   const isEdit = !!id;
 
   useEffect(() => {
     AMapLoader.load({
-      key: '14cf2ac7198b687730a69d24057f58de', 
+      key: '14cf2ac7198b687730a69d24057f58de',
       version: '2.0',
       plugins: ['AMap.Geocoder', 'AMap.PlaceSearch', 'AMap.Geolocation'],
     }).then((AMap) => {
       amapObj.current = AMap;
       initMap(AMap);
-    }).catch(e => console.error("地图加载失败:", e));
+    }).catch(_e => console.error("地图加载失败:", _e));
 
     return () => mapInstance.current?.destroy();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const initMap = (AMap: any) => {
     if (!mapRef.current) return;
-    
-    mapInstance.current = new AMap.Map(mapRef.current, { 
-      zoom: 13, 
-      center: [116.4074, 39.9042] 
+
+    mapInstance.current = new AMap.Map(mapRef.current, {
+      zoom: 13,
+      center: [116.4074, 39.9042]
     });
-    
+
     geocoder.current = new AMap.Geocoder();
     geolocation.current = new AMap.Geolocation({
       enableHighAccuracy: true,
@@ -71,18 +78,20 @@ const HotelEditContent: React.FC = () => {
       zoomToAccuracy: true,
     });
 
-    markerInstance.current = new AMap.Marker({ 
-      draggable: true, 
+    markerInstance.current = new AMap.Marker({
+      draggable: true,
       cursor: 'move',
       position: [116.4074, 39.9042]
     });
     mapInstance.current.add(markerInstance.current);
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     markerInstance.current.on('dragend', (e: any) => {
       const lnglat = [e.lnglat.lng, e.lnglat.lat] as [number, number];
       updateLocationInfo(lnglat);
     });
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     mapInstance.current.on('click', (e: any) => {
       const lnglat = [e.lnglat.lng, e.lnglat.lat] as [number, number];
       markerInstance.current.setPosition(e.lnglat);
@@ -95,6 +104,7 @@ const HotelEditContent: React.FC = () => {
   const handleLocateCurrent = () => {
     if (!geolocation.current) return;
     message.loading({ content: '正在精确定位...', key: 'locate' });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     geolocation.current.getCurrentPosition((status: string, result: any) => {
       if (status === 'complete') {
         const lnglat: [number, number] = [result.position.lng, result.position.lat];
@@ -110,14 +120,15 @@ const HotelEditContent: React.FC = () => {
 
   const updateLocationInfo = (lnglat: [number, number]) => {
     form.setFieldValue('location', lnglat);
-    
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     geocoder.current?.getAddress(lnglat, (status: string, result: any) => {
       if (status === 'complete' && result.regeocode) {
         const { addressComponent, formattedAddress } = result.regeocode;
         form.setFieldValue('address', formattedAddress);
         const province = addressComponent.province;
-        const city = (addressComponent.city && addressComponent.city.length > 0) 
-                     ? addressComponent.city : addressComponent.district; 
+        const city = (addressComponent.city && addressComponent.city.length > 0)
+          ? addressComponent.city : addressComponent.district;
         form.setFieldValue('city', [province, city]);
       }
     });
@@ -130,8 +141,10 @@ const HotelEditContent: React.FC = () => {
 
     searchConfig.forEach(({ field, type }) => {
       const ps = new amapObj.current.PlaceSearch({ type, pageSize: 15 });
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       ps.searchNearBy('', lnglat, 2000, (status: string, res: any) => {
         if (status === 'complete' && res.poiList) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const names = Array.from(new Set(res.poiList.pois.map((p: any) => p.name)));
           form.setFieldValue(field, names);
         }
@@ -160,7 +173,7 @@ const HotelEditContent: React.FC = () => {
           thumbUrl: url,
         })));
       }
-      
+
       if (hotel.location?.coordinates && mapInstance.current) {
         const coords = hotel.location.coordinates as [number, number];
         mapInstance.current.setCenter(coords);
@@ -169,10 +182,10 @@ const HotelEditContent: React.FC = () => {
 
       const { data: rooms } = await getHotelRoomTypes(id!);
       if (rooms?.length) {
-        const minPrice = Math.min(...rooms.map((r: any) => r.price).filter((p: number) => p > 0));
+        const minPrice = Math.min(...rooms.map((r: { price: number }) => r.price).filter((p: number) => p > 0));
         form.setFieldValue('price', minPrice);
       }
-    } catch (e) { message.error('详情回显失败'); }
+    } catch { message.error('详情回显失败'); }
   };
 
   const handleUpload: UploadProps['customRequest'] = async (options) => {
@@ -186,9 +199,10 @@ const HotelEditContent: React.FC = () => {
         thumbUrl: res.data.url,
       }]);
       options.onSuccess?.(res.data);
-    } catch (e) { message.error('图片上传失败'); }
+    } catch { message.error('图片上传失败'); }
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const onFinish = async (values: any) => {
     setLoading(true);
     try {
@@ -199,10 +213,10 @@ const HotelEditContent: React.FC = () => {
         location: { type: 'Point', coordinates: markerInstance.current.getPosition().toArray() },
         images: fileList.map(f => f.url),
       };
-      isEdit ? await updateHotel(id!, data) : await createHotel(data);
+      if (isEdit) { await updateHotel(id!, data); } else { await createHotel(data); }
       message.success('保存成功');
       navigate('/merchant/hotels');
-    } catch (e) { message.error('提交失败'); } finally { setLoading(false); }
+    } catch { message.error('提交失败'); } finally { setLoading(false); }
   };
 
   return (
@@ -224,13 +238,13 @@ const HotelEditContent: React.FC = () => {
               {/* 新增：酒店标签一栏 */}
               <Row gutter={16}>
                 <Col span={24}>
-                  <Form.Item 
-                    name="tags" 
+                  <Form.Item
+                    name="tags"
                     label={<span><TagsOutlined /> 酒店标签 <Tooltip title="输入自定义标签后回车即可添加"><InfoCircleOutlined /></Tooltip></span>}
                   >
-                    <Select 
-                      mode="tags" 
-                      style={{ width: '100%' }} 
+                    <Select
+                      mode="tags"
+                      style={{ width: '100%' }}
                       placeholder="输入标签（如：免费停车、智能客控）并回车"
                       tokenSeparators={[',', ' ', '，']}
                     />
@@ -242,14 +256,14 @@ const HotelEditContent: React.FC = () => {
                 <Col span={8}><Form.Item name="city" label="所在城市" rules={[{ required: true }]}><Cascader options={provinceCityData} /></Form.Item></Col>
                 <Col span={16}>
                   <Form.Item name="address" label="详细地址" rules={[{ required: true }]}>
-                    <Input 
-                      suffix={<EnvironmentOutlined onClick={handleLocateCurrent} style={{ color: '#4f8ef7', cursor: 'pointer' }} />} 
+                    <Input
+                      suffix={<EnvironmentOutlined onClick={handleLocateCurrent} style={{ color: '#4f8ef7', cursor: 'pointer' }} />}
                     />
                   </Form.Item>
                 </Col>
               </Row>
               <Row gutter={16}>
-                <Col span={8}><Form.Item name="starRating" label="星级"><Select>{[1,2,3,4,5].map(s => <Select.Option key={s} value={s}>{'⭐'.repeat(s)}</Select.Option>)}</Select></Form.Item></Col>
+                <Col span={8}><Form.Item name="starRating" label="星级"><Select>{[1, 2, 3, 4, 5].map(s => <Select.Option key={s} value={s}>{'⭐'.repeat(s)}</Select.Option>)}</Select></Form.Item></Col>
                 <Col span={8}>
                   <Form.Item name="price" label={<span>起始价格 <Tooltip title="基于房型最低价自动同步"><InfoCircleOutlined /></Tooltip></span>}>
                     <InputNumber prefix="¥" style={{ width: '100%' }} disabled placeholder="由房型同步" />

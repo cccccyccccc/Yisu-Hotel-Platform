@@ -22,14 +22,21 @@ router.get('/profile', authMiddleware, asyncHandler(async (req, res) => {
 // 修改个人资料 (PUT /api/users/profile)
 // 修改个人资料 (PUT /api/users/profile)
 router.put('/profile', authMiddleware, userValidators.updateProfile, asyncHandler(async (req, res) => {
-    const { avatar, gender, bio } = req.body;
+    const { avatar, gender, bio, username } = req.body;
 
     const user = await User.findById(req.user.userId);
     if (!user) {
         throw new AppError('用户不存在', 404, 'USER_NOT_FOUND');
     }
 
-    // 只允许修改这三个字段，防止用户篡改 role 或 username
+    // 允许修改用户名（需查重）、头像、性别、简介，防止用户篡改 role
+    if (username !== undefined && username !== user.username) {
+        const existing = await User.findOne({ username });
+        if (existing) {
+            throw new AppError('用户名已被占用', 400, 'USERNAME_TAKEN');
+        }
+        user.username = username;
+    }
     if (avatar !== undefined) user.avatar = avatar;
     if (gender !== undefined) user.gender = gender;
     if (bio !== undefined) user.bio = bio;

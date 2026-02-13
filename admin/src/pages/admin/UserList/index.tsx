@@ -21,6 +21,7 @@ const UserList: React.FC = () => {
 
   useEffect(() => {
     filterUsers();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [users, searchText, roleFilter]);
 
   const fetchUsers = async () => {
@@ -28,7 +29,7 @@ const UserList: React.FC = () => {
     try {
       const res = await getAdminUserList();
       setUsers(res.data);
-    } catch (error) {
+    } catch {
       message.error('获取用户列表失败');
     } finally {
       setLoading(false);

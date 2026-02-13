@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import {
-  Button, Card, Tabs, Tag, Table, Input, Select, DatePicker, Avatar, Rate, 
-  Space, Badge, Modal, message, Empty, Image, Form, InputNumber, Row, Col, Tooltip
+  Button, Card, Tabs, Tag, Table, Input, Avatar, Rate,
+  Space, Badge, Modal, message, Empty, Image, Form, InputNumber, Row, Col
 } from 'antd';
 import {
-  ArrowLeftOutlined, EditOutlined, DeleteOutlined,
-  EnvironmentOutlined, PhoneOutlined, StarOutlined,
-  InfoCircleOutlined, PlusOutlined, SearchOutlined,
+  ArrowLeftOutlined, EditOutlined, DeleteOutlined, PlusOutlined,
+  EnvironmentOutlined, StarOutlined,
+  InfoCircleOutlined,
   ExclamationCircleOutlined, MessageOutlined
 } from '@ant-design/icons';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -21,8 +21,7 @@ import { getMerchantOrders, type Order } from '@/api/orders';
 
 import styles from './HotelDetail.module.css';
 
-const { RangePicker } = DatePicker;
-const { Option } = Select;
+
 const { TextArea } = Input;
 
 // 🟢 配置图片服务器地址 (根据你的后端端口修改，如 http://localhost:3000)
@@ -31,18 +30,18 @@ const SERVER_URL = 'http://localhost:5000';
 const HotelDetail: React.FC = () => {
   const { hotelId } = useParams<{ hotelId: string }>();
   const navigate = useNavigate();
-  
+
   // Forms
   const [formHotel] = Form.useForm();
   const [formRoom] = Form.useForm();
   const [formBatch] = Form.useForm();
   const [formReply] = Form.useForm();
-  
+
   // Loading States
   const [loading, setLoading] = useState(false);
   const [roomLoading, setRoomLoading] = useState(false);
   const [orderLoading, setOrderLoading] = useState(false);
-  
+
   // Data States
   const [hotel, setHotel] = useState<Hotel | null>(null);
   const [reviews, setReviews] = useState<Review[]>([]);
@@ -53,7 +52,7 @@ const HotelDetail: React.FC = () => {
   const [isHotelModalVisible, setIsHotelModalVisible] = useState(false);
   const [isRoomModalVisible, setIsRoomModalVisible] = useState(false);
   const [editingRoom, setEditingRoom] = useState<RoomType | null>(null);
-  
+
   // Batch & Reply States
   const [selectedRoomKeys, setSelectedRoomKeys] = useState<React.Key[]>([]);
   const [isBatchModalVisible, setIsBatchModalVisible] = useState(false);
@@ -64,7 +63,7 @@ const HotelDetail: React.FC = () => {
   const getImageUrl = (url?: string) => {
     if (!url) return 'https://via.placeholder.com/200x150?text=No+Image';
     if (url.startsWith('http')) return url;
-    return `${SERVER_URL}${url}`;
+    return `${SERVER_URL}${url} `;
   };
 
   // 初始化数据
@@ -78,7 +77,7 @@ const HotelDetail: React.FC = () => {
       ]);
       setHotel(hotelRes.data);
       setReviews(reviewsRes.data || []);
-      
+
       // 并行获取子数据
       fetchRooms();
       fetchOrders();
@@ -96,7 +95,7 @@ const HotelDetail: React.FC = () => {
     try {
       const res = await getRoomsByHotel(hotelId);
       setRooms(res.data || []);
-    } catch (error) {
+    } catch {
       message.error('获取房型失败');
     } finally {
       setRoomLoading(false);
@@ -124,6 +123,7 @@ const HotelDetail: React.FC = () => {
 
   useEffect(() => {
     fetchData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hotelId]);
 
   // ================= 1. 酒店操作 (编辑/删除) =================
@@ -134,7 +134,7 @@ const HotelDetail: React.FC = () => {
       formHotel.setFieldsValue({
         ...hotel,
         tags: hotel.tags?.join(',') // 假设输入框是逗号分隔字符串，或者 Tag Select
-      }); 
+      });
       setIsHotelModalVisible(true);
     }
   };
@@ -143,7 +143,7 @@ const HotelDetail: React.FC = () => {
     try {
       const values = await formHotel.validateFields();
       if (!hotelId) return;
-      
+
       // 数据格式转换 (如 tags 字符串转数组)
       const submitData = {
         ...values,
@@ -154,7 +154,7 @@ const HotelDetail: React.FC = () => {
       message.success('酒店信息更新成功');
       setIsHotelModalVisible(false);
       fetchData(); // 刷新
-    } catch (error) {
+    } catch {
       message.error('更新失败');
     }
   };
@@ -175,7 +175,7 @@ const HotelDetail: React.FC = () => {
           await updateHotelStatus(hotelId, 3);
           message.success('酒店已下架');
           navigate('/merchant/hotels');
-        } catch (error) {
+        } catch {
           message.error('操作失败');
         }
       },
@@ -207,7 +207,7 @@ const HotelDetail: React.FC = () => {
       }
       setIsRoomModalVisible(false);
       fetchRooms();
-    } catch (error) {
+    } catch {
       message.error('操作失败');
     }
   };
@@ -225,7 +225,7 @@ const HotelDetail: React.FC = () => {
     try {
       const { price } = await formBatch.validateFields();
       // 并发请求
-      const promises = selectedRoomKeys.map(id => 
+      const promises = selectedRoomKeys.map(id =>
         updateRoom(id as string, { price })
       );
       await Promise.all(promises);
@@ -233,7 +233,7 @@ const HotelDetail: React.FC = () => {
       setIsBatchModalVisible(false);
       setSelectedRoomKeys([]);
       fetchRooms();
-    } catch (error) {
+    } catch {
       message.error('批量更新失败');
     }
   };
@@ -248,7 +248,7 @@ const HotelDetail: React.FC = () => {
           await deleteRoom(id);
           message.success('删除成功');
           fetchRooms();
-        } catch (error) {
+        } catch {
           message.error('删除失败');
         }
       }
@@ -272,7 +272,7 @@ const HotelDetail: React.FC = () => {
       // 刷新评论列表 (可能需要重新 fetch)
       const res = await getHotelReviews(hotelId!);
       setReviews(res.data);
-    } catch (error) {
+    } catch {
       message.error('回复失败');
     }
   };
@@ -316,7 +316,7 @@ const HotelDetail: React.FC = () => {
     },
     {
       title: '操作',
-      render: (_: any, record: RoomType) => (
+      render: (_: unknown, record: RoomType) => (
         <Space>
           <Button type="link" size="small" onClick={() => handleEditRoom(record)}>编辑</Button>
           <Button type="link" size="small" danger onClick={() => handleDeleteRoom(record._id)}>删除</Button>
@@ -326,27 +326,28 @@ const HotelDetail: React.FC = () => {
   ];
 
   const orderColumns = [
-    { title: '订单号', dataIndex: '_id', render: (id: string) => `#${id.slice(-6).toUpperCase()}` },
+    { title: '订单号', dataIndex: '_id', render: (id: string) => `#${id.slice(-6).toUpperCase()} ` },
     { title: '房型', dataIndex: ['roomTypeId', 'title'] },
-    { 
-      title: '入住信息', 
-      render: (_:any, r: Order) => (
+    {
+      title: '入住信息',
+      render: (_: unknown, r: Order) => (
         <div>
           <div>{r.userId?.username}</div>
-          <div style={{fontSize: 12, color:'#999'}}>
+          <div style={{ fontSize: 12, color: '#999' }}>
             {dayjs(r.checkInDate).format('MM/DD')} - {dayjs(r.checkOutDate).format('MM/DD')}
           </div>
         </div>
       )
     },
-    { title: '金额', dataIndex: 'totalPrice', render: (v: number) => `¥${v}` },
-    { 
-      title: '状态', 
-      dataIndex: 'status', 
+    { title: '金额', dataIndex: 'totalPrice', render: (v: number) => `¥${v} ` },
+    {
+      title: '状态',
+      dataIndex: 'status',
       render: (status: string) => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const map: any = { pending: 'default', paid: 'processing', completed: 'success', cancelled: 'error' };
         return <Badge status={map[status]} text={status} />;
-      } 
+      }
     },
   ];
 
@@ -382,17 +383,17 @@ const HotelDetail: React.FC = () => {
       key: '2',
       label: '订单记录',
       children: (
-        <Table 
+        <Table
           loading={orderLoading}
-          columns={orderColumns} 
-          dataSource={orders} 
-          rowKey="_id" 
+          columns={orderColumns}
+          dataSource={orders}
+          rowKey="_id"
         />
       )
     },
     {
       key: '3',
-      label: `评价管理 (${reviews.length})`,
+      label: `评价管理(${reviews.length})`,
       children: reviews.length > 0 ? (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           {reviews.map(review => (
@@ -412,9 +413,9 @@ const HotelDetail: React.FC = () => {
               <div style={{ marginTop: 12, color: '#333' }}>{review.content}</div>
               {/* 回复按钮区域 */}
               <div style={{ marginTop: 12, textAlign: 'right' }}>
-                 <Button size="small" icon={<MessageOutlined />} onClick={() => handleReplyClick(review._id)}>
-                   回复
-                 </Button>
+                <Button size="small" icon={<MessageOutlined />} onClick={() => handleReplyClick(review._id)}>
+                  回复
+                </Button>
               </div>
             </Card>
           ))}
@@ -428,7 +429,7 @@ const HotelDetail: React.FC = () => {
       {/* Header */}
       <div className={styles.topBar}>
         <div className={styles.headerLeft}>
-          <Button type="text" icon={<ArrowLeftOutlined />} onClick={() => navigate('/merchant/hotels')}>返回</Button>
+          <Button type="primary" icon={<ArrowLeftOutlined />} onClick={() => navigate('/merchant/hotels')} className={styles.backBtn}>返回</Button>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <h2 className={styles.title} style={{ margin: 0 }}>{hotel?.name}</h2>
             {hotel?.status === 0 && <Tag color="orange">待审核</Tag>}
@@ -466,14 +467,14 @@ const HotelDetail: React.FC = () => {
           </div>
           {/* Stats */}
           <div style={{ width: 200, borderLeft: '1px solid #f0f0f0', paddingLeft: 24 }}>
-             <div style={{ marginBottom: 16 }}>
-               <div style={{ color: '#888', fontSize: 12 }}>总订单</div>
-               <div style={{ fontSize: 24, fontWeight: 'bold' }}>{orders.length}</div>
-             </div>
-             <div>
-               <div style={{ color: '#888', fontSize: 12 }}>房型数量</div>
-               <div style={{ fontSize: 24, fontWeight: 'bold' }}>{rooms.length}</div>
-             </div>
+            <div style={{ marginBottom: 16 }}>
+              <div style={{ color: '#888', fontSize: 12 }}>总订单</div>
+              <div style={{ fontSize: 24, fontWeight: 'bold' }}>{orders.length}</div>
+            </div>
+            <div>
+              <div style={{ color: '#888', fontSize: 12 }}>房型数量</div>
+              <div style={{ fontSize: 24, fontWeight: 'bold' }}>{rooms.length}</div>
+            </div>
           </div>
         </div>
       </Card>
@@ -506,8 +507,8 @@ const HotelDetail: React.FC = () => {
             <Rate />
           </Form.Item>
           <Form.Item name="tags" label="标签 (逗号分隔)">
-             {/* 简单实现，这里用 Input，提交时转数组 */}
-             <Input placeholder="免费停车,健身房" />
+            {/* 简单实现，这里用 Input，提交时转数组 */}
+            <Input placeholder="免费停车,健身房" />
           </Form.Item>
         </Form>
       </Modal>

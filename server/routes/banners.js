@@ -76,7 +76,7 @@ router.put('/:id', authMiddleware, asyncHandler(async (req, res) => {
         throw new AppError('权限不足', 403, 'FORBIDDEN');
     }
 
-    const { title, imageUrl, link, sort, isActive } = req.body;
+    const { title, imageUrl, sort, isActive } = req.body;
 
     const updateData = {};
     if (title !== undefined) updateData.title = title;

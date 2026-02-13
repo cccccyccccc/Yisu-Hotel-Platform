@@ -44,6 +44,7 @@ const Profile: React.FC = () => {
   useEffect(() => {
     fetchProfile();
     fetchAnnouncements();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const fetchProfile = async () => {
@@ -53,10 +54,11 @@ const Profile: React.FC = () => {
       setProfile(res.data);
       setAvatarUrl(res.data.avatar || '');
       form.setFieldsValue({
+        username: res.data.username,
         gender: res.data.gender || 'unknown',
         bio: res.data.bio || '',
       });
-    } catch (error) {
+    } catch {
       message.error('获取个人资料失败');
     } finally {
       setLoading(false);
@@ -67,9 +69,8 @@ const Profile: React.FC = () => {
     try {
       const res = await getAnnouncements();
       setAnnouncements(res.data);
-    } catch (error) {
-      // 静默处理，不影响页面显示
-      console.error('获取公告失败', error);
+    } catch {
+      console.error('获取公告失败');
     }
   };
 
@@ -79,7 +80,7 @@ const Profile: React.FC = () => {
     try {
       const res = await getAnnouncementDetail(id);
       setAnnouncementDetail(res.data);
-    } catch (error) {
+    } catch {
       message.error('获取公告详情失败');
     } finally {
       setDetailLoading(false);
@@ -107,14 +108,15 @@ const Profile: React.FC = () => {
         ...values,
         avatar: avatarUrl,
       });
-      // 更新全局 Store 以同步侧边栏头像
+      // 更新全局 Store 以同步侧边栏
       useUserStore.getState().updateUser({
+        username: values.username,
         avatar: avatarUrl,
         gender: values.gender,
         bio: values.bio,
       });
       message.success('保存成功');
-    } catch (error) {
+    } catch {
       message.error('保存失败');
     } finally {
       setSaving(false);
@@ -234,8 +236,8 @@ const Profile: React.FC = () => {
             </div>
 
             <Form form={form} layout="vertical" className={styles.form}>
-              <Form.Item label="用户名">
-                <Input value={profile?.username} disabled />
+              <Form.Item name="username" label="用户名" rules={[{ required: true, message: '请输入用户名' }]}>
+                <Input placeholder="请输入用户名" />
               </Form.Item>
 
               <Form.Item label="角色">

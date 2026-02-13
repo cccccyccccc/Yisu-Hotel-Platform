@@ -33,7 +33,7 @@ const Dashboard: React.FC = () => {
     try {
       const res = await getMerchantStats();
       setStats(res.data);
-    } catch (error) {
+    } catch {
       message.error('获取统计数据失败');
     } finally {
       setLoading(false);

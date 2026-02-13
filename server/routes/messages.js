@@ -83,7 +83,7 @@ router.get('/contacts', authMiddleware, asyncHandler(async (req, res) => {
     // 去重用户
     const userMap = new Map();
     orders.forEach(order => {
-      if (order.userId && !userMap.has(order.userId._id.toString())) {
+      if (order.userId && !userMap.has(order.userId?._id.toString())) {
         userMap.set(order.userId._id.toString(), {
           user: order.userId,
           hotel: order.hotelId,

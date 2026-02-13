@@ -29,7 +29,7 @@ const AnnouncementList: React.FC = () => {
     try {
       const res = await getAdminAnnouncementList();
       setAnnouncements(res.data);
-    } catch (error) {
+    } catch {
       message.error('获取公告列表失败');
     } finally {
       setLoading(false);
@@ -63,7 +63,7 @@ const AnnouncementList: React.FC = () => {
       await deleteAnnouncement(id);
       message.success('删除成功');
       fetchList();
-    } catch (error) {
+    } catch {
       message.error('删除失败');
     }
   };
@@ -85,8 +85,8 @@ const AnnouncementList: React.FC = () => {
       }
       setModalVisible(false);
       fetchList();
-    } catch (error) {
-      console.error(error);
+    } catch {
+      // validation error
     }
   };
 

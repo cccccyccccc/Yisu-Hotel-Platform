@@ -51,12 +51,12 @@ describe('Rooms API', () => {
   });
 
   describe('getRoomsByHotel', () => {
-    it('should call GET /api/rooms/hotel/:hotelId', async () => {
+    it('should call GET /api/rooms/:hotelId', async () => {
       vi.mocked(request.get).mockResolvedValue({ data: [mockRoom] });
 
       const result = await getRoomsByHotel('hotel123');
 
-      expect(request.get).toHaveBeenCalledWith('/api/rooms/hotel/hotel123');
+      expect(request.get).toHaveBeenCalledWith('/api/rooms/hotel123');
       expect(result.data).toHaveLength(1);
     });
   });

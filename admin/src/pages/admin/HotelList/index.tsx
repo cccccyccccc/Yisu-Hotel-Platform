@@ -70,7 +70,7 @@ const AdminHotelList: React.FC = () => {
     try {
       const res = await getAdminHotelList();
       setHotels(res.data);
-    } catch (error) {
+    } catch {
       message.error('获取酒店列表失败');
     } finally {
       setLoading(false);
@@ -104,7 +104,7 @@ const AdminHotelList: React.FC = () => {
       await auditHotel(id, { status: 1 });
       message.success('审核通过');
       fetchHotels();
-    } catch (error) {
+    } catch {
       message.error('操作失败');
     }
   };
@@ -120,7 +120,7 @@ const AdminHotelList: React.FC = () => {
       setRejectModal({ visible: false, hotelId: '' });
       setRejectReason('');
       fetchHotels();
-    } catch (error) {
+    } catch {
       message.error('操作失败');
     }
   };
@@ -130,7 +130,7 @@ const AdminHotelList: React.FC = () => {
       await updateHotelStatus(id, status);
       message.success(status === 1 ? '已上线' : '已下线');
       fetchHotels();
-    } catch (error) {
+    } catch {
       message.error('操作失败');
     }
   };

@@ -151,7 +151,7 @@ router.get('/stats', authMiddleware, asyncHandler(async (req, res) => {
     reviews: {
       total: totalReviews,
       monthly: totalMonthlyReviews,
-      averageRating: parseFloat(averageRating),
+      averageRating: Number.parseFloat(averageRating),
       ratingDistribution
     },
     revenueHistory,

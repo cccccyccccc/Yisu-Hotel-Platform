@@ -31,6 +31,7 @@ const OrderDetail: React.FC = () => {
     if (orderId) {
       fetchOrderDetail();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [orderId]);
 
   const fetchOrderDetail = async () => {
@@ -38,7 +39,7 @@ const OrderDetail: React.FC = () => {
     try {
       const res = await getOrderDetail(orderId!);
       setOrder(res.data);
-    } catch (error) {
+    } catch {
       message.error('获取订单详情失败');
     } finally {
       setLoading(false);

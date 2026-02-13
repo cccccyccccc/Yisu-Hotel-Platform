@@ -177,7 +177,7 @@ router.get('/', cache(300), hotelValidators.search, asyncHandler(async (req, res
             }
         });
     } catch (err) {
-        if (err.message && err.message.includes('index')) {
+        if (err.message?.includes('index')) {
             throw new AppError('LBS Index Missing', 500, 'INDEX_MISSING');
         }
         throw err;

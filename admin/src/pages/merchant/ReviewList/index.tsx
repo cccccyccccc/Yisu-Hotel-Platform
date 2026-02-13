@@ -46,7 +46,7 @@ const ReviewList: React.FC = () => {
     try {
       const res = await getMerchantReviews();
       setReviews(res.data);
-    } catch (error) {
+    } catch {
       message.error('获取评价列表失败');
     } finally {
       setLoading(false);
@@ -79,7 +79,7 @@ const ReviewList: React.FC = () => {
       setReplyModalVisible(false);
       setReplyContent('');
       fetchReviews();
-    } catch (error) {
+    } catch {
       message.error('回复失败');
     } finally {
       setReplyLoading(false);

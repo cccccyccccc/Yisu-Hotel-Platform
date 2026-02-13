@@ -126,9 +126,13 @@ const MainLayout: React.FC = () => {
     if (path.includes('/merchant/dashboard')) return '数据统计';
     if (path.includes('/merchant/hotels')) return '我的酒店';
     if (path.includes('/merchant/orders')) return '订单管理';
+    if (path.includes('/merchant/reviews')) return '评价管理';
+    if (path.includes('/merchant/promotions')) return '促销管理';
+    if (path.includes('/chat')) return '消息中心';
     if (path.includes('/admin/hotels')) return '酒店审核';
     if (path.includes('/admin/banners')) return '轮播图管理';
     if (path.includes('/admin/users')) return '用户管理';
+    if (path.includes('/admin/announcements')) return '公告管理';
     if (path.includes('/profile')) return '个人设置';
     return '首页';
   };
@@ -156,8 +160,7 @@ const MainLayout: React.FC = () => {
           )}
         </div>
 
-        {/* 菜单分组标题 */}
-        {!collapsed && <div className={styles.menuGroup}>DASHBOARD</div>}
+
 
         {/* 导航菜单 */}
         <Menu

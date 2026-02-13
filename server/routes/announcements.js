@@ -18,10 +18,10 @@ router.get('/unread/count', authMiddleware, asyncHandler(async (req, res) => {
     userId,
     announcementId: { $in: announcementIds }
   }).select('announcementId');
-  const readIds = readRecords.map(r => r.announcementId.toString());
+  const readIds = new Set(readRecords.map(r => r.announcementId.toString()));
 
   // 计算未读数
-  const unreadCount = announcementIds.filter(id => !readIds.includes(id.toString())).length;
+  const unreadCount = announcementIds.filter(id => !readIds.has(id.toString())).length;
 
   res.json({ count: unreadCount });
 }));

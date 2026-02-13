@@ -77,7 +77,7 @@ router.put('/:id/reply', authMiddleware, asyncHandler(async (req, res) => {
     }
 
     // 验证该评价属于商户的酒店
-    const hotel = await Hotel.findById(review.hotelId._id || review.hotelId);
+    const hotel = await Hotel.findById(review.hotelId?._id || review.hotelId);
     if (!hotel || hotel.merchantId.toString() !== req.user.userId) {
         return res.status(403).json({ msg: '无权回复此评价' });
     }

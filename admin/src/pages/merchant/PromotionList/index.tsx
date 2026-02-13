@@ -41,7 +41,7 @@ const PromotionList: React.FC = () => {
     try {
       const res = await getMyPromotions();
       setPromotions(res.data);
-    } catch (error) {
+    } catch {
       message.error('获取促销列表失败');
     } finally {
       setLoading(false);
@@ -127,7 +127,7 @@ const PromotionList: React.FC = () => {
 
       setModalVisible(false);
       fetchPromotions();
-    } catch (error) {
+    } catch {
       // 表单验证失败
     }
   };
@@ -138,7 +138,7 @@ const PromotionList: React.FC = () => {
       await deletePromotion(id);
       message.success('促销已删除');
       fetchPromotions();
-    } catch (error) {
+    } catch {
       message.error('删除失败');
     }
   };
@@ -149,7 +149,7 @@ const PromotionList: React.FC = () => {
       await updatePromotion(promotion._id, { status: promotion.status === 1 ? 0 : 1 });
       message.success('状态已更新');
       fetchPromotions();
-    } catch (error) {
+    } catch {
       message.error('操作失败');
     }
   };

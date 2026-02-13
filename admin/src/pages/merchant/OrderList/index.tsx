@@ -70,7 +70,7 @@ const OrderList: React.FC = () => {
     try {
       const res = await getMerchantOrders();
       setOrders(res.data);
-    } catch (error) {
+    } catch {
       message.error('获取订单失败');
     } finally {
       setLoading(false);
@@ -91,10 +91,14 @@ const OrderList: React.FC = () => {
     // 酒店筛选
     if (hotelFilter !== 'all' && o.hotelId?._id !== hotelFilter) return false;
 
-    // 日期筛选
+    // 日期筛选 — 入住日期 >= 开始日期，退房日期 == 结束日期
     if (dateRange) {
-      const orderDate = dayjs(o.createdAt);
-      if (orderDate.isBefore(dateRange[0], 'day') || orderDate.isAfter(dateRange[1], 'day')) {
+      const checkIn = dayjs(o.checkInDate);
+      const checkOut = dayjs(o.checkOutDate);
+      if (checkIn.isBefore(dateRange[0], 'day') || checkIn.isAfter(dateRange[1], 'day')) {
+        return false;
+      }
+      if (!checkOut.isSame(dateRange[1], 'day')) {
         return false;
       }
     }
@@ -209,7 +213,13 @@ const OrderList: React.FC = () => {
         <Space>
           <RangePicker
             value={dateRange}
-            onChange={(dates) => setDateRange(dates as [Dayjs, Dayjs] | null)}
+            onChange={(dates) => {
+              if (dates && dates[0] && dates[1]) {
+                setDateRange([dates[0], dates[1]]);
+              } else {
+                setDateRange(null);
+              }
+            }}
             placeholder={['开始日期', '结束日期']}
             allowClear
           />

@@ -33,7 +33,7 @@ const NotificationBell: React.FC<NotificationBellProps> = ({ className }) => {
       ]);
       setUnreadAnnouncementCount(announcementRes.data.count);
       setUnreadMessageCount(messageRes.data.count);
-    } catch (error) {
+    } catch {
       // 静默失败
     }
   }, []);
@@ -44,7 +44,7 @@ const NotificationBell: React.FC<NotificationBellProps> = ({ className }) => {
     try {
       const res = await getAnnouncements();
       setAnnouncements(res.data);
-    } catch (error) {
+    } catch {
       // 静默失败
     } finally {
       setLoading(false);
@@ -73,7 +73,7 @@ const NotificationBell: React.FC<NotificationBellProps> = ({ className }) => {
       setSelectedAnnouncement(res.data);
       await markAnnouncementRead(item._id);
       fetchUnreadCounts(); // 刷新未读数
-    } catch (error) {
+    } catch {
       message.error('获取公告详情失败');
     } finally {
       setDetailLoading(false);
@@ -92,7 +92,7 @@ const NotificationBell: React.FC<NotificationBellProps> = ({ className }) => {
       await Promise.all(announcements.map(a => markAnnouncementRead(a._id)));
       message.success('已全部标记为已读');
       fetchUnreadCounts();
-    } catch (error) {
+    } catch {
       message.error('操作失败');
     }
   };

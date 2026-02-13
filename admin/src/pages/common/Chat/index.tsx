@@ -31,8 +31,8 @@ const Chat: React.FC = () => {
     try {
       const res = await getConversations();
       setConversations(res.data);
-    } catch (error) {
-      console.error('获取会话列表失败', error);
+    } catch {
+      console.error('获取会话列表失败');
     }
   };
 
@@ -42,7 +42,7 @@ const Chat: React.FC = () => {
       const res = await getMessages(userId);
       setMessages(res.data);
       setTimeout(() => scrollToBottom(), 100);
-    } catch (error) {
+    } catch {
       if (showLoading) message.error('获取消息失败');
     } finally {
       if (showLoading) setLoading(false);
@@ -54,7 +54,7 @@ const Chat: React.FC = () => {
     try {
       const res = await getContacts();
       setContacts(res.data);
-    } catch (error) {
+    } catch {
       message.error('获取联系人失败');
     } finally {
       setContactsLoading(false);
@@ -91,6 +91,7 @@ const Chat: React.FC = () => {
     if (selectedUser) {
       fetchMessages(selectedUser._id);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedUser]);
 
   const scrollToBottom = () => {
@@ -106,7 +107,7 @@ const Chat: React.FC = () => {
       setInputValue('');
       fetchMessages(selectedUser._id, false);
       fetchConversations();
-    } catch (error) {
+    } catch {
       message.error('发送失败');
     } finally {
       setSending(false);

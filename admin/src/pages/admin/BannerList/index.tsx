@@ -80,7 +80,7 @@ const BannerList: React.FC = () => {
       await deleteBanner(id);
       message.success('删除成功');
       fetchBanners();
-    } catch (error) {
+    } catch {
       message.error('删除失败');
     }
   };
@@ -90,7 +90,7 @@ const BannerList: React.FC = () => {
       await updateBanner(record._id, { isActive: checked });
       message.success(checked ? '已上线' : '已下线');
       fetchBanners();
-    } catch (error) {
+    } catch {
       message.error('操作失败');
     }
   };
@@ -108,8 +108,8 @@ const BannerList: React.FC = () => {
           url: res.data.url,
         },
       ]);
-    } catch (error) {
-      onError?.(error as Error);
+    } catch (err) {
+      onError?.(err as Error);
       message.error('图片上传失败');
     }
   };
@@ -137,8 +137,8 @@ const BannerList: React.FC = () => {
       }
       setModalVisible(false);
       fetchBanners();
-    } catch (error) {
-      console.error(error);
+    } catch {
+      // validation error
     }
   };
 

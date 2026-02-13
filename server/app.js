@@ -104,7 +104,7 @@ app.use(notFoundHandler);
 app.use(errorHandler);
 
 // Socket.IO 集成
-const http = require('http');
+const http = require('node:http');
 const { initSocket } = require('./config/socket');
 
 const server = http.createServer(app);

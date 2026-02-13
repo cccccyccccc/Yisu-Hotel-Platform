@@ -60,7 +60,7 @@ export const useSocket = () => {
     };
   }, [isAuthenticated, token]);
 
-  return socketRef.current;
+  return socket;
 };
 
 /**
