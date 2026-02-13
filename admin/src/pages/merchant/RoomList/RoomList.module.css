@@ -6,35 +6,42 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 24px;
+  margin-bottom: 20px;
+  background: #fff;
+  padding: 16px 24px;
+  border-radius: 8px;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.03);
 }
 
-.headerLeft {
+.titleArea {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 8px;
 }
 
-.title {
-  font-size: 22px;
+.pageTitle {
+  font-size: 20px;
   font-weight: 600;
-  color: #1e293b;
   margin: 0;
+  color: #1f2937;
 }
 
-.addBtn {
-  background: linear-gradient(90deg, #4f8ef7 0%, #3b7ddd 100%) !important;
-  border: none !important;
-  box-shadow: 0 4px 12px rgba(79, 142, 247, 0.25) !important;
+/* 列表部分 */
+.roomInfo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
-.addBtn:hover {
-  background: linear-gradient(90deg, #3b7ddd 0%, #2563eb 100%) !important;
-}
-
-.price {
-  font-size: 16px;
+.roomTitle {
   font-weight: 600;
+  font-size: 15px;
+  margin-bottom: 4px;
+}
+
+.currPrice {
+  font-size: 16px;
+  font-weight: bold;
   color: #ef4444;
 }
 
@@ -42,65 +49,172 @@
   font-size: 12px;
   color: #9ca3af;
   text-decoration: line-through;
-  margin-left: 8px;
+  margin-left: 6px;
 }
 
-/* 价格日历按钮 */
-.calendarBtn {
-  color: #4f8ef7 !important;
-}
-
-.calendarBtn:hover {
-  background: #eff6ff !important;
-}
-
-/* 价格日历弹窗 */
-.calendarContainer {
-  padding: 16px 0;
-}
-
-.calendarInfo {
+/* 首页库存列样式 */
+.stockColumn {
   display: flex;
-  justify-content: space-between;
+  flex-direction: column;
+}
+
+.stockMain {
+  display: flex;
   align-items: center;
-  margin-bottom: 16px;
-  padding: 12px 16px;
-  background: #f8fafc;
-  border-radius: 8px;
+  gap: 6px;
 }
 
-.calendarInfo strong {
-  color: #2563eb;
-  font-size: 18px;
+.stockLow {
+  color: #ef4444; /* 红色 */
+  font-weight: bold;
+  font-size: 15px;
 }
 
-.calendarTip {
-  font-size: 13px;
-  color: #64748b;
+.stockNormal {
+  color: #10b981; /* 绿色 */
+  font-weight: 600;
+  font-size: 15px;
 }
 
-/* 日历单元格 */
-.calendarCell {
-  font-size: 11px;
-}
-
-.stockBadge {
-  font-size: 10px;
-  color: #64748b;
+.stockSub {
+  font-size: 12px;
+  color: #6b7280;
   margin-top: 2px;
 }
 
-/* 单日价格设置表单 */
-.dayPriceForm {
-  margin-top: 20px;
-  padding: 16px;
-  background: linear-gradient(135deg, #eff6ff 0%, #f0f9ff 100%);
-  border-radius: 12px;
-  border: 1px solid #dbeafe;
+/* 日历样式 */
+.calendarContainer {
+  display: flex;
+  flex-direction: column;
 }
 
-.dayPriceForm h4 {
-  margin: 0 0 16px 0;
-  color: #1e40af;
+.calendarToolbar {
+  margin-bottom: 12px;
+  padding: 8px 12px;
+  background: #f0f9ff;
+  border: 1px solid #bae6fd;
+  border-radius: 6px;
+  color: #0369a1;
+  font-size: 13px;
+}
+
+.customCalendar {
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.calendarCell {
+  height: 76px; /* 增加高度以容纳更多信息 */
+  padding: 4px;
+  border-top: 2px solid transparent;
+  transition: all 0.2s;
+  cursor: pointer;
+}
+
+.calendarCell:hover {
+  background-color: #f9fafb;
+}
+
+.selectedCell {
+  background-color: #eff6ff !important;
+  border-top-color: #2563eb;
+}
+
+.cellTop {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  height: 20px;
+  padding: 0 2px;
+}
+
+.dateNum {
+  font-weight: 600;
+  color: #374151;
   font-size: 15px;
+  line-height: 1;
+}
+
+.topRightInfo {
+  display: flex;
+  gap: 2px;
+}
+
+.holidayTag {
+  font-size: 10px;
+  padding: 0 3px;
+  line-height: 14px;
+  margin: 0;
+  border-radius: 2px;
+}
+
+.checkIcon {
+  color: #2563eb;
+}
+
+.cellContent {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 4px;
+}
+
+.cellPrice {
+  color: #ef4444;
+  font-weight: bold;
+  font-size: 13px;
+}
+
+.defaultPrice {
+  color: #94a3b8;
+  font-size: 12px;
+}
+
+.cellStockRow {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  line-height: 1.2;
+  margin-top: 2px;
+}
+
+.stockWarning {
+  font-size: 11px;
+  color: #ef4444;
+  font-weight: bold;
+}
+
+.stockNormal {
+  font-size: 11px;
+  color: #059669;
+}
+
+.occupiedInfo {
+  font-size: 10px;
+  color: #94a3b8;
+  transform: scale(0.9);
+}
+
+/* 底部批量设置 */
+.batchSettings {
+  margin-top: 16px;
+  background: #f8fafc;
+  padding: 16px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+}
+
+.batchTitle {
+  font-weight: 600;
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.helpText {
+  margin-top: 8px;
+  font-size: 12px;
+  color: #94a3b8;
 }
