@@ -3,10 +3,8 @@ name: SonarCloud Analysis
 on:
   push:
     branches: [ "main", "master" ]
-    paths: [ "server/**" ]
   pull_request:
     branches: [ "main", "master" ]
-    paths: [ "server/**" ]
   workflow_dispatch:
 
 permissions:
@@ -15,11 +13,8 @@ permissions:
 jobs:
   Analysis:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ./server
 
-    # 添加 Redis 服务
+    # 后端测试需要 MongoDB 和 Redis
     services:
       mongodb:
         image: mongo:6.0
@@ -45,28 +40,38 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'npm'
-          cache-dependency-path: server/package-lock.json
 
-      - name: Install dependencies
+      # ===== 后端：安装 + 测试 =====
+      - name: Install backend dependencies
+        working-directory: ./server
         run: npm ci
 
       - name: Create uploads directory
+        working-directory: ./server
         run: mkdir -p uploads
 
-      # 注入 Redis 环境变量和 NODE_ENV
-      - name: Run Tests with Coverage
+      - name: Run backend tests with coverage
+        working-directory: ./server
         env:
           MONGODB_URI_TEST: mongodb://localhost:27017/yisu-test-ci
           JWT_SECRET: test_secret_key_for_ci
-          REDIS_URL: redis://localhost:6379  # 指向本地映射的 Service
-          NODE_ENV: test                     # 确保进入测试模式（禁用缓存中间件）
+          REDIS_URL: redis://localhost:6379
+          NODE_ENV: test
         run: npm test -- --coverage --runInBand
 
+      # ===== 前端：安装 + 测试 =====
+      - name: Install frontend dependencies
+        working-directory: ./admin
+        run: npm ci
+
+      - name: Run frontend tests with coverage
+        working-directory: ./admin
+        run: npx vitest run --coverage
+        continue-on-error: true
+
+      # ===== SonarCloud 扫描 =====
       - name: SonarCloud Scan
         uses: SonarSource/sonarcloud-github-action@master
-        with:
-          projectBaseDir: server
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
