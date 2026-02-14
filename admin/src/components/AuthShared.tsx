@@ -46,6 +46,7 @@ export const PasswordInput: React.FC<{
         bordered={false}
         value={value}
         onChange={onChange}
+        autoComplete="new-password"
       />
       <span className={styles.eyeIcon} onClick={() => setVisible(!visible)}>
         {visible ? <EyeOutlined /> : <EyeInvisibleOutlined />}

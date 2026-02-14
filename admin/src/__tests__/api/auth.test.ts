@@ -52,6 +52,7 @@ describe('Auth API', () => {
         username: 'newuser',
         password: '123456',
         role: 'merchant' as const,
+        captchaToken: 'mock-captcha-token',
       };
       const result = await register(userData);
 

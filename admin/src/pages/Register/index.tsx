@@ -59,7 +59,7 @@ const Register: React.FC = () => {
           <Form.Item name="username" rules={[{ required: true, message: '请输入用户名' }]}>
             <div className={styles.inputWrapper}>
               <UserOutlined className={styles.inputIcon} />
-              <Input placeholder="用户名" className={styles.glassInput} bordered={false} />
+              <Input placeholder="用户名" className={styles.glassInput} bordered={false} autoComplete="off" />
             </div>
           </Form.Item>
 

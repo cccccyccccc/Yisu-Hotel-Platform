@@ -16,7 +16,7 @@ const IMAGE_HEIGHT = 155;
 const TOLERANCE = 5; // 允许误差 (像素)
 
 // 定期清理过期验证码
-setInterval(() => {
+const cleanupTimer = setInterval(() => {
   const now = Date.now();
   for (const [key, val] of captchaStore.entries()) {
     if (now - val.timestamp > CAPTCHA_EXPIRY) {
@@ -24,6 +24,7 @@ setInterval(() => {
     }
   }
 }, 60 * 1000);
+cleanupTimer.unref(); // 不阻止进程退出 (测试环境)
 
 /**
  * 生成渐变背景 + 噪点图片
