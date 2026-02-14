@@ -1,0 +1,168 @@
+.captchaWrapper {
+  margin-bottom: 16px;
+}
+
+.captchaBox {
+  position: relative;
+  width: 310px;
+  height: 155px;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #f0f2f5;
+  margin: 0 auto;
+  user-select: none;
+}
+
+.bgImage {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 310px;
+  height: 155px;
+}
+
+.pieceImage {
+  position: absolute;
+  cursor: grab;
+  z-index: 2;
+  filter: drop-shadow(2px 2px 4px rgba(0, 0, 0, 0.5));
+  transition: none;
+}
+
+.pieceImage:active {
+  cursor: grabbing;
+}
+
+/* 滑块轨道 */
+.sliderTrack {
+  position: relative;
+  width: 310px;
+  height: 40px;
+  margin: 8px auto 0;
+  background: linear-gradient(135deg, #e8eaed 0%, #dfe2e6 100%);
+  border-radius: 20px;
+  border: 1px solid #d0d5dd;
+  overflow: hidden;
+}
+
+.sliderFill {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  background: linear-gradient(90deg, #4dabf7 0%, #339af0 100%);
+  border-radius: 20px 0 0 20px;
+  transition: none;
+}
+
+.sliderFill.success {
+  background: linear-gradient(90deg, #51cf66 0%, #40c057 100%);
+}
+
+.sliderFill.fail {
+  background: linear-gradient(90deg, #ff6b6b 0%, #fa5252 100%);
+}
+
+.sliderHandle {
+  position: absolute;
+  top: 2px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: grab;
+  z-index: 3;
+  border: 2px solid #4dabf7;
+  transition: none;
+}
+
+.sliderHandle:active {
+  cursor: grabbing;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.25);
+}
+
+.sliderHandle.success {
+  border-color: #40c057;
+  background: #40c057;
+  color: #fff;
+}
+
+.sliderHandle.fail {
+  border-color: #fa5252;
+  background: #fa5252;
+  color: #fff;
+}
+
+.sliderHint {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #868e96;
+  font-size: 13px;
+  letter-spacing: 2px;
+  pointer-events: none;
+}
+
+/* 状态提示 */
+.statusBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 6px;
+  padding: 0 4px;
+  width: 310px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.statusText {
+  font-size: 12px;
+  color: #868e96;
+}
+
+.statusText.success {
+  color: #40c057;
+  font-weight: 500;
+}
+
+.statusText.fail {
+  color: #fa5252;
+}
+
+.refreshBtn {
+  font-size: 12px;
+  color: #4dabf7;
+  cursor: pointer;
+  border: none;
+  background: none;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.refreshBtn:hover {
+  background: #e7f5ff;
+}
+
+/* 加载状态 */
+.loadingOverlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.85);
+  z-index: 10;
+  border-radius: 8px;
+}

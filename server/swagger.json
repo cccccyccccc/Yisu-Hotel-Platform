@@ -749,7 +749,8 @@
                 "type": "object",
                 "required": [
                   "username",
-                  "password"
+                  "password",
+                  "captchaToken"
                 ],
                 "properties": {
                   "username": {
@@ -768,6 +769,11 @@
                       "admin"
                     ],
                     "default": "user"
+                  },
+                  "captchaToken": {
+                    "type": "string",
+                    "description": "滑块验证码验证通过后获取的 token",
+                    "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
                   },
                   "gender": {
                     "type": "string",
@@ -791,6 +797,114 @@
           },
           "400": {
             "description": "账号已存在"
+          }
+        }
+      }
+    },
+    "/api/captcha/generate": {
+      "get": {
+        "summary": "生成滑块验证码",
+        "description": "生成拼图滑块验证码，返回背景图片、拼图块图片和验证码ID",
+        "tags": [
+          "Captcha"
+        ],
+        "responses": {
+          "200": {
+            "description": "验证码生成成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "captchaId": {
+                      "type": "string",
+                      "description": "验证码唯一标识",
+                      "example": "a1b2c3d4e5f6..."
+                    },
+                    "bgImage": {
+                      "type": "string",
+                      "description": "背景图片 (base64 PNG)"
+                    },
+                    "pieceImage": {
+                      "type": "string",
+                      "description": "拼图块图片 (base64 PNG)"
+                    },
+                    "y": {
+                      "type": "integer",
+                      "description": "拼图块的 Y 坐标位置",
+                      "example": 42
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "验证码生成失败"
+          }
+        }
+      }
+    },
+    "/api/captcha/verify": {
+      "post": {
+        "summary": "验证滑块验证码",
+        "description": "验证用户拖动滑块的位置是否正确，正确则返回 captchaToken",
+        "tags": [
+          "Captcha"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "captchaId",
+                  "x"
+                ],
+                "properties": {
+                  "captchaId": {
+                    "type": "string",
+                    "description": "验证码ID",
+                    "example": "a1b2c3d4e5f6..."
+                  },
+                  "x": {
+                    "type": "number",
+                    "description": "用户拖动到的 X 坐标位置",
+                    "example": 156
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "验证结果",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "captchaToken": {
+                      "type": "string",
+                      "description": "验证通过后的 JWT token (仅成功时返回)"
+                    },
+                    "msg": {
+                      "type": "string",
+                      "description": "失败原因 (仅失败时返回)"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "参数缺失或验证码已过期"
           }
         }
       }

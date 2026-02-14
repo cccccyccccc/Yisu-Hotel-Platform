@@ -12,7 +12,17 @@ const JWT_SECRET = process.env.JWT_SECRET;
 
 // 注册接口 (POST /api/auth/register)
 router.post('/register', authValidators.register, asyncHandler(async (req, res) => {
-    const { username, password, role } = req.body;
+    const { username, password, role, captchaToken } = req.body;
+
+    // 验证滑块验证码 token
+    if (!captchaToken) {
+        throw new AppError('请先完成滑块验证', 400, 'CAPTCHA_REQUIRED');
+    }
+    try {
+        jwt.verify(captchaToken, JWT_SECRET);
+    } catch {
+        throw new AppError('验证码已过期，请重新验证', 400, 'CAPTCHA_EXPIRED');
+    }
 
     // 检查账号是否已存在
     const existingUser = await User.findOne({ username: username.toString() });

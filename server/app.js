@@ -76,6 +76,7 @@ const merchantRoutes = require('./routes/merchant');
 const announcementRoutes = require('./routes/announcements');
 const messageRoutes = require('./routes/messages');
 const promotionRoutes = require('./routes/promotions');
+const captchaRoutes = require('./routes/captcha');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/hotels', hotelRoutes);
@@ -91,6 +92,7 @@ app.use('/api/merchant', merchantRoutes);
 app.use('/api/announcements', announcementRoutes);
 app.use('/api/messages', messageRoutes);
 app.use('/api/promotions', promotionRoutes);
+app.use('/api/captcha', captchaRoutes);
 
 setupSwagger(app); // 开启swagger
 

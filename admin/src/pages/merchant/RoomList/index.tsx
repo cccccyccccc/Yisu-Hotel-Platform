@@ -43,6 +43,32 @@ interface CalendarItem {
   stock?: number;
 }
 
+/** 库存单元格 - 提取以减少嵌套层级 */
+const StockCell: React.FC<{
+  record: RoomType;
+  todayStr: string;
+  getOccupiedCount: (roomId: string, dateStr: string) => number;
+  styles: Record<string, string>;
+}> = ({ record, todayStr, getOccupiedCount, styles }) => {
+  const todaySetting = record.priceCalendar?.find(c => c.date === todayStr);
+  const todayTotalStock = todaySetting?.stock !== undefined ? todaySetting.stock : record.stock;
+  const occupied = getOccupiedCount(record._id, todayStr);
+  const remaining = todayTotalStock - occupied;
+  const displayRemaining = remaining < 0 ? 0 : remaining;
+
+  return (
+    <div className={styles.stockColumn}>
+      <div className={styles.stockMain}>
+        <span className={displayRemaining < 3 ? styles.stockLow : styles.stockNormal}>
+          剩 {displayRemaining} 间
+        </span>
+        {displayRemaining < 3 && <Tag color="error" style={{ transform: 'scale(0.8)' }}>紧张</Tag>}
+      </div>
+      <div className={styles.stockSub}>总 {todayTotalStock} / 已订 {occupied}</div>
+    </div>
+  );
+};
+
 const RoomList: React.FC = () => {
   const { hotelId } = useParams<{ hotelId: string }>();
   const navigate = useNavigate();
@@ -308,27 +334,13 @@ const RoomList: React.FC = () => {
       width: 180,
       render: (_, record) => {
         const todayStr = dayjs().format('YYYY-MM-DD');
-        // 核心修复：查找“今日”是否有特殊库存设置
-        const todaySetting = record.priceCalendar?.find(c => c.date === todayStr);
-
-        // 今日总库存 = 日历设置库存 ?? 基础库存
-        const todayTotalStock = todaySetting?.stock !== undefined ? todaySetting.stock : record.stock;
-
-        const occupied = getOccupiedCount(record._id, todayStr);
-        const remaining = todayTotalStock - occupied;
-
         return (
-          <div className={styles.stockColumn}>
-            <div className={styles.stockMain}>
-              <span className={remaining < 3 ? styles.stockLow : styles.stockNormal}>
-                剩 {remaining < 0 ? 0 : remaining} 间
-              </span>
-              {remaining < 3 && <Tag color="error" style={{ transform: 'scale(0.8)' }}>紧张</Tag>}
-            </div>
-            <div className={styles.stockSub}>
-              总 {todayTotalStock} / 已订 {occupied}
-            </div>
-          </div>
+          <StockCell
+            record={record}
+            todayStr={todayStr}
+            getOccupiedCount={getOccupiedCount}
+            styles={styles}
+          />
         );
       }
     },
