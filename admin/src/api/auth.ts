@@ -9,6 +9,7 @@ export interface RegisterData {
   username: string;
   password: string;
   role: 'user' | 'merchant' | 'admin';
+  captchaToken: string;
   gender?: 'male' | 'female' | 'unknown';
   bio?: string;
 }

@@ -346,7 +346,8 @@ const HotelDetail: React.FC = () => {
       render: (status: string) => {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const map: any = { pending: 'default', paid: 'processing', completed: 'success', cancelled: 'error' };
-        return <Badge status={map[status]} text={status} />;
+        const labelMap: Record<string, string> = { pending: '待支付', paid: '已支付', completed: '已完成', cancelled: '已取消' };
+        return <Badge status={map[status]} text={labelMap[status] || status} />;
       }
     },
   ];
