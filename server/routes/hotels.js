@@ -10,6 +10,9 @@ const authMiddleware = require('../middleware/authMiddleware');
 const { asyncHandler, AppError } = require('../middleware/errorHandler');
 const { hotelValidators } = require('../middleware/validators');
 
+/**
+ * 辅助函数：获取指定日期范围内有空房的酒店ID
+ */
 async function getAvailableHotelIds(checkIn, checkOut) {
     if (!checkIn || !checkOut) return null;
 
@@ -41,6 +44,9 @@ async function getAvailableHotelIds(checkIn, checkOut) {
     return Array.from(availableHotelIds);
 }
 
+/**
+ * 辅助函数：构建查询过滤对象
+ */
 function buildFilterQuery(query, availableIds) {
     const { city, keyword, starRating, minPrice, maxPrice, tags } = query;
     const dbQuery = { status: 1 };
@@ -60,7 +66,7 @@ function buildFilterQuery(query, availableIds) {
     }
 
     if (keyword) {
-        const safeKeyword = String(keyword).replace(/[.*+?^${}()|[\]\\]/g, String.raw`\$&`); // NOSONAR
+        const safeKeyword = String(keyword).replace(/[.*+?^${}()|[\]\\]/g, String.raw`\$&`);
         dbQuery.$or = [
             { name: { $regex: safeKeyword, $options: 'i' } },
             { address: { $regex: safeKeyword, $options: 'i' } }
@@ -77,6 +83,9 @@ function buildFilterQuery(query, availableIds) {
     return dbQuery;
 }
 
+/**
+ * 辅助函数：构建排序逻辑
+ */
 function buildSortLogic(sortType, userLat, userLng) {
     let sort = {};
     let locationQuery = null;
@@ -101,28 +110,33 @@ function buildSortLogic(sortType, userLat, userLng) {
     return { sort, locationQuery };
 }
 
+// ==========================================
+// 路由处理器
+// ==========================================
+
 // 发布新酒店 (POST /api/hotels)
 router.post('/', authMiddleware, hotelValidators.create, asyncHandler(async (req, res) => {
-    if (req.user.role !== 'merchant') {
-        throw new AppError('只有商户权限才能发布酒店', 403, 'FORBIDDEN');
-    }
+    if (req.user.role !== 'merchant') throw new AppError('无权限', 403);
 
-    const { name, nameEn, city, address, starRating, price, description, tags, openingTime, location, nearbyAttractions, nearbyTransport, nearbyMalls } = req.body;
-    const safeName = String(name);
-    const existingHotel = await Hotel.findOne({ name: safeName });
-    if (existingHotel) {
-        throw new AppError('该酒店名称已存在', 400, 'HOTEL_EXISTS');
-    }
+    const { name, nameEn, city, address, starRating, price, description, tags, 
+            openingTime, location, nearbyAttractions, nearbyTransport, nearbyMalls, images } = req.body;
+
+    const existingHotel = await Hotel.findOne({ name: String(name) });
+    if (existingHotel) throw new AppError('酒店名已存在', 400);
 
     const newHotel = new Hotel({
         merchantId: req.user.userId,
-        name, nameEn, city, address, starRating, price, description, tags, openingTime,
-        location, nearbyAttractions, nearbyTransport, nearbyMalls,
+        name, nameEn, city, address, 
+        starRating: Number(starRating), 
+        price: Number(price), 
+        description, tags, openingTime, location, 
+        nearbyAttractions, nearbyTransport, nearbyMalls,
+        images: images || [], 
         status: 0
     });
 
-    const hotel = await newHotel.save();
-    res.json(hotel);
+    await newHotel.save();
+    res.json(newHotel);
 }));
 
 // 获取我的酒店列表 (GET /api/hotels/my)
@@ -137,7 +151,6 @@ router.get('/admin/list', authMiddleware, asyncHandler(async (req, res) => {
     if (req.user.role !== 'admin') {
         throw new AppError('权限不足', 403, 'FORBIDDEN');
     }
-    // 关联查询商户名，方便管理员知道是谁发布的
     const hotels = await Hotel.find()
         .populate('merchantId', 'username')
         .sort({ createdAt: -1 });
@@ -164,7 +177,7 @@ router.get('/', cache(300), hotelValidators.search, asyncHandler(async (req, res
     try {
         const [hotels, total] = await Promise.all([
             Hotel.find(findQuery).sort(sort).skip(skip).limit(limitNum),
-            Hotel.countDocuments(countQuery) // 使用干净的 countQuery
+            Hotel.countDocuments(countQuery)
         ]);
 
         res.json({
@@ -185,7 +198,7 @@ router.get('/', cache(300), hotelValidators.search, asyncHandler(async (req, res
 }));
 
 // 获取单个酒店详情 (GET /api/hotels/:id)
-router.get('/:id', cache(600), asyncHandler(async (req, res) => {
+router.get('/:id', asyncHandler(async (req, res) => {
     if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
         throw new AppError('Invalid ID format', 400, 'INVALID_ID');
     }
@@ -197,45 +210,63 @@ router.get('/:id', cache(600), asyncHandler(async (req, res) => {
     res.json(hotel);
 }));
 
-
-
 // 商户修改酒店信息 (PUT /api/hotels/:id)
 router.put('/:id', authMiddleware, hotelValidators.update, asyncHandler(async (req, res) => {
-    // 验证器已检查 ID 格式
+    const { 
+        name, nameEn, city, address, starRating, price, description, tags, 
+        openingTime, location, nearbyAttractions, nearbyTransport, nearbyMalls, images 
+    } = req.body;
 
-    const { name, nameEn, city, address, starRating, price, description, tags, openingTime, nearbyAttractions, nearbyTransport, nearbyMalls } = req.body;
+    // 🔍 步骤1：检查后端到底收到了什么 (查看 Node 运行窗口)
+    console.log('--- [后端接收检查] 原始 req.body.images:', images);
 
     const hotel = await Hotel.findById(req.params.id);
     if (!hotel) {
         throw new AppError('酒店不存在', 404, 'HOTEL_NOT_FOUND');
     }
 
-    // 权限校验
     if (hotel.merchantId.toString() !== req.user.userId) {
         throw new AppError('无权修改此酒店', 403, 'FORBIDDEN');
     }
 
-    // 更新字段
-    if (name) hotel.name = name;
-    if (nameEn) hotel.nameEn = nameEn;
-    if (city) hotel.city = city;
-    if (address) hotel.address = address;
-    if (starRating) hotel.starRating = starRating;
-    if (price !== undefined) hotel.price = price;
-    if (description) hotel.description = description;
-    if (tags) hotel.tags = tags;
-    if (openingTime) hotel.openingTime = openingTime;
-    // 附近信息字段
-    if (nearbyAttractions) hotel.nearbyAttractions = nearbyAttractions;
-    if (nearbyTransport) hotel.nearbyTransport = nearbyTransport;
-    if (nearbyMalls) hotel.nearbyMalls = nearbyMalls;
-
-    // 如果原本是“已发布”或“不通过”，修改后重置为“待审核”
-    if (hotel.status === 1 || hotel.status === 2) {
-        hotel.status = 0;
+    // 🔍 步骤2：组装更新对象，确保数值和数组类型严格正确
+    const updateData = {};
+    if (name) updateData.name = name;
+    if (nameEn !== undefined) updateData.nameEn = nameEn;
+    if (city) updateData.city = city;
+    if (address) updateData.address = address;
+    if (starRating !== undefined) updateData.starRating = Number(starRating);
+    if (price !== undefined) updateData.price = Number(price);
+    if (description !== undefined) updateData.description = description;
+    if (tags) updateData.tags = tags;
+    if (openingTime !== undefined) updateData.openingTime = openingTime;
+    if (nearbyAttractions) updateData.nearbyAttractions = nearbyAttractions;
+    if (nearbyTransport) updateData.nearbyTransport = nearbyTransport;
+    if (nearbyMalls) updateData.nearbyMalls = nearbyMalls;
+    if (location) updateData.location = location;
+    
+    // 🔴 强制更新：直接覆盖图片数组
+    if (images && Array.isArray(images)) {
+        updateData.images = images;
     }
-    await hotel.save();
-    res.json(hotel);
+
+    // 重置审核状态
+    if (hotel.status === 1 || hotel.status === 2) {
+        updateData.status = 0;
+    }
+
+    // 🔍 步骤3：使用 findByIdAndUpdate 进行“暴力”原子更新
+    // 使用 { new: true } 返回更新后的结果
+    const updatedHotel = await Hotel.findByIdAndUpdate(
+        req.params.id,
+        { $set: updateData },
+        { new: true, runValidators: true }
+    );
+
+    // 🔍 步骤4：打印数据库真实持久化后的结果
+    console.log('--- [数据库保存后] images 数组内容:', updatedHotel.images);
+
+    res.json(updatedHotel);
 }));
 
 // 管理员：审核酒店 (PUT /api/hotels/:id/audit)
@@ -254,14 +285,12 @@ router.put('/:id/audit', authMiddleware, hotelValidators.audit, asyncHandler(asy
     if (status === 2) {
         hotel.rejectReason = rejectReason || '未说明原因';
     } else {
-        hotel.rejectReason = ''; // 通过则清空原因
+        hotel.rejectReason = ''; 
     }
 
     await hotel.save();
     res.json(hotel);
 }));
-
-
 
 // 酒店上下线操作 (PUT /api/hotels/:id/status)
 router.put('/:id/status', authMiddleware, hotelValidators.status, asyncHandler(async (req, res) => {
@@ -279,15 +308,11 @@ router.put('/:id/status', authMiddleware, hotelValidators.status, asyncHandler(a
         throw new AppError('无权操作', 403, 'FORBIDDEN');
     }
 
-    // 上下线逻辑
     if (status === 3) {
-        hotel.status = 3; // 下线
+        hotel.status = 3; 
     } else if (status === 1) {
-        // 只有曾经审核通过的(status=1)或者只是被下线的(status=3)才能恢复
-        // 这里简单处理：允许恢复为1
         hotel.status = 1;
     } else {
-        // 理论上 validator 已经拦截，但双重保险
         throw new AppError('非法状态操作', 400, 'INVALID_STATUS');
     }
 

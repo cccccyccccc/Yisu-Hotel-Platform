@@ -1,11 +1,10 @@
 import { useEffect, useState, useRef } from 'react';
 import {
   Form, Input, InputNumber, Button, Select, Upload,
-  Space, Card, Row, Col, Cascader, DatePicker, Tooltip, App
+  Space, Card, Row, Col, Cascader, DatePicker, App, Modal
 } from 'antd';
 import {
-  PlusOutlined, ArrowLeftOutlined, EnvironmentOutlined, InfoCircleOutlined,
-  ShopOutlined, CarOutlined, RocketOutlined, TagsOutlined
+  PlusOutlined, ArrowLeftOutlined, EnvironmentOutlined
 } from '@ant-design/icons';
 import { useNavigate, useParams } from 'react-router-dom';
 import AMapLoader from '@amap/amap-jsapi-loader';
@@ -13,13 +12,24 @@ import dayjs from 'dayjs';
 import { createHotel, updateHotel, getHotelDetail } from '@/api/hotels';
 import { getHotelRoomTypes } from '@/api/rooms';
 import { uploadImage } from '@/api/upload';
-import type { UploadFile, UploadProps } from 'antd/es/upload';
+import type { UploadFile, UploadProps, RcFile } from 'antd/es/upload';
+import type { UploadFileStatus } from 'antd/es/upload/interface';
 import { provinceCityData, findProvinceByCity } from '@/data/cities';
 import styles from './HotelEdit.module.css';
 
 const { TextArea } = Input;
 
-// 配置高德安全密钥
+// 🔴 调试核心：请确保此地址与后端服务地址完全一致
+const API_BASE_URL = 'http://localhost:5000'; 
+
+const getBase64 = (file: RcFile): Promise<string> =>
+  new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = (error) => reject(error);
+  });
+
 if (typeof window !== 'undefined') {
   (window as unknown as Record<string, unknown>)._AMapSecurityConfig = {
     securityJsCode: '77c23574261c938c6d74008344c60ff1',
@@ -32,18 +42,16 @@ const HotelEditContent: React.FC = () => {
   const navigate = useNavigate();
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
+  
   const [fileList, setFileList] = useState<UploadFile[]>([]);
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [previewImage, setPreviewImage] = useState('');
+  const [previewTitle, setPreviewTitle] = useState('');
 
   const mapRef = useRef<HTMLDivElement>(null);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const amapObj = useRef<any>(null);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const mapInstance = useRef<any>(null);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const markerInstance = useRef<any>(null);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const geocoder = useRef<any>(null);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const geolocation = useRef<any>(null);
 
   const isEdit = !!id;
@@ -52,171 +60,182 @@ const HotelEditContent: React.FC = () => {
     AMapLoader.load({
       key: '14cf2ac7198b687730a69d24057f58de',
       version: '2.0',
-      plugins: ['AMap.Geocoder', 'AMap.PlaceSearch', 'AMap.Geolocation'],
+      plugins: ['AMap.Geocoder', 'AMap.Geolocation'],
     }).then((AMap) => {
-      amapObj.current = AMap;
       initMap(AMap);
-    }).catch(_e => console.error("地图加载失败:", _e));
-
+    }).catch(e => console.error("地图加载失败:", e));
     return () => mapInstance.current?.destroy();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  useEffect(() => {
+    if (id) fetchHotelDetail();
+  }, [id]);
+
   const initMap = (AMap: any) => {
     if (!mapRef.current) return;
-
     mapInstance.current = new AMap.Map(mapRef.current, {
       zoom: 13,
-      center: [116.4074, 39.9042]
+      center: [116.4074, 39.9042],
     });
-
     geocoder.current = new AMap.Geocoder();
-    geolocation.current = new AMap.Geolocation({
-      enableHighAccuracy: true,
-      timeout: 10000,
-      zoomToAccuracy: true,
-    });
-
-    markerInstance.current = new AMap.Marker({
-      draggable: true,
-      cursor: 'move',
-      position: [116.4074, 39.9042]
-    });
+    geolocation.current = new AMap.Geolocation({ enableHighAccuracy: true });
+    markerInstance.current = new AMap.Marker({ draggable: true, position: [116.4074, 39.9042] });
     mapInstance.current.add(markerInstance.current);
+  };
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    markerInstance.current.on('dragend', (e: any) => {
-      const lnglat = [e.lnglat.lng, e.lnglat.lat] as [number, number];
-      updateLocationInfo(lnglat);
+  const updateLocationInfo = (lnglat: [number, number]) => {
+    form.setFieldValue('location', lnglat);
+    geocoder.current?.getAddress(lnglat, (status: string, result: any) => {
+      if (status === 'complete' && result.regeocode) {
+        const { addressComponent, formattedAddress } = result.regeocode;
+        form.setFieldValue('address', formattedAddress);
+        const city = addressComponent.city || addressComponent.district;
+        form.setFieldValue('city', [addressComponent.province, city]);
+      }
     });
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    mapInstance.current.on('click', (e: any) => {
-      const lnglat = [e.lnglat.lng, e.lnglat.lat] as [number, number];
-      markerInstance.current.setPosition(e.lnglat);
-      updateLocationInfo(lnglat);
-    });
-
-    if (id) fetchHotelDetail();
   };
 
   const handleLocateCurrent = () => {
     if (!geolocation.current) return;
-    message.loading({ content: '正在精确定位...', key: 'locate' });
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     geolocation.current.getCurrentPosition((status: string, result: any) => {
       if (status === 'complete') {
         const lnglat: [number, number] = [result.position.lng, result.position.lat];
         markerInstance.current.setPosition(lnglat);
         mapInstance.current.setCenter(lnglat);
         updateLocationInfo(lnglat);
-        message.success({ content: '定位成功', key: 'locate' });
-      } else {
-        message.error({ content: '定位失败，请确保环境为 HTTPS 并授权', key: 'locate' });
       }
     });
   };
 
-  const updateLocationInfo = (lnglat: [number, number]) => {
-    form.setFieldValue('location', lnglat);
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    geocoder.current?.getAddress(lnglat, (status: string, result: any) => {
-      if (status === 'complete' && result.regeocode) {
-        const { addressComponent, formattedAddress } = result.regeocode;
-        form.setFieldValue('address', formattedAddress);
-        const province = addressComponent.province;
-        const city = (addressComponent.city && addressComponent.city.length > 0)
-          ? addressComponent.city : addressComponent.district;
-        form.setFieldValue('city', [province, city]);
-      }
-    });
-
-    const searchConfig = [
-      { field: 'nearbyAttractions', type: '风景名胜' },
-      { field: 'nearbyTransport', type: '地铁站|公交车站' },
-      { field: 'nearbyMalls', type: '购物中心' }
-    ];
-
-    searchConfig.forEach(({ field, type }) => {
-      const ps = new amapObj.current.PlaceSearch({ type, pageSize: 15 });
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      ps.searchNearBy('', lnglat, 2000, (status: string, res: any) => {
-        if (status === 'complete' && res.poiList) {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const names = Array.from(new Set(res.poiList.pois.map((p: any) => p.name)));
-          form.setFieldValue(field, names);
-        }
-      });
-    });
-  };
-
+  // --- 🛠 详情加载逻辑 (带日志) ---
   const fetchHotelDetail = async () => {
     try {
+      console.log('--- [Debug] 开始获取酒店详情 ---');
       const res = await getHotelDetail(id!);
-      const hotel = res.data;
-      const cityPath = hotel.city ? findProvinceByCity(hotel.city) : null;
+      const hotel = (res.data as any)?.data || res.data;
+      console.log('1. 后端返回原始数据:', hotel);
 
-      form.setFieldsValue({
-        ...hotel,
-        city: cityPath || [hotel.city],
-        openingTime: hotel.openingTime ? dayjs(hotel.openingTime, 'YYYY') : null,
-      });
+      if (hotel) {
+        form.setFieldsValue({
+          ...hotel,
+          city: hotel.city ? findProvinceByCity(hotel.city) || [hotel.city] : [],
+          openingTime: hotel.openingTime ? dayjs(hotel.openingTime, 'YYYY') : null,
+        });
 
-      if (hotel.images) {
-        setFileList(hotel.images.map((url: string, idx: number) => ({
-          uid: `${idx}`,
-          name: `img-${idx}`,
-          status: 'done',
-          url,
-          thumbUrl: url,
-        })));
+        // 图片回显处理
+        if (hotel.images && Array.isArray(hotel.images)) {
+          console.log('2. 原始图片路径数组:', hotel.images);
+          const formattedFiles: UploadFile[] = hotel.images.map((url: string, idx: number) => {
+            const isAbsolute = url.startsWith('http');
+            const finalUrl = isAbsolute ? url : `${API_BASE_URL}${url}`;
+            console.log(`   图片[${idx}] 转换结果: ${finalUrl}`);
+            
+            return {
+              uid: `-${idx}`,
+              name: `image-${idx}`,
+              status: 'done',
+              url: finalUrl,
+              thumbUrl: finalUrl, // 确保缩略图地址也正确
+            };
+          });
+          console.log('3. 最终存入状态的 fileList:', formattedFiles);
+          setFileList(formattedFiles);
+        }
       }
-
-      if (hotel.location?.coordinates && mapInstance.current) {
-        const coords = hotel.location.coordinates as [number, number];
-        mapInstance.current.setCenter(coords);
-        markerInstance.current.setPosition(coords);
-      }
-
-      const { data: rooms } = await getHotelRoomTypes(id!);
-      if (rooms?.length) {
-        const minPrice = Math.min(...rooms.map((r: { price: number }) => r.price).filter((p: number) => p > 0));
-        form.setFieldValue('price', minPrice);
-      }
-    } catch { message.error('详情回显失败'); }
+    } catch (error) {
+      console.error('[Debug] 加载详情失败:', error);
+      message.error('加载失败');
+    }
   };
 
-  const handleUpload: UploadProps['customRequest'] = async (options) => {
+  // --- 🛠 图片上传逻辑 (带日志) ---
+  const handleUpload: UploadProps['customRequest'] = async ({ file, onSuccess, onError }) => {
     try {
-      const res = await uploadImage(options.file as File);
-      setFileList(prev => [...prev, {
-        uid: Date.now().toString(),
-        name: (options.file as File).name,
+      console.log('--- [Debug] 发起图片上传 ---');
+      const res = await uploadImage(file as File);
+      const relativeUrl = res.data.url; 
+      console.log('1. 上传成功，后端返回相对路径:', relativeUrl);
+
+      const absoluteUrl = `${API_BASE_URL}${relativeUrl}`;
+      console.log('2. 拼接后的预览绝对地址:', absoluteUrl);
+
+      const newFile: UploadFile = {
+        uid: (file as RcFile).uid || Date.now().toString(),
+        name: (file as RcFile).name,
         status: 'done',
-        url: res.data.url,
-        thumbUrl: res.data.url,
-      }]);
-      options.onSuccess?.(res.data);
-    } catch { message.error('图片上传失败'); }
+        url: absoluteUrl,
+        response: { url: relativeUrl } // 提交保存时用这个原始路径
+      };
+      
+      setFileList(prev => {
+        const next = [...prev, newFile];
+        console.log('3. 当前 fileList 总状态:', next);
+        return next;
+      });
+      onSuccess?.(res.data);
+    } catch (err) {
+      console.error('[Debug] 上传过程出错:', err);
+      message.error('上传失败');
+      onError?.(err as any);
+    }
   };
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const handlePreview = async (file: UploadFile) => {
+    if (!file.url && !file.preview) {
+      file.preview = await getBase64(file.originFileObj as RcFile);
+    }
+    setPreviewImage(file.url || (file.preview as string));
+    setPreviewOpen(true);
+    setPreviewTitle(file.name || '图片预览');
+  };
+
+  const handleRemove = (file: UploadFile) => {
+    setFileList(prev => prev.filter(item => item.uid !== file.uid));
+  };
+
+  // --- 🛠 提交逻辑 (带日志) ---
   const onFinish = async (values: any) => {
     setLoading(true);
     try {
+      // 🔴 路径剥离逻辑：只保存相对路径入库
+      const processImages = fileList.map(f => {
+        if (f.response?.url) return f.response.url; // 新上传
+        if (f.url) return f.url.replace(API_BASE_URL, ''); // 已有图片剥离域名
+        return null;
+      }).filter(Boolean);
+  
+      // 🔴 安全获取坐标，防止 marker 未初始化崩溃
+      const coordinates = markerInstance.current 
+        ? markerInstance.current.getPosition().toArray() 
+        : (values.location?.coordinates || [116.4074, 39.9042]);
+  
       const data = {
         ...values,
+        // 🔴 强制类型转换，防止后端 validator 400 报错
+        starRating: Number(values.starRating), 
+        price: values.price ? Number(values.price) : 0,
         city: Array.isArray(values.city) ? values.city[values.city.length - 1] : values.city,
-        openingTime: values.openingTime?.format('YYYY'),
-        location: { type: 'Point', coordinates: markerInstance.current.getPosition().toArray() },
-        images: fileList.map(f => f.url),
+        openingTime: (values.openingTime && typeof values.openingTime.format === 'function')
+          ? values.openingTime.format('YYYY') : values.openingTime,
+        location: { type: 'Point', coordinates: coordinates },
+        images: processImages, 
       };
-      if (isEdit) { await updateHotel(id!, data); } else { await createHotel(data); }
+  
+      console.log('--- [Debug] 最终提交数据 ---', data);
+  
+      if (isEdit) { 
+        const res = await updateHotel(id!, data);
+        console.log('--- [Debug] 修改成功返回:', res.data);
+      } else { 
+        await createHotel(data); 
+      }
+      
       message.success('保存成功');
       navigate('/merchant/hotels');
-    } catch { message.error('提交失败'); } finally { setLoading(false); }
+    } catch (error: any) { 
+      console.error('[Debug] 提交异常:', error.response?.data || error);
+      message.error(error.response?.data?.msg || '保存失败'); 
+    } finally { setLoading(false); }
   };
 
   return (
@@ -229,87 +248,56 @@ const HotelEditContent: React.FC = () => {
       <Form form={form} layout="vertical" onFinish={onFinish}>
         <Row gutter={24}>
           <Col span={15}>
-            <Card title="基础信息" className={styles.formCard}>
+            <Card title="基础信息">
               <Row gutter={16}>
                 <Col span={12}><Form.Item name="name" label="酒店名称" rules={[{ required: true }]}><Input /></Form.Item></Col>
                 <Col span={12}><Form.Item name="nameEn" label="英文名称"><Input /></Form.Item></Col>
               </Row>
-
-              {/* 新增：酒店标签一栏 */}
+              <Form.Item name="tags" label="标签"><Select mode="tags" /></Form.Item>
               <Row gutter={16}>
-                <Col span={24}>
-                  <Form.Item
-                    name="tags"
-                    label={<span><TagsOutlined /> 酒店标签 <Tooltip title="输入自定义标签后回车即可添加"><InfoCircleOutlined /></Tooltip></span>}
-                  >
-                    <Select
-                      mode="tags"
-                      style={{ width: '100%' }}
-                      placeholder="输入标签（如：免费停车、智能客控）并回车"
-                      tokenSeparators={[',', ' ', '，']}
-                    />
-                  </Form.Item>
-                </Col>
-              </Row>
-
-              <Row gutter={16}>
-                <Col span={8}><Form.Item name="city" label="所在城市" rules={[{ required: true }]}><Cascader options={provinceCityData} /></Form.Item></Col>
-                <Col span={16}>
-                  <Form.Item name="address" label="详细地址" rules={[{ required: true }]}>
-                    <Input
-                      suffix={<EnvironmentOutlined onClick={handleLocateCurrent} style={{ color: '#4f8ef7', cursor: 'pointer' }} />}
-                    />
-                  </Form.Item>
-                </Col>
+                <Col span={8}><Form.Item name="city" label="城市" rules={[{ required: true }]}><Cascader options={provinceCityData} /></Form.Item></Col>
+                <Col span={16}><Form.Item name="address" label="地址" rules={[{ required: true }]}><Input suffix={<EnvironmentOutlined onClick={handleLocateCurrent} />} /></Form.Item></Col>
               </Row>
               <Row gutter={16}>
-                <Col span={8}><Form.Item name="starRating" label="星级"><Select>{[1, 2, 3, 4, 5].map(s => <Select.Option key={s} value={s}>{'⭐'.repeat(s)}</Select.Option>)}</Select></Form.Item></Col>
-                <Col span={8}>
-                  <Form.Item name="price" label={<span>起始价格 <Tooltip title="基于房型最低价自动同步"><InfoCircleOutlined /></Tooltip></span>}>
-                    <InputNumber prefix="¥" style={{ width: '100%' }} disabled placeholder="由房型同步" />
-                  </Form.Item>
-                </Col>
-                <Col span={8}><Form.Item name="openingTime" label="开业年份"><DatePicker picker="year" style={{ width: '100%' }} /></Form.Item></Col>
+                <Col span={8}><Form.Item name="starRating" label="星级"><Select>{[1,2,3,4,5].map(s=><Select.Option key={s} value={s}>{s}星</Select.Option>)}</Select></Form.Item></Col>
+                <Col span={8}><Form.Item name="price" label="起始价格"><InputNumber prefix="¥" disabled style={{width:'100%'}} /></Form.Item></Col>
+                <Col span={8}><Form.Item name="openingTime" label="开业年份"><DatePicker picker="year" style={{width:'100%'}}/></Form.Item></Col>
               </Row>
-              <Form.Item name="description" label="酒店简介"><TextArea rows={4} /></Form.Item>
+              <Form.Item name="description" label="简介"><TextArea rows={4} /></Form.Item>
             </Card>
 
-            <Card title="酒店图片 (最多10张)" className={styles.formCard}>
+            <Card title="酒店图片 (最多10张)" style={{ marginTop: 24 }}>
               <Upload
                 listType="picture-card"
                 fileList={fileList}
                 customRequest={handleUpload}
-                onRemove={(file) => setFileList(prev => prev.filter(f => f.uid !== file.uid))}
+                onPreview={handlePreview}
+                onRemove={handleRemove}
               >
                 {fileList.length < 10 && <div><PlusOutlined /><div style={{ marginTop: 8 }}>上传</div></div>}
               </Upload>
+              <Modal open={previewOpen} title={previewTitle} footer={null} onCancel={() => setPreviewOpen(false)}>
+                <img alt="预览" style={{ width: '100%' }} src={previewImage} />
+              </Modal>
             </Card>
           </Col>
 
           <Col span={9}>
-            <Card title="地理位置" className={styles.formCard}>
-              <div ref={mapRef} className={styles.mapContainer} style={{ height: 350 }} />
-              <Form.Item name="location" hidden><Input /></Form.Item>
+            <Card title="地理位置">
+              <div ref={mapRef} style={{ height: 350, background: '#f0f2f5' }} />
             </Card>
-
-            <Card title="周边信息" className={`${styles.formCard} ${styles.nearbySection}`}>
-              <Form.Item name="nearbyAttractions" label={<span><RocketOutlined /> 附近景点</span>}>
-                <Select mode="tags" placeholder="自动检索或手动输入" />
-              </Form.Item>
-              <Form.Item name="nearbyTransport" label={<span><CarOutlined /> 交通信息</span>}>
-                <Select mode="tags" placeholder="自动检索或手动输入" />
-              </Form.Item>
-              <Form.Item name="nearbyMalls" label={<span><ShopOutlined /> 附近商场</span>}>
-                <Select mode="tags" placeholder="自动检索或手动输入" />
-              </Form.Item>
+            <Card title="周边信息" style={{ marginTop: 24 }}>
+              <Form.Item name="nearbyAttractions" label="附近景点"><Select mode="tags" /></Form.Item>
+              <Form.Item name="nearbyTransport" label="交通信息"><Select mode="tags" /></Form.Item>
+              <Form.Item name="nearbyMalls" label="附近商场"><Select mode="tags" /></Form.Item>
             </Card>
           </Col>
         </Row>
 
         <div className={styles.footerBar}>
           <Space>
-            <Button size="large" onClick={() => navigate('/merchant/hotels')}>取消退出</Button>
-            <Button type="primary" size="large" htmlType="submit" loading={loading} className={styles.submitBtn}>保存修改</Button>
+            <Button onClick={() => navigate('/merchant/hotels')}>取消</Button>
+            <Button type="primary" htmlType="submit" loading={loading}>提交保存</Button>
           </Space>
         </div>
       </Form>
@@ -317,8 +305,5 @@ const HotelEditContent: React.FC = () => {
   );
 };
 
-const HotelEdit = () => (
-  <App><HotelEditContent /></App>
-);
-
+const HotelEdit = () => (<App><HotelEditContent /></App>);
 export default HotelEdit;

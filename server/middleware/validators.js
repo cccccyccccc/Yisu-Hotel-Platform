@@ -56,18 +56,32 @@ const hotelValidators = {
     body('starRating')
       .notEmpty().withMessage('星级不能为空')
       .isInt({ min: 1, max: 5 }).withMessage('星级应为1-5之间的整数'),
+    // 酒店起始价格可选（可由房型价格自动同步）
     body('price')
-      .notEmpty().withMessage('价格不能为空')
+      .optional()
       .isFloat({ min: 0 }).withMessage('价格必须大于等于0'),
     body('location.coordinates')
       .optional()
       .isArray({ min: 2, max: 2 }).withMessage('坐标格式错误'),
+    body('images').optional().isArray().withMessage('图片格式必须是数组'),
+    body('tags').optional().isArray().withMessage('标签格式必须是数组'),
     validate
   ],
   update: [
     param('id').isMongoId().withMessage('无效的酒店ID'),
+    body('name').optional().trim().notEmpty().withMessage('酒店名称不能为空'),
+    body('city').optional().trim().notEmpty().withMessage('城市不能为空'),
+    body('address').optional().trim().notEmpty().withMessage('地址不能为空'),
     body('starRating').optional().isInt({ min: 1, max: 5 }).withMessage('星级应为1-5之间的整数'),
     body('price').optional().isFloat({ min: 0 }).withMessage('价格必须大于等于0'),
+    body('images').optional().isArray().withMessage('图片格式必须是数组'),
+    body('location').optional(),
+    body('tags').optional().isArray(),
+    body('nearbyAttractions').optional().isArray(),
+    body('nearbyTransport').optional().isArray(),
+    body('nearbyMalls').optional().isArray(),
+    body('openingTime').optional(),
+    body('description').optional(),
     validate
   ],
   search: [
@@ -137,6 +151,7 @@ const roomValidators = {
   create: [
     body('hotelId').isMongoId().withMessage('无效的酒店ID'),
     body('title').trim().notEmpty().withMessage('房型名称不能为空'),
+    // 🟢 修改点：恢复为必填 notEmpty()
     body('price')
       .notEmpty().withMessage('价格不能为空')
       .isFloat({ min: 0 }).withMessage('价格必须大于等于0'),
@@ -166,7 +181,7 @@ const roomValidators = {
 const userValidators = {
   updateProfile: [
     body('avatar').optional().isString().withMessage('头像地址必须是字符串'),
-    body('gender').optional().isIn(['male', 'female', 'other', 'unknown']).withMessage('性别无效'), // Assuming common values, or relax to string
+    body('gender').optional().isIn(['male', 'female', 'other', 'unknown']).withMessage('性别无效'), 
     body('bio').optional().isString().isLength({ max: 200 }).withMessage('简介不能超过200字'),
     validate
   ]
@@ -200,7 +215,6 @@ module.exports = {
   hotelValidators,
   orderValidators,
   reviewValidators,
-
   roomValidators,
   userValidators,
   bannerValidators,

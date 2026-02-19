@@ -38,7 +38,7 @@ const hotelSchema = new mongoose.Schema({
     // 详细信息 & 媒体
     description: { type: String },
     tags: [String],                // 标签，如 ["免费停车", "亲子"]
-    images: [String],              // 图片路径数组
+    images: { type: [String], default: [] },              // 图片路径数组
 
     // 可选维度：酒店附近信息
     nearbyAttractions: [String],   // 热门景点，如 ["故宫", "天安门广场"]
