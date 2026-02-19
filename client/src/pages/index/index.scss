@@ -1,16 +1,16 @@
 .index-page {
   min-height: 100vh;
-  background: linear-gradient(180deg, #e8f4fc 0%, #f5f7fa 30%);
+  background: #f5f7fa;
 }
 
-// Banner 区域
+// ============ Banner 区域 ============
 .banner-section {
   width: 100%;
 }
 
 .banner-swiper {
   width: 100%;
-  height: 380px;
+  height: 360px;
 }
 
 .banner-image {
@@ -25,7 +25,7 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #f6a623 0%, #f7c948 50%, #fbe68a 100%);
   color: #fff;
   font-size: 48px;
   font-weight: bold;
@@ -49,10 +49,10 @@
   font-size: 28px;
 }
 
-// 搜索区域
+// ============ 搜索区域 ============
 .search-section {
-  padding: 24px;
-  margin-top: -48px;
+  padding: 0 24px 24px;
+  margin-top: -40px;
   position: relative;
   z-index: 10;
 }
@@ -64,206 +64,237 @@
   overflow: hidden;
 }
 
-.search-row {
+// ============ Tab栏 ============
+.tab-bar {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 28px 32px;
-  border-bottom: 1px solid #f0f0f0;
-
-  &:last-child {
-    border-bottom: none;
-  }
+  padding: 28px 32px 0;
 }
 
-.row-label {
+.tab-item {
   display: flex;
   align-items: center;
-  color: #666;
-  font-size: 28px;
-
-  .icon {
-    margin-right: 12px;
-    font-size: 32px;
-  }
-}
-
-.row-value {
-  display: flex;
-  align-items: center;
-}
-
-.city-name {
-  font-size: 32px;
-  font-weight: 600;
-  color: #1a1a1a;
-  margin-right: 8px;
-}
-
-.arrow {
-  font-size: 32px;
+  margin-right: 48px;
+  padding-bottom: 20px;
+  position: relative;
+  font-size: 30px;
   color: #999;
-}
-
-.keyword-row {
-  .keyword-input {
-    flex: 1;
-    text-align: right;
-    font-size: 28px;
-    color: #1a1a1a;
-  }
-}
-
-// 日期选择
-.date-row {
-  padding: 32px;
-  background: linear-gradient(135deg, #f8fbff 0%, #fff5f5 100%);
-}
-
-.date-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-.date-label {
-  font-size: 24px;
-  color: #999;
-  margin-bottom: 8px;
-}
-
-.date-value {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-.date-day {
-  font-size: 36px;
-  font-weight: 700;
-  color: #1a1a1a;
-}
-
-.date-weekday {
-  font-size: 24px;
-  color: #666;
-  margin-top: 4px;
-}
-
-.date-nights {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 16px 32px;
-  background: linear-gradient(135deg, #2196f3 0%, #1976d2 100%);
-  border-radius: 12px;
-}
-
-.nights-num {
-  font-size: 40px;
-  font-weight: 700;
-  color: #fff;
-}
-
-.nights-text {
-  font-size: 22px;
-  color: rgba(255, 255, 255, 0.9);
-}
-
-// 筛选条件
-.filter-row {
-  display: flex;
-  padding: 24px 32px;
-}
-
-.filter-item {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 20px;
-  margin: 0 8px;
-  background: #f5f7fa;
-  border-radius: 12px;
-  font-size: 26px;
-  color: #666;
   transition: all 0.2s;
-
-  &:first-child {
-    margin-left: 0;
-  }
 
   &:last-child {
     margin-right: 0;
   }
 
   &.active {
-    background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
-    color: #1976d2;
-  }
-
-  .filter-value {
-    margin-top: 8px;
-    font-size: 24px;
-    color: #999;
-  }
-
-  &.active .filter-value {
     color: #2196f3;
-  }
-}
+    font-weight: 600;
 
-// 快捷标签
-.quick-tags {
-  margin-top: 24px;
-}
+    .tab-label {
+      font-size: 34px;
+    }
 
-.tags-title {
-  font-size: 28px;
-  font-weight: 600;
-  color: #1a1a1a;
-  margin-bottom: 20px;
-  padding-left: 8px;
-}
-
-.tags-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 16px;
-}
-
-.tag-item {
-  display: flex;
-  align-items: center;
-  padding: 16px 24px;
-  background: #fff;
-  border-radius: 24px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-  transition: all 0.2s;
-
-  &.active {
-    background: linear-gradient(135deg, #2196f3 0%, #1976d2 100%);
-    box-shadow: 0 4px 12px rgba(33, 150, 243, 0.3);
-
-    .tag-name {
-      color: #fff;
+    &::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 40px;
+      height: 6px;
+      background: #2196f3;
+      border-radius: 3px;
     }
   }
 }
 
-.tag-icon {
-  font-size: 28px;
-  margin-right: 8px;
+.tab-label {
+  font-size: 30px;
+  transition: font-size 0.2s;
 }
 
-.tag-name {
+.tab-hot {
+  font-size: 20px;
+  margin-left: 4px;
+}
+
+// ============ 城市+搜索+定位 同一行 ============
+.city-search-row {
+  display: flex;
+  align-items: center;
+  padding: 24px 32px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.city-selector {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.city-name {
+  font-size: 34px;
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
+.city-arrow {
+  margin-left: 6px;
+  font-size: 24px;
+  color: #999;
+}
+
+.row-divider {
+  width: 1px;
+  height: 32px;
+  background: #e0e0e0;
+  margin: 0 20px;
+  flex-shrink: 0;
+}
+
+.search-input-wrap {
+  flex: 1;
+  overflow: hidden;
+
+  .keyword-input {
+    width: 100%;
+    font-size: 28px;
+    color: #999;
+  }
+}
+
+.location-btn {
+  flex-shrink: 0;
+  margin-left: 16px;
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.location-icon {
+  font-size: 36px;
+  color: #2196f3;
+}
+
+// ============ 日期选择行 ============
+.date-row {
+  display: flex;
+  align-items: center;
+  padding: 28px 32px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.date-item {
+  display: flex;
+  align-items: baseline;
+}
+
+.date-bold {
+  font-size: 32px;
+  font-weight: 700;
+  color: #1a1a1a;
+}
+
+.date-label {
+  font-size: 26px;
+  color: #666;
+  margin-left: 8px;
+}
+
+.date-separator {
+  font-size: 28px;
+  color: #ccc;
+  margin: 0 20px;
+}
+
+.nights-badge {
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+.nights-text {
+  font-size: 26px;
+  color: #666;
+}
+
+// ============ 凌晨入住提示 ============
+.early-notice {
+  display: flex;
+  align-items: center;
+  margin: 0 32px;
+  padding: 16px 20px;
+  background: #e8f5e9;
+  border-radius: 8px;
+
+  .notice-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: #4caf50;
+    margin-right: 12px;
+    flex-shrink: 0;
+  }
+
+  .notice-text {
+    font-size: 22px;
+    color: #2e7d32;
+    line-height: 1.5;
+  }
+}
+
+// ============ 价格/星级 ============
+.price-star-row {
+  display: flex;
+  align-items: center;
+  padding: 24px 32px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.price-star-text {
+  font-size: 28px;
+  color: #999;
+}
+
+.price-star-value {
+  font-size: 24px;
+  color: #2196f3;
+  margin-left: 16px;
+}
+
+// ============ 快捷标签 ============
+.quick-tags-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  padding: 24px 32px;
+}
+
+.quick-tag {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 14px 24px;
+  background: #f5f7fa;
+  border-radius: 8px;
   font-size: 26px;
   color: #333;
+  border: 1px solid #e8e8e8;
+  transition: all 0.2s;
+
+  &.active {
+    background: #e3f2fd;
+    border-color: #2196f3;
+    color: #1976d2;
+  }
 }
 
-// 搜索按钮
+// ============ 查询按钮 ============
+.search-btn-wrap {
+  padding: 24px 32px 32px;
+}
+
 .search-button {
-  margin-top: 32px;
   height: 96px;
   display: flex;
   align-items: center;
@@ -282,7 +313,7 @@
   }
 }
 
-// 选择器弹窗
+// ============ 筛选弹窗 ============
 .picker-overlay {
   position: fixed;
   top: 0;
@@ -326,28 +357,219 @@
   color: #1a1a1a;
 }
 
-.picker-options {
-  padding: 16px 32px 32px;
+// ============ 筛选弹窗内部 ============
+.filter-section {
+  padding: 24px 32px 8px;
 }
 
-.picker-option {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 28px 24px;
-  border-radius: 12px;
-  font-size: 30px;
+.filter-section-title {
+  font-size: 28px;
+  font-weight: 600;
   color: #333;
+  margin-bottom: 20px;
+}
+
+.filter-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.filter-option-item {
+  padding: 16px 28px;
+  background: #f5f7fa;
+  border-radius: 12px;
+  font-size: 26px;
+  color: #666;
+  border: 1px solid transparent;
   transition: all 0.2s;
 
   &.active {
-    background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+    background: #e3f2fd;
     color: #1976d2;
-  }
-
-  .check {
-    color: #2196f3;
-    font-weight: bold;
+    border-color: #2196f3;
   }
 }
 
+.filter-confirm-btn {
+  margin: 24px 32px 32px;
+  height: 88px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #2196f3 0%, #1565c0 100%);
+  border-radius: 44px;
+  font-size: 32px;
+  font-weight: 600;
+  color: #fff;
+  box-shadow: 0 6px 20px rgba(33, 150, 243, 0.3);
+
+  &:active {
+    transform: scale(0.98);
+  }
+}
+
+// ============ 城市弹窗 ============
+.city-picker-content {
+  width: 100%;
+  max-height: 82vh;
+  background: #fff;
+  border-radius: 24px 24px 0 0;
+  display: flex;
+  flex-direction: column;
+  animation: slideUp 0.3s ease-out;
+}
+
+.city-picker-header {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 28px 32px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.city-picker-title {
+  font-size: 32px;
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
+.city-picker-close {
+  position: absolute;
+  right: 24px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 56px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  color: #666;
+  background: #f5f7fa;
+}
+
+.city-search-box {
+  padding: 20px 24px 12px;
+}
+
+.city-search-input {
+  height: 72px;
+  line-height: 72px;
+  border-radius: 12px;
+  background: #f5f7fa;
+  padding: 0 20px;
+  font-size: 26px;
+  color: #333;
+}
+
+.city-picker-scroll {
+  height: 60vh;
+}
+
+.city-section {
+  padding: 8px 24px 12px;
+}
+
+.city-section-title {
+  font-size: 24px;
+  color: #999;
+  margin-bottom: 14px;
+}
+
+.city-location-row {
+  display: flex;
+}
+
+.city-location-item {
+  min-width: 180px;
+  height: 68px;
+  padding: 0 20px;
+  border-radius: 10px;
+  background: #eef6ff;
+  border: 1px solid #bcdcff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 26px;
+  color: #1976d2;
+}
+
+.location-icon-small {
+  margin-right: 8px;
+}
+
+.city-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.city-grid-item {
+  min-width: 112px;
+  height: 64px;
+  padding: 0 20px;
+  border-radius: 10px;
+  background: #f5f7fa;
+  border: 1px solid #e8e8e8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 26px;
+  color: #333;
+
+  &.active {
+    background: #e3f2fd;
+    border-color: #2196f3;
+    color: #1976d2;
+  }
+}
+
+.city-list-section {
+  padding: 8px 24px 24px;
+}
+
+.city-group {
+  margin-bottom: 18px;
+}
+
+.city-group-letter {
+  font-size: 24px;
+  color: #2196f3;
+  font-weight: 600;
+}
+
+.city-group-items {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.city-group-item {
+  min-width: 112px;
+  height: 64px;
+  padding: 0 20px;
+  border-radius: 10px;
+  background: #fff;
+  border: 1px solid #e8e8e8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 26px;
+  color: #333;
+
+  &.active {
+    background: #e3f2fd;
+    border-color: #2196f3;
+    color: #1976d2;
+  }
+}
+
+.city-empty {
+  padding: 36px 24px 44px;
+  text-align: center;
+  font-size: 24px;
+  color: #999;
+}
