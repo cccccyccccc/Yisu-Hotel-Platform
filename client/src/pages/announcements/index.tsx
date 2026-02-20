@@ -2,7 +2,7 @@ import { View, Text } from '@tarojs/components'
 import { useLoad } from '@tarojs/taro'
 import Taro from '@tarojs/taro'
 import { useState } from 'react'
-import { getAnnouncements, type Announcement } from '../../services'
+import { getAnnouncements, type AnnouncementListItem } from '../../services'
 import './index.scss'
 
 const PRIORITY_MAP: Record<string, { label: string; color: string }> = {
@@ -29,7 +29,7 @@ function getTimeDiff(dateStr: string): string {
 }
 
 export default function Announcements() {
-  const [list, setList] = useState<Announcement[]>([])
+  const [list, setList] = useState<AnnouncementListItem[]>([])
   const [loading, setLoading] = useState(true)
 
   useLoad(() => {
@@ -75,7 +75,7 @@ export default function Announcements() {
                 </View>
                 <Text className="card-title">{item.title}</Text>
                 <Text className="card-summary">
-                  {item.content.length > 80 ? item.content.substring(0, 80) + '...' : item.content}
+                  {(item.content || '').length > 80 ? `${(item.content || '').substring(0, 80)}...` : (item.content || '点击查看公告详情')}
                 </Text>
               </View>
             )

@@ -1,8 +1,8 @@
-import { View, Text, Image, ScrollView, Input } from '@tarojs/components'
+import { View, Text, Image, Input, ScrollView } from '@tarojs/components'
 import { useLoad, useRouter, useReachBottom } from '@tarojs/taro'
 import Taro from '@tarojs/taro'
-import { useState, useEffect, useCallback } from 'react'
-import { searchHotels, Hotel, HotelSearchParams } from '../../services'
+import { useState, useEffect, useCallback, useRef } from 'react'
+import { searchHotels, Hotel, HotelSearchParams, PaginationData } from '../../services'
 import Calendar from '../../components/Calendar'
 import './index.scss'
 
@@ -33,6 +33,21 @@ const PRICE_FILTERS = [
   { value: '700+', label: '¥700+', min: 700, max: undefined }
 ]
 
+const BASE_URL = 'http://localhost:5000'
+
+// 安全解码 URI 参数（兼容 Taro H5 模式下 router.params 未自动解码的情况）
+function safeDecodeParam(value: string | undefined): string {
+  if (!value) return ''
+  try {
+    // 检测是否含有 URL 编码特征（%XX 格式），有则解码
+    const decoded = decodeURIComponent(value)
+    return decoded
+  } catch {
+    // 如果解码失败（例如本身不是合法编码），返回原值
+    return value
+  }
+}
+
 // 格式化日期
 function formatShortDate(dateStr: string): string {
   if (!dateStr) return ''
@@ -40,9 +55,63 @@ function formatShortDate(dateStr: string): string {
   return `${date.getMonth() + 1}.${date.getDate()}`
 }
 
-// 渲染星级
+function normalizeSearchResult(raw: unknown): PaginationData<Hotel> {
+  // 兼容某些 Taro 环境下响应为 JSON 字符串而非对象的情况
+  let parsed = raw
+  if (typeof parsed === 'string') {
+    try {
+      parsed = JSON.parse(parsed)
+    } catch {
+      console.error('[normalizeSearchResult] JSON 解析失败:', parsed)
+      return {
+        data: [],
+        pagination: { total: 0, page: 1, limit: 10, totalPages: 0 }
+      }
+    }
+  }
+
+  const value = parsed as {
+    data?: unknown
+    pagination?: PaginationData<Hotel>['pagination']
+  }
+
+  // 标准格式: { data: Hotel[], pagination: {...} }
+  if (Array.isArray(value?.data) && value.pagination) {
+    return {
+      data: value.data as Hotel[],
+      pagination: value.pagination
+    }
+  }
+
+  // 兼容被再次包装的格式: { data: { data: Hotel[], pagination: {...} } }
+  const nested = value?.data as {
+    data?: unknown
+    pagination?: PaginationData<Hotel>['pagination']
+  } | undefined
+  if (nested && Array.isArray(nested.data) && nested.pagination) {
+    return {
+      data: nested.data as Hotel[],
+      pagination: nested.pagination
+    }
+  }
+
+  console.error('[normalizeSearchResult] 未匹配到已知响应格式, raw =', raw)
+  return {
+    data: [],
+    pagination: { total: 0, page: 1, limit: 10, totalPages: 0 }
+  }
+}
+
+function getImageUrl(url?: string): string {
+  if (!url) return '/assets/default-hotel.png'
+  if (url.startsWith('http')) return url
+  return `${BASE_URL}${url}`
+}
+
+// 渲染星级（防御性处理，避免非法 rating 导致 RangeError 白屏）
 function renderStars(rating: number): string {
-  return '★'.repeat(rating) + '☆'.repeat(5 - rating)
+  const r = Math.max(0, Math.min(5, Math.round(rating || 0)))
+  return '★'.repeat(r) + '☆'.repeat(5 - r)
 }
 
 export default function HotelList() {
@@ -50,7 +119,6 @@ export default function HotelList() {
   const [hotels, setHotels] = useState<Hotel[]>([])
   const [loading, setLoading] = useState(false)
   const [hasMore, setHasMore] = useState(true)
-  const [page, setPage] = useState(1)
   const [total, setTotal] = useState(0)
 
   // 搜索参数
@@ -63,34 +131,52 @@ export default function HotelList() {
   const [maxPrice, setMaxPrice] = useState<number | undefined>()
   const [priceRange, setPriceRange] = useState('')
   const [tags, setTags] = useState('')
-  const [sortType, setSortType] = useState<HotelSearchParams['sortType']>('')
+  const [sortType, setSortType] = useState<HotelSearchParams['sortType'] | ''>('')
 
   // UI 状态
   const [showCalendar, setShowCalendar] = useState(false)
   const [showFilterPanel, setShowFilterPanel] = useState(false)
   const [activeFilter, setActiveFilter] = useState<'sort' | 'star' | 'price' | null>(null)
 
+  // 标记 useLoad 是否已完成初始化，防止 useEffect 在路由参数就绪前发起空请求
+  const [initialized, setInitialized] = useState(false)
+
   useLoad(() => {
     // 从路由参数初始化搜索条件
+    // 注意: Taro H5 模式下 router.params 可能不自动解码 URL 编码的中文参数，
+    // 需要手动 decodeURIComponent，否则会出现显示编码字符或二次编码导致查询失败的问题
     const params = router.params
-    if (params.city) setCity(params.city)
-    if (params.keyword) setKeyword(params.keyword)
-    if (params.checkInDate) setCheckInDate(params.checkInDate)
-    if (params.checkOutDate) setCheckOutDate(params.checkOutDate)
-    if (params.starRating) setStarRating(params.starRating)
+    if (params.city) setCity(safeDecodeParam(params.city))
+    if (params.keyword) setKeyword(safeDecodeParam(params.keyword))
+    if (params.checkInDate) setCheckInDate(safeDecodeParam(params.checkInDate))
+    if (params.checkOutDate) setCheckOutDate(safeDecodeParam(params.checkOutDate))
+    if (params.starRating) setStarRating(safeDecodeParam(params.starRating))
     if (params.minPrice) setMinPrice(Number(params.minPrice))
     if (params.maxPrice) setMaxPrice(Number(params.maxPrice))
-    if (params.tags) setTags(params.tags)
+    if (params.tags) setTags(safeDecodeParam(params.tags))
+    // 标记初始化完成，触发首次加载
+    setInitialized(true)
   })
+
+  // 使用 ref 追踪加载状态和分页，避免闭包陷阱
+  const loadingRef = useRef(false)
+  const pageRef = useRef(1)
+  const hasMoreRef = useRef(true)
+  // 请求版本号，用于丢弃过期的响应（防止竞态条件）
+  const requestVersionRef = useRef(0)
 
   // 加载酒店数据
   const loadHotels = useCallback(async (isRefresh = false) => {
-    if (loading) return
-    if (!isRefresh && !hasMore) return
+    // 刷新时允许打断当前加载；非刷新时检查状态
+    if (!isRefresh && (loadingRef.current || !hasMoreRef.current)) return
 
+    // 递增请求版本号，用于识别过期请求
+    const version = ++requestVersionRef.current
+
+    loadingRef.current = true
     setLoading(true)
     try {
-      const currentPage = isRefresh ? 1 : page
+      const currentPage = isRefresh ? 1 : pageRef.current
       const params: HotelSearchParams = {
         city,
         keyword,
@@ -105,32 +191,43 @@ export default function HotelList() {
         limit: 10
       }
 
-      const result = await searchHotels(params)
+      const result = normalizeSearchResult(await searchHotels(params))
+
+      // 如果在等待期间又发起了新请求，丢弃本次过期的结果
+      if (version !== requestVersionRef.current) return
 
       if (isRefresh) {
         setHotels(result.data)
-        setPage(2)
+        pageRef.current = 2
       } else {
         setHotels((prev) => [...prev, ...result.data])
-        setPage((prev) => prev + 1)
+        pageRef.current = currentPage + 1
       }
 
       setTotal(result.pagination.total)
-      setHasMore(currentPage < result.pagination.totalPages)
+      hasMoreRef.current = currentPage < result.pagination.totalPages
+      setHasMore(hasMoreRef.current)
     } catch (error) {
+      // 过期请求的错误不处理
+      if (version !== requestVersionRef.current) return
       console.error('加载酒店失败:', error)
       Taro.showToast({ title: '加载失败', icon: 'none' })
     } finally {
-      setLoading(false)
+      // 只有最新请求才更新 loading 状态
+      if (version === requestVersionRef.current) {
+        loadingRef.current = false
+        setLoading(false)
+      }
     }
-  }, [city, keyword, checkInDate, checkOutDate, starRating, minPrice, maxPrice, tags, sortType, page, loading, hasMore])
-
-  // 初始加载
-  useEffect(() => {
-    loadHotels(true)
   }, [city, keyword, checkInDate, checkOutDate, starRating, minPrice, maxPrice, tags, sortType])
 
-  // 触底加载更多
+  // 筛选条件变化时刷新列表（等 useLoad 初始化完成后才执行）
+  useEffect(() => {
+    if (!initialized) return
+    loadHotels(true)
+  }, [loadHotels, initialized])
+
+  // 触底加载更多（页面级滚动）
   useReachBottom(() => {
     loadHotels()
   })
@@ -303,13 +400,7 @@ export default function HotelList() {
       )}
 
       {/* 酒店列表 */}
-      <ScrollView
-        className="hotel-list"
-        scrollY
-        enhanced
-        showScrollbar={false}
-        onScrollToLower={() => loadHotels()}
-      >
+      <View className="hotel-list">
         <View className="list-info">
           <Text>共找到 {total} 家酒店</Text>
         </View>
@@ -322,7 +413,7 @@ export default function HotelList() {
           >
             <Image
               className="hotel-image"
-              src={hotel.images?.[0] || '/assets/default-hotel.png'}
+              src={getImageUrl(hotel.images?.[0])}
               mode="aspectFill"
             />
             <View className="hotel-info">
@@ -334,17 +425,24 @@ export default function HotelList() {
               </View>
 
               <View className="hotel-score-row">
-                <View className="score-badge">
-                  <Text className="score-num">{hotel.score?.toFixed(1) || '5.0'}</Text>
-                </View>
-                <Text className="score-label">
-                  {hotel.score >= 4.5 ? '超棒' : hotel.score >= 4 ? '很好' : '不错'}
-                </Text>
+                {(() => {
+                  const displayScore = hotel.score ?? 5.0
+                  return (
+                    <>
+                      <View className="score-badge">
+                        <Text className="score-num">{displayScore.toFixed(1)}</Text>
+                      </View>
+                      <Text className="score-label">
+                        {displayScore >= 4.5 ? '超棒' : displayScore >= 4 ? '很好' : '不错'}
+                      </Text>
+                    </>
+                  )
+                })()}
               </View>
 
               <View className="hotel-location">
                 <Text className="location-icon">📍</Text>
-                <Text className="location-text" numberOfLines={1}>
+                <Text className="location-text">
                   {hotel.address}
                 </Text>
               </View>
@@ -388,7 +486,7 @@ export default function HotelList() {
             <Text className="empty-hint">试试调整搜索条件</Text>
           </View>
         )}
-      </ScrollView>
+      </View>
 
       {/* 日历弹窗 */}
       <Calendar

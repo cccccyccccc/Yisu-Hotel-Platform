@@ -33,8 +33,8 @@ export function getUserProfile(): Promise<UserProfile> {
 }
 
 // 更新用户资料（头像/性别/简介）
-export function updateUserProfile(data: UpdateProfileData): Promise<{ msg: string }> {
-  return request<{ msg: string }>({
+export function updateUserProfile(data: UpdateProfileData): Promise<UserProfile> {
+  return request<UserProfile>({
     url: '/users/profile',
     method: 'PUT',
     data

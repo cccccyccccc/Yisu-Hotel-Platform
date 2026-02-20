@@ -1,8 +1,6 @@
 .hotel-list-page {
   min-height: 100vh;
   background-color: #f5f7fa;
-  display: flex;
-  flex-direction: column;
 }
 
 // 搜索头部
@@ -188,7 +186,6 @@
 
 // 酒店列表
 .hotel-list {
-  flex: 1;
   padding: 16px;
 }
 

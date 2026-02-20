@@ -28,8 +28,8 @@ export interface CreateReviewData {
 }
 
 // 发布评价
-export function createReview(data: CreateReviewData): Promise<{ msg: string; review: Review }> {
-  return request<{ msg: string; review: Review }>({
+export function createReview(data: CreateReviewData): Promise<{ msg: string }> {
+  return request<{ msg: string }>({
     url: '/reviews',
     method: 'POST',
     data

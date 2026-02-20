@@ -22,6 +22,11 @@ export interface Favorite {
   createdAt: string
 }
 
+export interface MyFavoriteHotel extends FavoriteHotel {
+  minPrice: number
+  rating: number
+}
+
 // 收藏状态检查响应
 export interface FavoriteCheckResponse {
   isFavorite: boolean
@@ -33,6 +38,19 @@ export function getFavorites(): Promise<Favorite[]> {
     url: '/favorites',
     method: 'GET'
   })
+}
+
+// 获取我的收藏列表（页面直接使用酒店列表结构）
+export async function getMyFavorites(): Promise<MyFavoriteHotel[]> {
+  const favorites = await getFavorites()
+  return favorites
+    .map((item) => item.hotelId)
+    .filter(Boolean)
+    .map((hotel) => ({
+      ...hotel,
+      minPrice: hotel.price,
+      rating: hotel.score
+    }))
 }
 
 // 收藏酒店
