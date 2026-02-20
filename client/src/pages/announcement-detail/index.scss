@@ -1,0 +1,55 @@
+.loading-page {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  font-size: 28px;
+  color: #999;
+}
+
+.detail-page {
+  min-height: 100vh;
+  background: #fff;
+}
+
+.detail-header {
+  padding: 32px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.priority-tag {
+  display: inline-flex;
+  padding: 4px 16px;
+  border-radius: 8px;
+  font-size: 22px;
+  color: #fff;
+  margin-bottom: 16px;
+}
+
+.detail-title {
+  font-size: 40px;
+  font-weight: 700;
+  color: #333;
+  display: block;
+  line-height: 1.4;
+  margin-bottom: 16px;
+}
+
+.detail-meta {
+  font-size: 24px;
+  color: #bbb;
+  display: block;
+}
+
+.detail-content {
+  padding: 32px;
+}
+
+.content-text {
+  font-size: 30px;
+  color: #333;
+  line-height: 1.8;
+  white-space: pre-wrap;
+}
+
+

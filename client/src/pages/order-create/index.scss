@@ -1,0 +1,307 @@
+.loading-page {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  font-size: 28px;
+  color: #999;
+}
+
+.order-create-page {
+  min-height: 100vh;
+  background: #f5f7fa;
+  padding: 16px 24px;
+}
+
+// 酒店卡片
+.hotel-card {
+  display: flex;
+  background: #fff;
+  border-radius: 16px;
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+
+.hotel-img {
+  width: 200px;
+  height: 150px;
+  flex-shrink: 0;
+}
+
+.hotel-info {
+  flex: 1;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.hotel-name {
+  font-size: 32px;
+  font-weight: 600;
+  color: #333;
+  display: block;
+}
+
+.hotel-address {
+  font-size: 24px;
+  color: #999;
+  margin-top: 8px;
+  display: block;
+}
+
+// 信息卡片
+.info-card {
+  background: #fff;
+  border-radius: 16px;
+  padding: 28px;
+  margin-bottom: 16px;
+}
+
+.info-title {
+  font-size: 32px;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 24px;
+}
+
+// 日期行
+.date-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 24px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.date-item {
+  display: flex;
+  flex-direction: column;
+}
+
+.date-label {
+  font-size: 24px;
+  color: #999;
+}
+
+.date-value {
+  font-size: 28px;
+  color: #333;
+  font-weight: 500;
+  margin-top: 8px;
+}
+
+.date-nights {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #e3f2fd;
+  padding: 8px 20px;
+  border-radius: 24px;
+}
+
+.nights-num {
+  font-size: 24px;
+  color: #1565c0;
+  font-weight: 500;
+}
+
+// 房间信息
+.room-info-row {
+  padding: 24px 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.room-name {
+  font-size: 30px;
+  font-weight: 500;
+  color: #333;
+  display: block;
+}
+
+.room-specs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.spec {
+  font-size: 24px;
+  color: #999;
+  background: #f5f5f5;
+  padding: 4px 12px;
+  border-radius: 8px;
+}
+
+// 数量选择
+.quantity-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 24px;
+}
+
+.quantity-label {
+  font-size: 30px;
+  color: #333;
+}
+
+.quantity-control {
+  display: flex;
+  align-items: center;
+}
+
+.qty-btn {
+  width: 56px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid #e0e0e0;
+  border-radius: 12px;
+  font-size: 32px;
+  color: #333;
+
+  &.disabled {
+    opacity: 0.3;
+  }
+
+  &:active {
+    background: #f5f5f5;
+  }
+}
+
+.qty-num {
+  width: 80px;
+  text-align: center;
+  font-size: 34px;
+  font-weight: 600;
+  color: #333;
+}
+
+// 价格明细
+.price-detail-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 0;
+
+  &.promo {
+    background: #fff8e1;
+    margin: 4px -12px;
+    padding: 12px;
+    border-radius: 8px;
+  }
+}
+
+.detail-label {
+  font-size: 28px;
+  color: #666;
+}
+
+.detail-value {
+  font-size: 28px;
+  color: #333;
+}
+
+.promo-text {
+  color: #e65100;
+  font-weight: 500;
+}
+
+.price-total-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-top: 2px solid #f0f0f0;
+  padding-top: 20px;
+  margin-top: 12px;
+}
+
+.total-label {
+  font-size: 30px;
+  color: #333;
+  font-weight: 500;
+}
+
+.total-price {
+  display: flex;
+  align-items: baseline;
+}
+
+.price-symbol {
+  font-size: 28px;
+  color: #ff4d4f;
+  font-weight: 600;
+}
+
+.price-amount {
+  font-size: 44px;
+  color: #ff4d4f;
+  font-weight: 700;
+}
+
+// 底部提交栏
+.submit-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #fff;
+  padding: 16px 24px;
+  box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.08);
+  z-index: 100;
+}
+
+.safe-area-bottom {
+  padding-bottom: calc(16px + env(safe-area-inset-bottom));
+}
+
+.submit-left {
+  display: flex;
+  align-items: baseline;
+}
+
+.submit-price-label {
+  font-size: 26px;
+  color: #666;
+}
+
+.submit-price-symbol {
+  font-size: 28px;
+  color: #ff4d4f;
+  font-weight: 600;
+}
+
+.submit-price-num {
+  font-size: 40px;
+  color: #ff4d4f;
+  font-weight: 700;
+}
+
+.submit-btn {
+  padding: 0 48px;
+  height: 84px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #ff6b35 0%, #ff4d4f 100%);
+  border-radius: 42px;
+  font-size: 32px;
+  font-weight: 600;
+  color: #fff;
+
+  &.disabled {
+    opacity: 0.6;
+  }
+
+  &:active {
+    transform: scale(0.98);
+  }
+}
+
+

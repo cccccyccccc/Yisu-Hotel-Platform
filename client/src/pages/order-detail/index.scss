@@ -1,0 +1,181 @@
+.loading-page {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  font-size: 28px;
+  color: #999;
+}
+
+.order-detail-page {
+  min-height: 100vh;
+  background: #f5f7fa;
+}
+
+// 状态头部
+.status-header {
+  padding: 40px 32px;
+}
+
+.status-label {
+  font-size: 40px;
+  font-weight: 700;
+  display: block;
+}
+
+.status-hint {
+  font-size: 26px;
+  color: #666;
+  margin-top: 8px;
+  display: block;
+}
+
+// 通用卡片
+.card {
+  background: #fff;
+  margin: 16px 24px;
+  border-radius: 16px;
+  padding: 28px;
+}
+
+.card-title {
+  font-size: 32px;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 20px;
+}
+
+.card-arrow {
+  font-size: 36px;
+  color: #ccc;
+  flex-shrink: 0;
+}
+
+// 酒店卡片
+.hotel-card {
+  display: flex;
+  align-items: center;
+}
+
+.hotel-img {
+  width: 140px;
+  height: 105px;
+  border-radius: 12px;
+  flex-shrink: 0;
+}
+
+.hotel-info {
+  flex: 1;
+  margin-left: 20px;
+}
+
+.hotel-name {
+  font-size: 30px;
+  font-weight: 600;
+  color: #333;
+  display: block;
+}
+
+.hotel-address {
+  font-size: 24px;
+  color: #999;
+  margin-top: 6px;
+  display: block;
+}
+
+// 信息行
+.info-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 0;
+  border-bottom: 1px solid #f5f5f5;
+
+  &:last-child {
+    border-bottom: none;
+  }
+
+  &.total {
+    border-top: 2px solid #f0f0f0;
+    border-bottom: none;
+    padding-top: 20px;
+    margin-top: 8px;
+  }
+}
+
+.info-label {
+  font-size: 28px;
+  color: #999;
+}
+
+.info-value {
+  font-size: 28px;
+  color: #333;
+  font-weight: 500;
+
+  &.price {
+    font-size: 36px;
+    color: #ff4d4f;
+    font-weight: 700;
+  }
+
+  &.order-id {
+    font-size: 24px;
+    color: #999;
+    max-width: 400px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+// 底部操作栏
+.action-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: flex-end;
+  gap: 16px;
+  background: #fff;
+  padding: 16px 24px;
+  box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.08);
+  z-index: 100;
+}
+
+.safe-area-bottom {
+  padding-bottom: calc(16px + env(safe-area-inset-bottom));
+}
+
+.action-btn {
+  padding: 0 40px;
+  height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 40px;
+  font-size: 30px;
+  font-weight: 500;
+
+  &:active {
+    transform: scale(0.98);
+  }
+}
+
+.cancel-btn {
+  border: 2px solid #ddd;
+  color: #999;
+}
+
+.review-btn {
+  background: linear-gradient(135deg, #2196f3 0%, #1565c0 100%);
+  color: #fff;
+}
+
+.reviewed-btn {
+  background: #f0f0f0;
+  color: #999;
+}
+
+

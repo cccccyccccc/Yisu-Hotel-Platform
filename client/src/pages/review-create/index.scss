@@ -1,0 +1,162 @@
+.review-create-page {
+  min-height: 100vh;
+  background: #f5f7fa;
+  padding: 16px 24px;
+}
+
+.section-title {
+  font-size: 30px;
+  font-weight: 600;
+  color: #333;
+  display: block;
+  margin-bottom: 20px;
+}
+
+// 评分
+.rating-section {
+  background: #fff;
+  border-radius: 16px;
+  padding: 32px;
+  margin-bottom: 16px;
+  text-align: center;
+}
+
+.star-row {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  margin: 16px 0;
+}
+
+.star {
+  font-size: 56px;
+  color: #e0e0e0;
+
+  &.active {
+    color: #faad14;
+  }
+}
+
+.rating-label {
+  font-size: 28px;
+  color: #faad14;
+  font-weight: 500;
+}
+
+// 内容
+.content-section {
+  background: #fff;
+  border-radius: 16px;
+  padding: 32px;
+  margin-bottom: 16px;
+  position: relative;
+}
+
+.content-input {
+  width: 100%;
+  height: 240px;
+  font-size: 28px;
+  color: #333;
+  padding: 16px;
+  background: #f9f9f9;
+  border-radius: 12px;
+  box-sizing: border-box;
+}
+
+.char-count {
+  position: absolute;
+  bottom: 44px;
+  right: 44px;
+  font-size: 24px;
+  color: #bbb;
+}
+
+// 图片
+.image-section {
+  background: #fff;
+  border-radius: 16px;
+  padding: 32px;
+  margin-bottom: 16px;
+}
+
+.image-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.image-item {
+  width: 200px;
+  height: 200px;
+  position: relative;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.preview-img {
+  width: 100%;
+  height: 100%;
+}
+
+.remove-btn {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 40px;
+  height: 40px;
+  background: rgba(0, 0, 0, 0.5);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  color: #fff;
+}
+
+.add-image {
+  width: 200px;
+  height: 200px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: #f5f7fa;
+  border: 2px dashed #d0d0d0;
+  border-radius: 12px;
+}
+
+.add-icon {
+  font-size: 56px;
+  color: #ccc;
+}
+
+.add-text {
+  font-size: 24px;
+  color: #ccc;
+  margin-top: 4px;
+}
+
+// 提交按钮
+.submit-btn {
+  margin-top: 16px;
+  height: 96px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #2196f3 0%, #1565c0 100%);
+  border-radius: 48px;
+  font-size: 34px;
+  font-weight: 600;
+  color: #fff;
+  box-shadow: 0 8px 24px rgba(33, 150, 243, 0.35);
+
+  &.disabled {
+    opacity: 0.6;
+  }
+
+  &:active {
+    transform: scale(0.98);
+  }
+}
+
+
