@@ -1,31 +1,65 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import {
   Button, Card, Tabs, Tag, Table, Input, Avatar, Rate,
-  Space, Badge, Modal, message, Empty, Image, Form, InputNumber, Row, Col
+  Space, Badge, Modal, message, Empty, Image, Form, InputNumber, Row, Col,
+  Upload, Cascader, DatePicker, Select, AutoComplete, Popconfirm, Calendar, Typography
 } from 'antd';
 import {
   ArrowLeftOutlined, EditOutlined, DeleteOutlined, PlusOutlined,
-  EnvironmentOutlined, StarOutlined,
-  InfoCircleOutlined,
-  ExclamationCircleOutlined, MessageOutlined
+  EnvironmentOutlined, StarOutlined, InfoCircleOutlined,
+  ExclamationCircleOutlined, MessageOutlined, ReloadOutlined,
+  CheckCircleFilled, SearchOutlined
 } from '@ant-design/icons';
 import { useNavigate, useParams } from 'react-router-dom';
-import dayjs from 'dayjs';
+import dayjs, { Dayjs } from 'dayjs';
+import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
+import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
+import AMapLoader from '@amap/amap-jsapi-loader';
 
 // === API Imports ===
-// 注意：如果你的 api/hotels.ts 没有 deleteHotel，请添加或者使用下面的下线逻辑
 import { getHotelDetail, updateHotel, updateHotelStatus, type Hotel } from '@/api/hotels';
 import { getHotelReviews, replyToReview, type Review } from '@/api/reviews';
-import { getRoomsByHotel, createRoom, updateRoom, deleteRoom, type RoomType } from '@/api/rooms';
+import { 
+  getRoomsByHotel, createRoom, updateRoom, deleteRoom, 
+  getRoomCalendar, updateRoomCalendar, type RoomType 
+} from '@/api/rooms';
 import { getMerchantOrders, type Order } from '@/api/orders';
+import { uploadImage } from '@/api/upload';
 
-import styles from './HotelDetail.module.css';
+// === Data/Utils Imports ===
+// 请确保你有这个文件，或者在代码下方模拟一个 provinceCityData
+import { provinceCityData, findProvinceByCity } from '@/data/cities'; 
+import type { UploadFile, UploadProps, RcFile } from 'antd/es/upload';
 
+import styles from './HotelDetail.module.css'; // 请确保合并了 RoomList 和 HotelEdit 的 CSS
+
+// 扩展 dayjs
+dayjs.extend(isSameOrAfter);
+dayjs.extend(isSameOrBefore);
 
 const { TextArea } = Input;
+const { Text } = Typography;
 
-// 🟢 配置图片服务器地址 (根据你的后端端口修改，如 http://localhost:3000)
+// 🟢 配置
 const SERVER_URL = 'http://localhost:5000';
+const HOLIDAYS: Record<string, string> = {
+  '2026-01-01': '元旦', '2026-02-17': '除夕', '2026-02-18': '春节',
+  '2026-05-01': '五一', '2026-10-01': '国庆',
+};
+const BED_TYPES = ['1.8m大床', '1.5m大床', '1.2m双床', '2.0m圆床', '榻榻米', '家庭房'];
+
+// 高德地图安全密钥 (建议移至全局配置)
+if (typeof window !== 'undefined') {
+  (window as unknown as Record<string, unknown>)._AMapSecurityConfig = {
+    securityJsCode: '77c23574261c938c6d74008344c60ff1', // 替换你的安全密钥
+  };
+}
+
+interface CalendarItem {
+  date: string;
+  price: number;
+  stock?: number;
+}
 
 const HotelDetail: React.FC = () => {
   const { hotelId } = useParams<{ hotelId: string }>();
@@ -34,8 +68,8 @@ const HotelDetail: React.FC = () => {
   // Forms
   const [formHotel] = Form.useForm();
   const [formRoom] = Form.useForm();
-  const [formBatch] = Form.useForm();
   const [formReply] = Form.useForm();
+  const [formCalendar] = Form.useForm();
 
   // Loading States
   const [loading, setLoading] = useState(false);
@@ -48,25 +82,56 @@ const HotelDetail: React.FC = () => {
   const [rooms, setRooms] = useState<RoomType[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
 
-  // UI States
+  // UI States - Modals
   const [isHotelModalVisible, setIsHotelModalVisible] = useState(false);
   const [isRoomModalVisible, setIsRoomModalVisible] = useState(false);
-  const [editingRoom, setEditingRoom] = useState<RoomType | null>(null);
-
-  // Batch & Reply States
-  const [selectedRoomKeys, setSelectedRoomKeys] = useState<React.Key[]>([]);
-  const [isBatchModalVisible, setIsBatchModalVisible] = useState(false);
   const [isReplyModalVisible, setIsReplyModalVisible] = useState(false);
+  const [isCalendarModalVisible, setIsCalendarModalVisible] = useState(false);
+
+  // Logic States - Hotel Edit
+  const [hotelFileList, setHotelFileList] = useState<UploadFile[]>([]);
+  const mapRef = useRef<HTMLDivElement>(null);
+  const mapInstance = useRef<any>(null);
+  const markerInstance = useRef<any>(null);
+  const geocoder = useRef<any>(null);
+
+  // Logic States - Room Edit
+  const [editingRoom, setEditingRoom] = useState<RoomType | null>(null);
+  const [roomFileList, setRoomFileList] = useState<UploadFile[]>([]);
+  
+  // Logic States - Calendar
+  const [calendarRoom, setCalendarRoom] = useState<RoomType | null>(null);
+  const [calendarData, setCalendarData] = useState<CalendarItem[]>([]);
+  const [basePrice, setBasePrice] = useState(0);
+  const [selectedDates, setSelectedDates] = useState<string[]>([]);
+  
+  // Logic States - Reply
   const [currentReviewId, setCurrentReviewId] = useState<string>('');
 
-  // 🟢 工具函数：处理图片路径
+  // 🟢 工具函数
   const getImageUrl = (url?: string) => {
     if (!url) return 'https://via.placeholder.com/200x150?text=No+Image';
     if (url.startsWith('http')) return url;
-    return `${SERVER_URL}${url} `;
+    return `${SERVER_URL}${url}`;
   };
 
-  // 初始化数据
+  const getOccupiedCount = (roomId: string, dateStr: string) => {
+    const targetDate = dayjs(dateStr);
+    return orders.reduce((sum, order) => {
+      // 兼容处理 order.hotelId 和 order.roomTypeId
+      const rId = typeof order.roomTypeId === 'string' ? order.roomTypeId : order.roomTypeId?._id;
+      if (rId !== roomId || order.status === 'cancelled') return sum;
+      
+      const checkIn = dayjs(order.checkInDate);
+      const checkOut = dayjs(order.checkOutDate);
+      if (targetDate.isSameOrAfter(checkIn, 'day') && targetDate.isBefore(checkOut, 'day')) {
+        return sum + order.quantity;
+      }
+      return sum;
+    }, 0);
+  };
+
+  // ================= 1. 初始化数据 =================
   const fetchData = async () => {
     if (!hotelId) return;
     setLoading(true);
@@ -77,8 +142,6 @@ const HotelDetail: React.FC = () => {
       ]);
       setHotel(hotelRes.data);
       setReviews(reviewsRes.data || []);
-
-      // 并行获取子数据
       fetchRooms();
       fetchOrders();
     } catch (error) {
@@ -107,8 +170,6 @@ const HotelDetail: React.FC = () => {
     setOrderLoading(true);
     try {
       const res = await getMerchantOrders();
-      // 🟢 前端过滤：只显示当前酒店的订单
-      // 兼容处理：API返回的 hotelId 可能是对象也可能是字符串
       const currentHotelOrders = (res.data || []).filter((order: Order) => {
         const orderHotelId = typeof order.hotelId === 'string' ? order.hotelId : order.hotelId?._id;
         return orderHotelId === hotelId;
@@ -126,17 +187,91 @@ const HotelDetail: React.FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hotelId]);
 
-  // ================= 1. 酒店操作 (编辑/删除) =================
+  // ================= 2. 酒店编辑逻辑 (融合 HotelEdit) =================
+
+  // 初始化地图
+  const initMap = (AMap: any) => {
+    if (!mapRef.current) return;
+    // 如果已有实例，先销毁（防止二次打开弹窗报错）
+    if (mapInstance.current) {
+        mapInstance.current.destroy();
+    }
+
+    const initialCenter = hotel?.location?.coordinates || [116.4074, 39.9042];
+    
+    mapInstance.current = new AMap.Map(mapRef.current, {
+      zoom: 13,
+      center: initialCenter,
+    });
+    geocoder.current = new AMap.Geocoder();
+    markerInstance.current = new AMap.Marker({ 
+      draggable: true, 
+      position: initialCenter 
+    });
+    mapInstance.current.add(markerInstance.current);
+
+    // 拖拽标记更新表单
+    markerInstance.current.on('dragend', (e: any) => {
+        const lnglat = [e.lnglat.lng, e.lnglat.lat];
+        updateLocationInfo(lnglat as [number, number]);
+    });
+    
+    // 点击地图更新标记
+    mapInstance.current.on('click', (e: any) => {
+        const lnglat = [e.lnglat.lng, e.lnglat.lat];
+        markerInstance.current.setPosition(lnglat);
+        updateLocationInfo(lnglat as [number, number]);
+    });
+  };
+
+  const updateLocationInfo = (lnglat: [number, number]) => {
+    // 这里只更新 form 的 location 字段，显示地址需要 geocoder
+    geocoder.current?.getAddress(lnglat, (status: string, result: any) => {
+      if (status === 'complete' && result.regeocode) {
+        const { addressComponent, formattedAddress } = result.regeocode;
+        formHotel.setFieldValue('address', formattedAddress);
+        // 尝试自动匹配城市
+        const city = addressComponent.city || addressComponent.district;
+        // 注意：这里可能需要根据你的 provinceCityData 结构来匹配
+        formHotel.setFieldValue('city', [addressComponent.province, city]); 
+      }
+    });
+  };
 
   const handleEditHotel = () => {
-    if (hotel) {
-      // 处理回填数据，注意 location 等复杂字段可能需要特殊处理，这里回填基础字段
-      formHotel.setFieldsValue({
-        ...hotel,
-        tags: hotel.tags?.join(',') // 假设输入框是逗号分隔字符串，或者 Tag Select
-      });
-      setIsHotelModalVisible(true);
+    if (!hotel) return;
+    setIsHotelModalVisible(true);
+
+    // 表单回填
+    formHotel.setFieldsValue({
+      ...hotel,
+      city: hotel.city ? findProvinceByCity(hotel.city) || [hotel.city] : [], // 需自行实现 findProvinceByCity
+      openingTime: hotel.openingTime ? dayjs(hotel.openingTime, 'YYYY') : null,
+      starRating: Number(hotel.starRating)
+    });
+
+    // 图片回填
+    if (hotel.images) {
+      const files = hotel.images.map((url, idx) => ({
+        uid: `-${idx}`,
+        name: `image-${idx}`,
+        status: 'done',
+        url: getImageUrl(url),
+        response: { url } // 保留原始相对路径
+      }));
+      setHotelFileList(files as UploadFile[]);
     }
+
+    // 延迟加载地图，确保 Modal DOM 已渲染
+    setTimeout(() => {
+        AMapLoader.load({
+            key: '14cf2ac7198b687730a69d24057f58de', // 替换你的 Key
+            version: '2.0',
+            plugins: ['AMap.Geocoder', 'AMap.Geolocation'],
+        }).then((AMap) => {
+            initMap(AMap);
+        }).catch(e => console.error("地图加载失败:", e));
+    }, 100);
   };
 
   const submitEditHotel = async () => {
@@ -144,19 +279,49 @@ const HotelDetail: React.FC = () => {
       const values = await formHotel.validateFields();
       if (!hotelId) return;
 
-      // 数据格式转换 (如 tags 字符串转数组)
+      // 处理图片路径
+      const processImages = hotelFileList.map(f => {
+        if (f.response?.url) return f.response.url; // 已经是相对路径
+        if (f.url) return f.url?.replace(SERVER_URL, ''); // 绝对转相对
+        return null;
+      }).filter(Boolean);
+
+      // 处理坐标
+      const coordinates = markerInstance.current 
+        ? markerInstance.current.getPosition().toArray() 
+        : (hotel?.location?.coordinates || [116.4074, 39.9042]);
+
       const submitData = {
         ...values,
-        tags: typeof values.tags === 'string' ? values.tags.split(',') : values.tags
+        starRating: Number(values.starRating),
+        city: Array.isArray(values.city) ? values.city[values.city.length - 1] : values.city,
+        openingTime: values.openingTime?.format('YYYY'),
+        location: { type: 'Point', coordinates },
+        images: processImages
       };
 
       await updateHotel(hotelId, submitData);
       message.success('酒店信息更新成功');
       setIsHotelModalVisible(false);
-      fetchData(); // 刷新
-    } catch {
+      fetchData(); 
+    } catch (e) {
+      console.error(e);
       message.error('更新失败');
     }
+  };
+
+  const handleUploadHotel: UploadProps['customRequest'] = async ({ file, onSuccess }) => {
+    try {
+      const res = await uploadImage(file as File);
+      onSuccess?.(res.data);
+      setHotelFileList(prev => [...prev, { 
+        uid: Date.now().toString(), 
+        name: 'img', 
+        status: 'done', 
+        url: getImageUrl(res.data.url),
+        response: { url: res.data.url }
+      }]);
+    } catch { message.error('上传失败'); }
   };
 
   const handleDeleteHotel = () => {
@@ -166,30 +331,33 @@ const HotelDetail: React.FC = () => {
       content: '下架后用户将无法检索到该酒店。',
       okText: '确认下架',
       okType: 'danger',
-      cancelText: '取消',
       onOk: async () => {
         try {
-          if (!hotelId) return;
-          // 🟢 使用 updateHotelStatus 将状态改为 3 (下线)
-          // 如果你实现了 deleteHotel 接口，这里可以换成 deleteHotel(hotelId)
-          await updateHotelStatus(hotelId, 3);
-          message.success('酒店已下架');
-          navigate('/merchant/hotels');
-        } catch {
-          message.error('操作失败');
-        }
+            if (hotelId) {
+                await updateHotelStatus(hotelId, 3);
+                message.success('酒店已下架');
+                navigate('/merchant/hotels');
+            }
+        } catch { message.error('操作失败'); }
       },
     });
   };
 
-  // ================= 2. 房型操作 (新增/编辑/批量改价) =================
+  // ================= 3. 房型列表与编辑 (融合 RoomList) =================
 
   const handleEditRoom = (room?: RoomType) => {
     setEditingRoom(room || null);
     if (room) {
       formRoom.setFieldsValue(room);
+      setRoomFileList(
+        room.images?.map((url, idx) => ({ 
+            uid: `-${idx}`, name: `img-${idx}`, status: 'done', 
+            url: getImageUrl(url), response: { url }
+        })) || []
+      );
     } else {
       formRoom.resetFields();
+      setRoomFileList([]);
     }
     setIsRoomModalVisible(true);
   };
@@ -197,12 +365,19 @@ const HotelDetail: React.FC = () => {
   const submitRoom = async () => {
     try {
       const values = await formRoom.validateFields();
+      // 图片处理
+      const images = roomFileList.map(f => {
+        return f.response?.url || f.url?.replace(SERVER_URL, '');
+      }).filter(Boolean);
+
+      const payload = { ...values, hotelId, images };
+
       if (editingRoom) {
-        await updateRoom(editingRoom._id, values);
+        await updateRoom(editingRoom._id, payload);
         message.success('房型更新成功');
       } else {
         if (!hotelId) return;
-        await createRoom({ ...values, hotelId });
+        await createRoom(payload);
         message.success('房型创建成功');
       }
       setIsRoomModalVisible(false);
@@ -212,121 +387,224 @@ const HotelDetail: React.FC = () => {
     }
   };
 
-  const handleBatchPrice = () => {
-    if (selectedRoomKeys.length === 0) {
-      message.warning('请先勾选需要改价的房型');
-      return;
-    }
-    formBatch.resetFields();
-    setIsBatchModalVisible(true);
-  };
-
-  const submitBatchPrice = async () => {
+  const handleUploadRoom: UploadProps['customRequest'] = async ({ file, onSuccess }) => {
     try {
-      const { price } = await formBatch.validateFields();
-      // 并发请求
-      const promises = selectedRoomKeys.map(id =>
-        updateRoom(id as string, { price })
-      );
-      await Promise.all(promises);
-      message.success(`已更新 ${selectedRoomKeys.length} 个房型的价格`);
-      setIsBatchModalVisible(false);
-      setSelectedRoomKeys([]);
-      fetchRooms();
-    } catch {
-      message.error('批量更新失败');
-    }
+      const res = await uploadImage(file as File);
+      onSuccess?.(res.data);
+      setRoomFileList(prev => [...prev, { 
+        uid: Date.now().toString(), name: 'img', status: 'done', 
+        url: getImageUrl(res.data.url), response: { url: res.data.url }
+      }]);
+    } catch { message.error('上传失败'); }
   };
 
   const handleDeleteRoom = (id: string) => {
-    Modal.confirm({
-      title: '确认删除房型?',
-      content: '删除后无法恢复。',
-      okType: 'danger',
-      onOk: async () => {
-        try {
-          await deleteRoom(id);
-          message.success('删除成功');
-          fetchRooms();
-        } catch {
-          message.error('删除失败');
-        }
-      }
-    });
-  };
-
-  // ================= 3. 评价回复 =================
-
-  const handleReplyClick = (reviewId: string) => {
-    setCurrentReviewId(reviewId);
-    formReply.resetFields();
-    setIsReplyModalVisible(true);
-  };
-
-  const submitReply = async () => {
     try {
-      const { content } = await formReply.validateFields();
-      await replyToReview(currentReviewId, content);
-      message.success('回复成功');
-      setIsReplyModalVisible(false);
-      // 刷新评论列表 (可能需要重新 fetch)
-      const res = await getHotelReviews(hotelId!);
-      setReviews(res.data);
-    } catch {
-      message.error('回复失败');
-    }
+        deleteRoom(id).then(() => {
+            message.success('删除成功');
+            fetchRooms();
+        });
+    } catch { message.error('删除失败'); }
   };
 
-  // ================= 4. Columns 配置 =================
+  // ================= 4. 房型日历逻辑 =================
+
+  const handleOpenCalendar = async (record: RoomType) => {
+    setCalendarRoom(record);
+    setSelectedDates([]);
+    formCalendar.resetFields();
+    setCalendarData([]);
+    setBasePrice(record.price);
+    setIsCalendarModalVisible(true);
+    try {
+      const res = await getRoomCalendar(record._id);
+      setBasePrice(res.data.basePrice || record.price);
+      setCalendarData(res.data.calendar || []);
+    } catch { console.log('No calendar data'); }
+  };
+
+  const onCalendarSelect = (date: Dayjs) => {
+    const dateStr = date.format('YYYY-MM-DD');
+    const newSelected = selectedDates.includes(dateStr)
+      ? selectedDates.filter(d => d !== dateStr)
+      : [...selectedDates, dateStr];
+    setSelectedDates(newSelected);
+  };
+
+  const dateCellRender = (value: Dayjs) => {
+    if (!calendarRoom) return null;
+    const dateStr = value.format('YYYY-MM-DD');
+    const item = calendarData.find(c => c.date === dateStr);
+    const isSelected = selectedDates.includes(dateStr);
+    const holiday = HOLIDAYS[dateStr];
+
+    const dailyTotalStock = item?.stock !== undefined ? item.stock : calendarRoom.stock;
+    const occupied = getOccupiedCount(calendarRoom._id, dateStr);
+    const remaining = dailyTotalStock - occupied;
+    const finalRemaining = remaining < 0 ? 0 : remaining;
+    const isPriceSpecial = item && item.price !== basePrice;
+
+    return (
+      <div className={`${styles.calendarCell} ${isSelected ? styles.selectedCell : ''}`}>
+        <div className={styles.cellTop}>
+          <span className={styles.dateNum}>{value.date()}</span>
+          <div className={styles.topRightInfo}>
+            {holiday && <Tag color="#f50" className={styles.holidayTag}>{holiday}</Tag>}
+            {isSelected && <CheckCircleFilled className={styles.checkIcon} />}
+          </div>
+        </div>
+        <div className={styles.cellContent}>
+          <span className={isPriceSpecial ? styles.cellPrice : styles.defaultPrice}>
+            ¥{item?.price ?? basePrice}
+          </span>
+          <div className={styles.cellStockRow}>
+            <span className={finalRemaining < 3 ? styles.stockWarning : styles.stockNormal}>
+              剩{finalRemaining}
+            </span>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const handleBatchSaveCalendar = async () => {
+    if (!selectedDates.length || !calendarRoom) return message.warning('请选择日期');
+    try {
+      const values = await formCalendar.validateFields();
+      const stockToSend = (values.dayStock === undefined || values.dayStock === null)
+        ? calendarRoom.stock
+        : values.dayStock;
+
+      const updates = selectedDates.map(dateStr => ({
+        date: dateStr,
+        price: values.dayPrice,
+        stock: stockToSend
+      }));
+
+      await updateRoomCalendar(calendarRoom._id, updates);
+      
+      // 更新本地数据，避免频繁刷新
+      setCalendarData(prev => {
+        const next = [...prev];
+        updates.forEach(u => {
+          const idx = next.findIndex(i => i.date === u.date);
+          if (idx > -1) next[idx] = u;
+          else next.push(u);
+        });
+        return next;
+      });
+      setSelectedDates([]);
+      message.success('设置成功');
+      fetchRooms(); // 刷新外层列表
+    } catch { message.error('保存失败'); }
+  };
+
+  const handleBatchResetCalendar = async () => {
+    if (!selectedDates.length || !calendarRoom) return message.warning('请选择日期');
+    try {
+      const updates = selectedDates.map(dateStr => ({
+        date: dateStr,
+        price: basePrice,
+        stock: calendarRoom.stock
+      }));
+      await updateRoomCalendar(calendarRoom._id, updates);
+      setCalendarData(prev => prev.filter(i => !selectedDates.includes(i.date)));
+      setSelectedDates([]);
+      message.success('已恢复默认');
+      fetchRooms();
+    } catch { message.error('重置失败'); }
+  };
+
+
+  // ================= 5. 表格列配置 =================
 
   const roomColumns = [
     {
-      title: '图片',
-      dataIndex: 'images',
-      render: (images: string[]) => (
-        <Image
-          src={getImageUrl(images?.[0])}
-          width={60}
-          height={45}
-          style={{ objectFit: 'cover', borderRadius: 4 }}
-        />
-      )
-    },
-    {
-      title: '房型名称',
-      dataIndex: 'title',
-      render: (text: string, record: RoomType) => (
-        <div>
-          <div style={{ fontWeight: 'bold' }}>{text}</div>
-          <div style={{ fontSize: 12, color: '#888' }}>
-            {record.bedInfo} | {record.size} | {record.capacity}人
+      title: '房型信息',
+      key: 'info',
+      render: (_: unknown, record: RoomType) => (
+        <div className={styles.roomInfo} style={{ display: 'flex', gap: 12 }}>
+          <Image 
+            src={getImageUrl(record.images?.[0])} 
+            width={80} height={60} 
+            style={{ borderRadius: 6, objectFit: 'cover' }} 
+            fallback="https://via.placeholder.com/80"
+          />
+          <div>
+            <div style={{ fontWeight: 600, fontSize: 16 }}>{record.title}</div>
+            <Space size={4} style={{ marginTop: 4 }}>
+              {record.size && <Tag>{record.size}m²</Tag>}
+              {record.bedInfo && <Tag>{record.bedInfo}</Tag>}
+            </Space>
           </div>
         </div>
-      )
+      ),
     },
     {
-      title: '价格',
-      dataIndex: 'price',
-      render: (val: number) => <span style={{ color: '#f5222d', fontWeight: 'bold' }}>¥{val}</span>
+      title: '今日价格',
+      key: 'price',
+      width: 140,
+      render: (_: unknown, record: RoomType) => {
+        const todayStr = dayjs().format('YYYY-MM-DD');
+        const todaySetting = record.priceCalendar?.find(c => c.date === todayStr);
+        const displayPrice = todaySetting ? todaySetting.price : record.price;
+        const isSpecial = !!todaySetting && todaySetting.price !== record.price;
+
+        return (
+          <div style={{ display: 'flex', flexDirection: 'column' }}>
+            <span style={{ color: isSpecial ? '#f5222d' : '#333', fontWeight: 'bold', fontSize: 16 }}>
+              ¥{displayPrice}
+            </span>
+            {isSpecial && <Text type="secondary" style={{ fontSize: 11 }}>已设特殊价</Text>}
+            {!isSpecial && record.originalPrice && (
+              <span style={{ textDecoration: 'line-through', color: '#999', fontSize: 12 }}>¥{record.originalPrice}</span>
+            )}
+          </div>
+        );
+      },
     },
     {
-      title: '库存',
-      dataIndex: 'stock',
-      render: (val: number) => val > 0 ? <Tag color="success">{val}间</Tag> : <Tag color="error">满房</Tag>
+      title: '今日库存',
+      key: 'stock',
+      width: 180,
+      render: (_: unknown, record: RoomType) => {
+        const todayStr = dayjs().format('YYYY-MM-DD');
+        const todaySetting = record.priceCalendar?.find(c => c.date === todayStr);
+        const todayTotalStock = todaySetting?.stock !== undefined ? todaySetting.stock : record.stock;
+        const occupied = getOccupiedCount(record._id, todayStr);
+        const remaining = todayTotalStock - occupied;
+
+        return (
+          <div>
+            <div style={{ color: remaining < 3 ? '#ff4d4f' : '#333', fontWeight: 'bold' }}>
+              剩 {remaining < 0 ? 0 : remaining} 间
+              {remaining < 3 && <Tag color="error" style={{ marginLeft: 6, transform: 'scale(0.8)' }}>紧张</Tag>}
+            </div>
+            <div style={{ fontSize: 12, color: '#888' }}>
+              总 {todayTotalStock} / 已订 {occupied}
+            </div>
+          </div>
+        );
+      }
     },
     {
       title: '操作',
+      key: 'action',
+      width: 200,
       render: (_: unknown, record: RoomType) => (
-        <Space>
-          <Button type="link" size="small" onClick={() => handleEditRoom(record)}>编辑</Button>
-          <Button type="link" size="small" danger onClick={() => handleDeleteRoom(record._id)}>删除</Button>
+        <Space size="small">
+          <Button type="primary" ghost size="small" onClick={() => handleOpenCalendar(record)}>日历</Button>
+          <Button size="small" icon={<EditOutlined />} onClick={() => handleEditRoom(record)}>编辑</Button>
+          <Popconfirm title="确认删除?" onConfirm={() => handleDeleteRoom(record._id)}>
+            <Button size="small" danger icon={<DeleteOutlined />} />
+          </Popconfirm>
         </Space>
       )
     }
   ];
 
   const orderColumns = [
-    { title: '订单号', dataIndex: '_id', render: (id: string) => `#${id.slice(-6).toUpperCase()} ` },
+    { title: '订单号', dataIndex: '_id', render: (id: string) => `#${id.slice(-6).toUpperCase()}` },
     { title: '房型', dataIndex: ['roomTypeId', 'title'] },
     {
       title: '入住信息',
@@ -339,15 +617,14 @@ const HotelDetail: React.FC = () => {
         </div>
       )
     },
-    { title: '金额', dataIndex: 'totalPrice', render: (v: number) => `¥${v} ` },
+    { title: '金额', dataIndex: 'totalPrice', render: (v: number) => `¥${v}` },
     {
       title: '状态',
       dataIndex: 'status',
       render: (status: string) => {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const map: any = { pending: 'default', paid: 'processing', completed: 'success', cancelled: 'error' };
-        const labelMap: Record<string, string> = { pending: '待支付', paid: '已支付', completed: '已完成', cancelled: '已取消' };
-        return <Badge status={map[status]} text={labelMap[status] || status} />;
+        return <Badge status={map[status]} text={status} />;
       }
     },
   ];
@@ -359,18 +636,13 @@ const HotelDetail: React.FC = () => {
       label: '房型管理',
       children: (
         <>
-          <div className={styles.tableToolbar} style={{ marginBottom: 16 }}>
-            <Space>
-              <Button type="primary" icon={<PlusOutlined />} onClick={() => handleEditRoom()}>新增房型</Button>
-              <Button onClick={handleBatchPrice}>批量改价</Button>
-            </Space>
+          <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'flex-end' }}>
+             <Space>
+               <Button icon={<ReloadOutlined />} onClick={fetchRooms}>刷新</Button>
+               <Button type="primary" icon={<PlusOutlined />} onClick={() => handleEditRoom()}>新增房型</Button>
+             </Space>
           </div>
           <Table
-            rowSelection={{
-              type: 'checkbox',
-              onChange: (keys) => setSelectedRoomKeys(keys),
-              selectedRowKeys: selectedRoomKeys
-            }}
             loading={roomLoading}
             columns={roomColumns}
             dataSource={rooms}
@@ -412,9 +684,12 @@ const HotelDetail: React.FC = () => {
                 </span>
               </div>
               <div style={{ marginTop: 12, color: '#333' }}>{review.content}</div>
-              {/* 回复按钮区域 */}
               <div style={{ marginTop: 12, textAlign: 'right' }}>
-                <Button size="small" icon={<MessageOutlined />} onClick={() => handleReplyClick(review._id)}>
+                <Button size="small" icon={<MessageOutlined />} onClick={() => {
+                    setCurrentReviewId(review._id);
+                    formReply.resetFields();
+                    setIsReplyModalVisible(true);
+                }}>
                   回复
                 </Button>
               </div>
@@ -430,12 +705,11 @@ const HotelDetail: React.FC = () => {
       {/* Header */}
       <div className={styles.topBar}>
         <div className={styles.headerLeft}>
-          <Button type="primary" icon={<ArrowLeftOutlined />} onClick={() => navigate('/merchant/hotels')} className={styles.backBtn}>返回</Button>
+          <Button type="text" icon={<ArrowLeftOutlined />} onClick={() => navigate('/merchant/hotels')} style={{ marginRight: 8 }}/>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <h2 className={styles.title} style={{ margin: 0 }}>{hotel?.name}</h2>
             {hotel?.status === 0 && <Tag color="orange">待审核</Tag>}
             {hotel?.status === 1 && <Tag color="green">已发布</Tag>}
-            {hotel?.status === 2 && <Tag color="red">已拒绝</Tag>}
             {hotel?.status === 3 && <Tag color="default">已下线</Tag>}
           </div>
         </div>
@@ -466,7 +740,6 @@ const HotelDetail: React.FC = () => {
               {hotel?.tags?.map(tag => <Tag key={tag} color="blue">{tag}</Tag>)}
             </div>
           </div>
-          {/* Stats */}
           <div style={{ width: 200, borderLeft: '1px solid #f0f0f0', paddingLeft: 24 }}>
             <div style={{ marginBottom: 16 }}>
               <div style={{ color: '#888', fontSize: 12 }}>总订单</div>
@@ -480,92 +753,181 @@ const HotelDetail: React.FC = () => {
         </div>
       </Card>
 
-      {/* Main Tabs */}
       <Card style={{ marginTop: 24 }} className={styles.tabsCard}>
         <Tabs defaultActiveKey="1" items={tabItems} />
       </Card>
 
       {/* --- Modals --- */}
 
-      {/* 1. Edit Hotel Modal */}
+      {/* 1. 复杂酒店编辑弹窗 (集成高德地图) */}
       <Modal
         title="编辑酒店资料"
         open={isHotelModalVisible}
         onOk={submitEditHotel}
         onCancel={() => setIsHotelModalVisible(false)}
+        width={900}
+        style={{ top: 20 }}
       >
         <Form form={formHotel} layout="vertical">
-          <Form.Item name="name" label="酒店名称" rules={[{ required: true }]}>
-            <Input />
-          </Form.Item>
-          <Form.Item name="address" label="详细地址" rules={[{ required: true }]}>
-            <Input />
-          </Form.Item>
-          <Form.Item name="price" label="起步价">
-            <InputNumber prefix="¥" style={{ width: '100%' }} />
-          </Form.Item>
-          <Form.Item name="starRating" label="星级">
-            <Rate />
-          </Form.Item>
-          <Form.Item name="tags" label="标签 (逗号分隔)">
-            {/* 简单实现，这里用 Input，提交时转数组 */}
-            <Input placeholder="免费停车,健身房" />
-          </Form.Item>
+            <Row gutter={24}>
+                <Col span={14}>
+                    <Row gutter={16}>
+                        <Col span={12}><Form.Item name="name" label="酒店名称" rules={[{ required: true }]}><Input /></Form.Item></Col>
+                        <Col span={12}><Form.Item name="nameEn" label="英文名称"><Input /></Form.Item></Col>
+                    </Row>
+                    <Form.Item name="tags" label="标签"><Select mode="tags" /></Form.Item>
+                    <Row gutter={16}>
+                        <Col span={10}>
+                           {/* 需自行确保 provinceCityData 存在 */}
+                           <Form.Item name="city" label="城市" rules={[{ required: true }]}>
+                               <Cascader options={provinceCityData} placeholder="选择城市" />
+                           </Form.Item>
+                        </Col>
+                        <Col span={14}>
+                            <Form.Item name="address" label="地址" rules={[{ required: true }]}>
+                                <Input suffix={<SearchOutlined />} placeholder="输入详细地址" />
+                            </Form.Item>
+                        </Col>
+                    </Row>
+                    <Row gutter={16}>
+                        <Col span={8}>
+                            <Form.Item name="starRating" label="星级">
+                                <Select>{[1,2,3,4,5].map(s=><Select.Option key={s} value={s}>{s}星</Select.Option>)}</Select>
+                            </Form.Item>
+                        </Col>
+                        <Col span={8}><Form.Item name="price" label="起步价"><InputNumber prefix="¥" style={{width:'100%'}} /></Form.Item></Col>
+                        <Col span={8}><Form.Item name="openingTime" label="开业年份"><DatePicker picker="year" style={{width:'100%'}}/></Form.Item></Col>
+                    </Row>
+                    <Form.Item name="description" label="简介"><TextArea rows={3} /></Form.Item>
+                    
+                    <Form.Item label="酒店图片 (最多10张)">
+                        <Upload 
+                            listType="picture-card" 
+                            fileList={hotelFileList} 
+                            customRequest={handleUploadHotel}
+                            onRemove={(file) => setHotelFileList(prev => prev.filter(i => i.uid !== file.uid))}
+                        >
+                           {hotelFileList.length < 10 && <div><PlusOutlined /><div>上传</div></div>}
+                        </Upload>
+                    </Form.Item>
+                </Col>
+                <Col span={10}>
+                    <div style={{ marginBottom: 8, color: '#666', fontSize: 12 }}>* 拖动红色标记或点击地图可修正位置</div>
+                    <div ref={mapRef} style={{ height: 400, width: '100%', background: '#f0f2f5', borderRadius: 8 }} />
+                    <div style={{ marginTop: 16 }}>
+                       <Form.Item name="nearbyAttractions" label="附近景点"><Select mode="tags" /></Form.Item>
+                       <Form.Item name="nearbyTransport" label="交通信息"><Select mode="tags" /></Form.Item>
+                    </div>
+                </Col>
+            </Row>
         </Form>
       </Modal>
 
-      {/* 2. Room Modal */}
+      {/* 2. 复杂房型编辑弹窗 */}
       <Modal
         title={editingRoom ? "编辑房型" : "新增房型"}
         open={isRoomModalVisible}
         onOk={submitRoom}
         onCancel={() => setIsRoomModalVisible(false)}
+        width={600}
       >
         <Form form={formRoom} layout="vertical">
           <Form.Item name="title" label="房型名称" rules={[{ required: true }]}>
             <Input />
           </Form.Item>
-          <Row gutter={16}>
-            <Col span={12}>
-              <Form.Item name="price" label="价格" rules={[{ required: true }]}>
-                <InputNumber prefix="¥" style={{ width: '100%' }} />
-              </Form.Item>
-            </Col>
-            <Col span={12}>
-              <Form.Item name="stock" label="库存" rules={[{ required: true }]}>
-                <InputNumber style={{ width: '100%' }} />
-              </Form.Item>
-            </Col>
-          </Row>
-          <Form.Item name="bedInfo" label="床型信息">
-            <Input placeholder="例如：1.8m大床" />
-          </Form.Item>
-          <Form.Item name="capacity" label="可住人数">
-            <InputNumber style={{ width: '100%' }} />
+          <Space>
+            <Form.Item name="price" label="价格" rules={[{ required: true }]}>
+              <InputNumber prefix="¥" style={{ width: 130 }} />
+            </Form.Item>
+            <Form.Item name="originalPrice" label="原价">
+              <InputNumber prefix="¥" style={{ width: 130 }} />
+            </Form.Item>
+          </Space>
+          <Space>
+            <Form.Item name="stock" label="总物理库存" rules={[{ required: true }]}>
+              <InputNumber style={{ width: 130 }} />
+            </Form.Item>
+            <Form.Item name="capacity" label="入住人数" rules={[{ required: true }]}>
+              <InputNumber style={{ width: 130 }} suffix="人" />
+            </Form.Item>
+          </Space>
+          <Space>
+            <Form.Item name="bedInfo" label="床型" style={{ width: 200 }}>
+              <AutoComplete options={BED_TYPES.map(v => ({ value: v }))} placeholder="选择或输入" />
+            </Form.Item>
+            <Form.Item name="size" label="面积">
+              <Input suffix="m²" style={{ width: 130 }} />
+            </Form.Item>
+          </Space>
+          <Form.Item label="房型图片">
+            <Upload 
+                listType="picture-card" 
+                fileList={roomFileList} 
+                customRequest={handleUploadRoom} 
+                onRemove={f => setRoomFileList(p => p.filter(i => i.uid !== f.uid))}
+            >
+              {roomFileList.length < 5 && <div><PlusOutlined /><div>上传</div></div>}
+            </Upload>
           </Form.Item>
         </Form>
       </Modal>
 
-      {/* 3. Batch Price Modal */}
+      {/* 3. 价格库存日历弹窗 */}
       <Modal
-        title="批量修改价格"
-        open={isBatchModalVisible}
-        onOk={submitBatchPrice}
-        onCancel={() => setIsBatchModalVisible(false)}
+        title={<div>{calendarRoom?.title} - 价格库存日历 <Tag>基础价 ¥{basePrice}</Tag></div>}
+        open={isCalendarModalVisible}
+        onCancel={() => setIsCalendarModalVisible(false)}
+        footer={null}
+        width={850}
       >
-        <p>即将修改 {selectedRoomKeys.length} 个房型的价格</p>
-        <Form form={formBatch} layout="vertical">
-          <Form.Item name="price" label="新价格" rules={[{ required: true }]}>
-            <InputNumber prefix="¥" style={{ width: '100%' }} />
-          </Form.Item>
-        </Form>
+        <div className={styles.calendarContainer}>
+          <div style={{ marginBottom: 12, display: 'flex', alignItems: 'center', color: '#666' }}>
+            <InfoCircleOutlined style={{ color: '#1890ff', marginRight: 5 }} />
+            <span>点击日期可多选。选中后下方可批量设置。</span>
+          </div>
+
+          <Calendar 
+            fullscreen={false} 
+            fullCellRender={dateCellRender} 
+            onSelect={onCalendarSelect} 
+            className={styles.customCalendar} 
+          />
+
+          <div style={{ background: '#f5f5f5', padding: 16, marginTop: 16, borderRadius: 8 }}>
+            <div style={{ marginBottom: 12, fontWeight: 'bold' }}>
+              批量设置 {selectedDates.length > 0 && <Tag color="blue">{selectedDates.length}天</Tag>}
+            </div>
+            <Form form={formCalendar} layout="inline" disabled={selectedDates.length === 0}>
+              <Form.Item name="dayPrice" label="价格" rules={[{ required: true }]}>
+                <InputNumber prefix="¥" style={{ width: 100 }} placeholder={`${basePrice}`} />
+              </Form.Item>
+              <Form.Item name="dayStock" label="总库存">
+                <InputNumber style={{ width: 100 }} placeholder={`${calendarRoom?.stock}`} />
+              </Form.Item>
+              <Space>
+                <Button type="primary" onClick={handleBatchSaveCalendar}>保存</Button>
+                <Button danger onClick={handleBatchResetCalendar}>恢复默认</Button>
+              </Space>
+            </Form>
+            <div style={{ marginTop: 8, fontSize: 12, color: '#999' }}>* 点击“恢复默认”可清除选中日期的特殊价格，使其跟随全局设置</div>
+          </div>
+        </div>
       </Modal>
 
-      {/* 4. Reply Modal */}
+      {/* 4. 回复评价弹窗 */}
       <Modal
         title="回复评价"
         open={isReplyModalVisible}
-        onOk={submitReply}
+        onOk={async () => {
+            try {
+                const { content } = await formReply.validateFields();
+                await replyToReview(currentReviewId, content);
+                message.success('回复成功');
+                setIsReplyModalVisible(false);
+                const res = await getHotelReviews(hotelId!);
+                setReviews(res.data);
+            } catch { message.error('回复失败'); }
+        }}
         onCancel={() => setIsReplyModalVisible(false)}
       >
         <Form form={formReply}>

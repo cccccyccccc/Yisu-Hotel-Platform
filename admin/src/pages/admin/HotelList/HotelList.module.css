@@ -221,3 +221,34 @@
   border-radius: 8px;
   border: 1px solid #e2e8f0;
 }
+
+.container {
+  padding: 24px;
+  background-color: #f8fafc; /* 企业级极浅灰底色，凸显白色卡片 */
+  min-height: 100%;
+}
+
+.drawerContent {
+  padding-bottom: 40px;
+}
+
+.imageGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 12px;
+}
+
+.image {
+  width: 100% !important;
+  height: 100px !important;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  transition: transform 0.2s;
+  cursor: pointer;
+}
+
+.image:hover {
+  transform: scale(1.02);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
